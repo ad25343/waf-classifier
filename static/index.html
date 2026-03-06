@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Category Classifier</title>
+    <style>
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d27;
+            --bg-tertiary: #242736;
+            --bg-hover: #2d3045;
+            --border: #353849;
+            --text-primary: #e4e5ea;
+            --text-secondary: #9395a5;
+            --text-muted: #6b6e80;
+            --accent: #6c8aff;
+            --accent-hover: #5a78f0;
+            --accent-dim: rgba(108, 138, 255, 0.1);
+            --success: #4ade80;
+            --success-dim: rgba(74, 222, 128, 0.1);
+            --warning: #fbbf24;
+            --warning-dim: rgba(251, 191, 36, 0.1);
+            --error: #f87171;
+            --error-dim: rgba(248, 113, 113, 0.1);
+            --purple: #a78bfa;
+            --purple-dim: rgba(167, 139, 250, 0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header h1 span {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .status-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pill.active {
+            background: var(--success-dim);
+            color: var(--success);
+        }
+
+        .pill.inactive {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .pill.purple {
+            background: var(--purple-dim);
+            color: var(--purple);
+        }
+
+        .pill .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 340px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-section h3 {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sidebar-section h3 .step-num {
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        /* Upload Area */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .upload-zone.has-file {
+            border-color: var(--success);
+            border-style: solid;
+            background: var(--success-dim);
+            padding: 14px;
+        }
+
+        .upload-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .upload-zone p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .upload-zone .filename {
+            color: var(--success);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .upload-zone .hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .upload-zone .stats-line {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        #waf-file-input, #gt-file-input {
+            display: none;
+        }
+
+        /* Categories List */
+        .categories-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .category-tag {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 11px;
+            border: 1px solid var(--border);
+        }
+
+        /* GT Stats */
+        .gt-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .gt-stat {
+            background: var(--bg-primary);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .gt-stat .count {
+            color: var(--purple);
+            font-weight: 600;
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            padding: 3px;
+            gap: 3px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Batch Input */
+        .batch-area {
+            display: none;
+        }
+
+        .batch-area.visible {
+            display: block;
+        }
+
+        .batch-textarea {
+            width: 100%;
+            height: 120px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            padding: 12px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            resize: vertical;
+            margin-top: 8px;
+        }
+
+        .batch-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .batch-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sidebar-actions {
+            padding: 12px 20px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .sidebar-actions .btn {
+            margin-top: 0;
+            flex: 1;
+            font-size: 12px;
+        }
+
+        /* Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.user .message-bubble {
+            background: var(--accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-bubble {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-bubble strong {
+            color: var(--accent);
+        }
+
+        .message.user .message-bubble strong {
+            color: white;
+        }
+
+        .message-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            padding: 0 4px;
+        }
+
+        .message.user .message-label {
+            text-align: right;
+        }
+
+        /* Welcome message */
+        .welcome {
+            text-align: center;
+            padding: 40px 40px;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .welcome-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .welcome h2 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .setup-steps {
+            text-align: left;
+            margin-top: 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+
+        .setup-steps h3 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .setup-step {
+            display: flex;
+            gap: 10px;
+            padding: 8px 0;
+            align-items: flex-start;
+        }
+
+        .setup-step .num {
+            width: 22px;
+            height: 22px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .setup-step .step-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .setup-step .step-text strong {
+            color: var(--text-primary);
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .quick-action {
+            padding: 8px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-action:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 14px 18px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            border-bottom-left-radius: 4px;
+        }
+
+        .typing-indicator.visible {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            padding: 14px 16px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+            line-height: 1.5;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .input-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            padding: 0 4px;
+        }
+
+        /* Markdown-ish rendering */
+        .message-bubble h1, .message-bubble h2, .message-bubble h3 {
+            margin: 8px 0 4px 0;
+            font-size: 14px;
+        }
+
+        .message-bubble ul, .message-bubble ol {
+            padding-left: 20px;
+            margin: 4px 0;
+        }
+
+        .message-bubble code {
+            background: var(--bg-primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .message-bubble p {
+            margin: 6px 0;
+        }
+
+        /* Approve button */
+        .approve-bar {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .approve-btn {
+            padding: 6px 14px;
+            border: 1px solid var(--success);
+            background: var(--success-dim);
+            color: var(--success);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .approve-btn:hover {
+            background: var(--success);
+            color: white;
+        }
+
+        .approve-btn.approved {
+            background: var(--success);
+            color: white;
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        .approve-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+            animation-fill-mode: forwards;
+        }
+
+        .toast.success { background: var(--success-dim); color: var(--success); border: 1px solid var(--success); }
+        .toast.error { background: var(--error-dim); color: var(--error); border: 1px solid var(--error); }
+        .toast.warning { background: var(--warning-dim); color: var(--warning); border: 1px solid var(--warning); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; }
+        }
+
+        /* API Key Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            width: 440px;
+            max-width: 90%;
+            box-shadow: var(--shadow);
+        }
+
+        .modal h2 { font-size: 18px; margin-bottom: 8px; }
+        .modal p { color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">W</div>
+            <h1>WAF Classifier <span>| Story Alignment Tool</span></h1>
+        </div>
+        <div class="status-pills">
+            <div class="pill" id="api-pill">
+                <span class="dot"></span>
+                <span id="api-status-text">Checking API...</span>
+            </div>
+            <div class="pill" id="waf-pill">
+                <span class="dot"></span>
+                <span id="waf-status-text">No WAF loaded</span>
+            </div>
+            <div class="pill" id="gt-pill">
+                <span class="dot"></span>
+                <span id="gt-status-text">No ground truth</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Step 1: WAF Definitions -->
+            <div class="sidebar-section">
+                <h3><span class="step-num">1</span> WAF Definitions</h3>
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('waf-file-input').click()">
+                    <div class="upload-icon">📋</div>
+                    <p>Upload WAF category definitions</p>
+                    <p class="hint">CSV, Excel, JSON, or text</p>
+                </div>
+                <input type="file" id="waf-file-input" accept=".csv,.tsv,.xlsx,.xls,.json,.txt,.md">
+            </div>
+
+            <!-- Step 2: Ground Truth -->
+            <div class="sidebar-section">
+                <h3><span class="step-num">2</span> Ground Truth Examples</h3>
+                <div class="upload-zone" id="gt-upload-zone" onclick="document.getElementById('gt-file-input').click()">
+                    <div class="upload-icon">🎯</div>
+                    <p>Upload correctly classified stories</p>
+                    <p class="hint">CSV or Excel with Title, Desc, WAF Color, Category, Sub-Category</p>
+                </div>
+                <input type="file" id="gt-file-input" accept=".csv,.tsv,.xlsx,.xls">
+                <div id="gt-stats-area" style="display:none;"></div>
+            </div>
+
+            <!-- Detected Categories -->
+            <div class="sidebar-section" id="categories-section" style="display:none;">
+                <h3>Detected Categories</h3>
+                <div class="categories-list" id="categories-list"></div>
+            </div>
+
+            <!-- Step 3: Classify -->
+            <div class="sidebar-section">
+                <h3><span class="step-num">3</span> Classify Stories</h3>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" data-mode="single" onclick="setMode('single')">Single Story</button>
+                    <button class="mode-btn" data-mode="batch" onclick="setMode('batch')">Batch Review</button>
+                </div>
+
+                <div class="batch-area" id="batch-area">
+                    <textarea class="batch-textarea" id="batch-input" placeholder="Paste stories (one per line):&#10;Story Title | Description | Current WAF Tag&#10;&#10;Example:&#10;Add SSO login | Enable SAML-based SSO for enterprise | New Feature"></textarea>
+                    <p class="batch-hint">Format: Title | Description | Current WAF (pipe-separated)</p>
+                    <button class="btn btn-primary" onclick="batchClassify()">Classify All</button>
+                </div>
+            </div>
+
+            <div class="sidebar-actions">
+                <button class="btn btn-ghost" onclick="clearChat()">Clear Chat</button>
+                <button class="btn btn-ghost" onclick="clearWaf()">Reset WAF</button>
+                <button class="btn btn-ghost" onclick="clearGroundTruth()">Reset GT</button>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="welcome" id="welcome">
+                    <div class="welcome-icon">🎯</div>
+                    <h2>WAF Category Classifier</h2>
+                    <p>Accurately classify JIRA stories into WAF categories using AI, calibrated by your team's ground truth data.</p>
+
+                    <div class="setup-steps">
+                        <h3>Getting Started</h3>
+                        <div class="setup-step">
+                            <div class="num">1</div>
+                            <div class="step-text"><strong>Upload WAF Definitions</strong> — Your category names, descriptions, colors, and sub-categories (the rulebook)</div>
+                        </div>
+                        <div class="setup-step">
+                            <div class="num">2</div>
+                            <div class="step-text"><strong>Upload Ground Truth</strong> — Previously correctly classified stories so the AI learns your team's patterns (the answer key)</div>
+                        </div>
+                        <div class="setup-step">
+                            <div class="num">3</div>
+                            <div class="step-text"><strong>Classify</strong> — Paste a story or use batch mode. Get category, sub-category, color, confidence, and mismatch detection</div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="useQuickAction('Classify this story: ')">Classify a story</div>
+                        <div class="quick-action" onclick="useQuickAction('What WAF categories are available?')">List categories</div>
+                        <div class="quick-action" onclick="useQuickAction('This story is currently tagged as \"New Feature\": ')">Check a tag</div>
+                        <div class="quick-action" onclick="useQuickAction('Help me understand the difference between ')">Compare categories</div>
+                    </div>
+                </div>
+
+                <div class="typing-indicator" id="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <textarea class="chat-input" id="chat-input"
+                        placeholder="Paste a JIRA story title and description to classify..."
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"></textarea>
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+                </div>
+                <div class="input-hint">
+                    Press Enter to send · Shift+Enter for new line · Include current WAF tag for mismatch detection
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div class="modal-overlay" id="api-modal">
+        <div class="modal">
+            <h2>Configure API Key</h2>
+            <p>This tool uses Claude AI for intelligent story classification. The API key is stored server-side in the environment variable.</p>
+            <p style="color: var(--warning);">Set ANTHROPIC_API_KEY in your environment before starting the server.</p>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = "single";
+
+        // Auto-resize textarea
+        const chatInput = document.getElementById("chat-input");
+        chatInput.addEventListener("input", function() {
+            this.style.height = "auto";
+            this.style.height = Math.min(this.scrollHeight, 150) + "px";
+        });
+
+        // === WAF File Upload ===
+        const wafFileInput = document.getElementById("waf-file-input");
+        const uploadZone = document.getElementById("upload-zone");
+
+        setupDragDrop(uploadZone, wafFileInput, uploadWafFile);
+        wafFileInput.addEventListener("change", () => {
+            if (wafFileInput.files.length) uploadWafFile(wafFileInput.files[0]);
+        });
+
+        // === Ground Truth File Upload ===
+        const gtFileInput = document.getElementById("gt-file-input");
+        const gtUploadZone = document.getElementById("gt-upload-zone");
+
+        setupDragDrop(gtUploadZone, gtFileInput, uploadGroundTruth);
+        gtFileInput.addEventListener("change", () => {
+            if (gtFileInput.files.length) uploadGroundTruth(gtFileInput.files[0]);
+        });
+
+        function setupDragDrop(zone, input, handler) {
+            zone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                zone.style.borderColor = "var(--accent)";
+                zone.style.background = "var(--accent-dim)";
+            });
+            zone.addEventListener("dragleave", () => {
+                if (!zone.classList.contains("has-file")) {
+                    zone.style.borderColor = "";
+                    zone.style.background = "";
+                }
+            });
+            zone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                if (e.dataTransfer.files.length) {
+                    input.files = e.dataTransfer.files;
+                    handler(e.dataTransfer.files[0]);
+                }
+            });
+        }
+
+        async function uploadWafFile(file) {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const res = await fetch("/api/upload-waf", { method: "POST", body: formData });
+                const data = await res.json();
+
+                if (data.success) {
+                    uploadZone.classList.add("has-file");
+                    uploadZone.innerHTML = `
+                        <div class="upload-icon">✅</div>
+                        <p class="filename">${data.filename}</p>
+                        <p class="hint">${data.categories.length} categories detected</p>
+                    `;
+
+                    if (data.categories.length > 0) {
+                        const section = document.getElementById("categories-section");
+                        const list = document.getElementById("categories-list");
+                        section.style.display = "block";
+                        list.innerHTML = data.categories.map(c =>
+                            `<span class="category-tag">${c}</span>`
+                        ).join("");
+                    }
+
+                    updateStatus();
+                    showToast("WAF definitions loaded!", "success");
+                } else {
+                    showToast(data.error || "Upload failed", "error");
+                }
+            } catch (err) {
+                showToast("Upload failed: " + err.message, "error");
+            }
+        }
+
+        async function uploadGroundTruth(file) {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const res = await fetch("/api/upload-ground-truth", { method: "POST", body: formData });
+                const data = await res.json();
+
+                if (data.success) {
+                    gtUploadZone.classList.add("has-file");
+                    gtUploadZone.innerHTML = `
+                        <div class="upload-icon">✅</div>
+                        <p class="filename">${data.filename}</p>
+                        <p class="stats-line">${data.example_count} examples across ${Object.keys(data.stats).length} categories</p>
+                    `;
+
+                    // Show category distribution
+                    const statsArea = document.getElementById("gt-stats-area");
+                    if (data.stats && Object.keys(data.stats).length > 0) {
+                        statsArea.style.display = "block";
+                        statsArea.innerHTML = '<div class="gt-stats">' +
+                            Object.entries(data.stats)
+                                .sort((a, b) => b[1] - a[1])
+                                .map(([cat, count]) =>
+                                    `<span class="gt-stat">${cat}: <span class="count">${count}</span></span>`
+                                ).join("") +
+                            '</div>';
+                    }
+
+                    updateStatus();
+                    showToast(`Ground truth loaded: ${data.example_count} examples!`, "success");
+                } else {
+                    showToast(data.error || "Upload failed", "error");
+                }
+            } catch (err) {
+                showToast("Upload failed: " + err.message, "error");
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll(".mode-btn").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.mode === mode);
+            });
+            document.getElementById("batch-area").classList.toggle("visible", mode === "batch");
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("chat-input");
+            const message = input.value.trim();
+            if (!message) return;
+
+            const welcome = document.getElementById("welcome");
+            if (welcome) welcome.style.display = "none";
+
+            addMessage(message, "user");
+            input.value = "";
+            input.style.height = "auto";
+
+            const typing = document.getElementById("typing-indicator");
+            typing.classList.add("visible");
+            scrollToBottom();
+
+            document.getElementById("send-btn").disabled = true;
+
+            try {
+                const res = await fetch("/api/classify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+
+                typing.classList.remove("visible");
+                document.getElementById("send-btn").disabled = false;
+
+                if (data.error) {
+                    addMessage("Error: " + data.error, "assistant");
+                    if (data.error.includes("API_KEY")) {
+                        document.getElementById("api-modal").classList.add("visible");
+                    }
+                } else {
+                    addMessage(data.response, "assistant");
+                }
+            } catch (err) {
+                typing.classList.remove("visible");
+                document.getElementById("send-btn").disabled = false;
+                addMessage("Connection error: " + err.message, "assistant");
+            }
+        }
+
+        async function batchClassify() {
+            const input = document.getElementById("batch-input");
+            const text = input.value.trim();
+            if (!text) return;
+
+            const lines = text.split("\n").filter(l => l.trim());
+            const stories = lines.map(line => {
+                const parts = line.split("|").map(s => s.trim());
+                return {
+                    title: parts[0] || "",
+                    description: parts[1] || "",
+                    current_waf: parts[2] || ""
+                };
+            });
+
+            const welcome = document.getElementById("welcome");
+            if (welcome) welcome.style.display = "none";
+
+            addMessage(`Batch classifying ${stories.length} stories...`, "user");
+
+            const typing = document.getElementById("typing-indicator");
+            typing.classList.add("visible");
+            scrollToBottom();
+
+            try {
+                const res = await fetch("/api/batch-classify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ stories })
+                });
+                const data = await res.json();
+
+                typing.classList.remove("visible");
+
+                if (data.error) {
+                    addMessage("Error: " + data.error, "assistant");
+                } else {
+                    addMessage(data.response, "assistant");
+                }
+            } catch (err) {
+                typing.classList.remove("visible");
+                addMessage("Connection error: " + err.message, "assistant");
+            }
+        }
+
+        function addMessage(text, role) {
+            const container = document.getElementById("chat-messages");
+            const typing = document.getElementById("typing-indicator");
+
+            const msgDiv = document.createElement("div");
+            msgDiv.className = `message ${role}`;
+
+            const label = document.createElement("div");
+            label.className = "message-label";
+            label.textContent = role === "user" ? "You" : "WAF Classifier";
+
+            const bubble = document.createElement("div");
+            bubble.className = "message-bubble";
+            bubble.innerHTML = formatMessage(text);
+
+            // Add approve button for assistant classification responses
+            if (role === "assistant" && isClassificationResponse(text)) {
+                const approveBar = document.createElement("div");
+                approveBar.className = "approve-bar";
+
+                const approveBtn = document.createElement("button");
+                approveBtn.className = "approve-btn";
+                approveBtn.innerHTML = "&#10003; Approve &amp; Save to Ground Truth";
+                approveBtn.onclick = () => approveClassification(text, approveBtn);
+
+                const hint = document.createElement("span");
+                hint.className = "approve-hint";
+                hint.textContent = "Saves this classification as a training example";
+
+                approveBar.appendChild(approveBtn);
+                approveBar.appendChild(hint);
+                bubble.appendChild(approveBar);
+            }
+
+            msgDiv.appendChild(label);
+            msgDiv.appendChild(bubble);
+
+            container.insertBefore(msgDiv, typing);
+            scrollToBottom();
+        }
+
+        function isClassificationResponse(text) {
+            return text.includes("Recommended WAF Category") ||
+                   text.includes("WAF Category:") ||
+                   (text.includes("Confidence:") && text.includes("Reasoning:"));
+        }
+
+        function extractField(text, fieldName) {
+            const patterns = [
+                new RegExp(`\\*\\*${fieldName}:?\\*\\*\\s*(.+?)(?:\\n|$)`, "i"),
+                new RegExp(`${fieldName}:?\\s*(.+?)(?:\\n|$)`, "i"),
+            ];
+            for (const pat of patterns) {
+                const match = text.match(pat);
+                if (match) return match[1].replace(/\*\*/g, "").trim();
+            }
+            return "";
+        }
+
+        async function approveClassification(responseText, btn) {
+            if (btn.classList.contains("approved")) return;
+
+            const category = extractField(responseText, "Recommended WAF Category") ||
+                             extractField(responseText, "WAF Category");
+            const subCategory = extractField(responseText, "Recommended WAF Sub-Category") ||
+                                extractField(responseText, "WAF Sub-Category");
+            const color = extractField(responseText, "WAF Color");
+
+            if (!category) {
+                showToast("Could not extract WAF category from response", "error");
+                return;
+            }
+
+            // Determine Run/Change from the category
+            const runCategories = ["KTLO", "Keep the Lights On", "Business Maintenance",
+                                   "Technical Maintenance", "Regulatory (Operational)"];
+            const runChange = runCategories.some(c => category.includes(c)) ? "Run" : "Change";
+
+            // Get the user's last message as the story title/description
+            const messages = document.querySelectorAll(".message.user .message-bubble");
+            const lastUserMsg = messages.length > 0 ? messages[messages.length - 1].textContent.trim() : "";
+
+            // Try to split title from description
+            let title = lastUserMsg.substring(0, 200);
+            let description = lastUserMsg;
+
+            // Clean up common prefixes
+            title = title.replace(/^(classify this story:|classify:|check this:)\s*/i, "");
+
+            // If quoted, extract the quote as title
+            const quoteMatch = lastUserMsg.match(/"([^"]+)"/);
+            if (quoteMatch) {
+                title = quoteMatch[1];
+                description = lastUserMsg;
+            }
+
+            try {
+                const res = await fetch("/api/approve-classification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description,
+                        run_change: runChange,
+                        waf_color: color,
+                        waf_category: category,
+                        waf_subcategory: subCategory
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    btn.classList.add("approved");
+                    btn.innerHTML = "&#10003; Saved to Ground Truth";
+                    showToast(`Saved! Ground truth now has ${data.example_count} examples`, "success");
+                    updateStatus();
+                } else {
+                    showToast(data.error || "Failed to save", "error");
+                }
+            } catch (err) {
+                showToast("Failed to save: " + err.message, "error");
+            }
+        }
+
+        function formatMessage(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                .replace(/\*(.*?)\*/g, "<em>$1</em>")
+                .replace(/`(.*?)`/g, "<code>$1</code>")
+                .replace(/^### (.*$)/gm, "<h3>$1</h3>")
+                .replace(/^## (.*$)/gm, "<h2>$1</h2>")
+                .replace(/^# (.*$)/gm, "<h1>$1</h1>")
+                .replace(/^- (.*$)/gm, "<li>$1</li>")
+                .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+                .replace(/<\/ul>\s*<ul>/g, "")
+                .replace(/✅/g, '<span style="color:var(--success)">✅</span>')
+                .replace(/⚠️/g, '<span style="color:var(--warning)">⚠️</span>')
+                .replace(/\n/g, "<br>");
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById("chat-messages");
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function useQuickAction(text) {
+            const input = document.getElementById("chat-input");
+            input.value = text;
+            input.focus();
+        }
+
+        async function clearChat() {
+            await fetch("/api/clear-chat", { method: "POST" });
+            const container = document.getElementById("chat-messages");
+            const welcome = document.getElementById("welcome");
+            container.querySelectorAll(".message").forEach(m => m.remove());
+            if (welcome) welcome.style.display = "";
+            showToast("Chat cleared", "success");
+        }
+
+        async function clearWaf() {
+            await fetch("/api/clear-waf", { method: "POST" });
+            uploadZone.classList.remove("has-file");
+            uploadZone.innerHTML = `
+                <div class="upload-icon">📋</div>
+                <p>Upload WAF category definitions</p>
+                <p class="hint">CSV, Excel, JSON, or text</p>
+            `;
+            document.getElementById("categories-section").style.display = "none";
+            updateStatus();
+            showToast("WAF definitions cleared", "success");
+        }
+
+        async function clearGroundTruth() {
+            await fetch("/api/clear-ground-truth", { method: "POST" });
+            gtUploadZone.classList.remove("has-file");
+            gtUploadZone.innerHTML = `
+                <div class="upload-icon">🎯</div>
+                <p>Upload correctly classified stories</p>
+                <p class="hint">CSV or Excel with Title, Desc, WAF Color, Category, Sub-Category</p>
+            `;
+            document.getElementById("gt-stats-area").style.display = "none";
+            updateStatus();
+            showToast("Ground truth cleared", "success");
+        }
+
+        async function updateStatus() {
+            try {
+                const res = await fetch("/api/status");
+                const data = await res.json();
+
+                const apiPill = document.getElementById("api-pill");
+                const apiText = document.getElementById("api-status-text");
+                const wafPill = document.getElementById("waf-pill");
+                const wafText = document.getElementById("waf-status-text");
+                const gtPill = document.getElementById("gt-pill");
+                const gtText = document.getElementById("gt-status-text");
+
+                if (data.api_key_configured) {
+                    apiPill.className = "pill active";
+                    apiText.textContent = "API Connected";
+                } else {
+                    apiPill.className = "pill inactive";
+                    apiText.textContent = "API Key Missing";
+                }
+
+                if (data.waf_loaded) {
+                    wafPill.className = "pill active";
+                    wafText.textContent = `WAF: ${data.waf_filename}`;
+
+                    // Update sidebar upload zone to show loaded state
+                    if (!uploadZone.classList.contains("has-file")) {
+                        uploadZone.classList.add("has-file");
+                        uploadZone.innerHTML = `
+                            <div class="upload-icon">✅</div>
+                            <p class="filename">${data.waf_filename}</p>
+                            <p class="hint">${data.waf_categories.length} categories detected</p>
+                        `;
+                    }
+
+                    // Show categories list
+                    if (data.waf_categories && data.waf_categories.length > 0) {
+                        const section = document.getElementById("categories-section");
+                        const list = document.getElementById("categories-list");
+                        section.style.display = "block";
+                        list.innerHTML = data.waf_categories.map(c =>
+                            `<span class="category-tag">${c}</span>`
+                        ).join("");
+                    }
+                } else {
+                    wafPill.className = "pill inactive";
+                    wafText.textContent = "No WAF loaded";
+                }
+
+                if (data.ground_truth_loaded) {
+                    gtPill.className = "pill purple";
+                    gtText.textContent = `GT: ${data.ground_truth_count} examples`;
+
+                    // Update sidebar upload zone to show loaded state
+                    if (!gtUploadZone.classList.contains("has-file")) {
+                        gtUploadZone.classList.add("has-file");
+                        gtUploadZone.innerHTML = `
+                            <div class="upload-icon">✅</div>
+                            <p class="filename">${data.ground_truth_filename}</p>
+                            <p class="stats-line">${data.ground_truth_count} examples across ${Object.keys(data.ground_truth_stats).length} categories</p>
+                        `;
+
+                        // Show GT stats
+                        const statsArea = document.getElementById("gt-stats-area");
+                        if (data.ground_truth_stats && Object.keys(data.ground_truth_stats).length > 0) {
+                            statsArea.style.display = "block";
+                            statsArea.innerHTML = '<div class="gt-stats">' +
+                                Object.entries(data.ground_truth_stats)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .map(([cat, count]) =>
+                                        `<span class="gt-stat">${cat}: <span class="count">${count}</span></span>`
+                                    ).join("") +
+                                '</div>';
+                        }
+                    }
+                } else {
+                    gtPill.className = "pill inactive";
+                    gtText.textContent = "No ground truth";
+                }
+            } catch (err) {
+                console.error("Status check failed:", err);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("api-modal").classList.remove("visible");
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.createElement("div");
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Init
+        updateStatus();
+    </script>
+</body>
+</html>

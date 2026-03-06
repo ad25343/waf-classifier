@@ -1,0 +1,19 @@
+Story Title,Description,Run/Change,WAF Color,WAF Category,WAF Sub-Category
+Fix production database connection timeout,"Users experiencing intermittent 504 errors on loan lookup service during peak hours. Connection pool exhaustion confirmed.",Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix
+Implement daily backup verification script,"Create automated validation that DR backups completed successfully and are restorable.",Run,GRAY,KTLO (Keep the Lights On),Monitoring and backups
+Update fee calculation rules for Q2 rate changes,"Business requested update to existing fee schedule logic to reflect new Q2 pricing approved by product team.",Run,BLACK,Business Maintenance,Configuration updates
+Fix duplicate records in customer address table,"Data quality issue causing downstream errors in correspondence. Existing dedup logic needs tuning.",Run,BLACK,Business Maintenance,Data quality fixes
+Upgrade Java runtime from 11 to 17,"Current JDK approaching EOL. Upgrade to maintain security patch availability and performance.",Run,BLACK,Technical Maintenance,Platform upgrades
+Consolidate three monitoring dashboards into one,"Reduce tool sprawl by merging Datadog, Grafana, and custom dashboards into single pane of glass.",Run,BLACK,Technical Maintenance,Tool consolidation
+Refactor legacy batch processor to reduce retry failures,"Batch job has 12% retry rate due to poor error handling. Refactor to improve reliability.",Run,BLACK,Technical Maintenance,Tech debt reduction
+Generate quarterly HMDA data extract for compliance,"Recurring regulatory reporting requirement. No system changes needed, just extract and validate.",Run,RED,Regulatory (Operational),Regulatory reporting
+Remediate audit finding on access control logging,"Internal audit flagged insufficient logging on admin actions. Add logging to existing endpoints.",Run,RED,Regulatory (Operational),Audit remediation
+Implement new FHFA credit score model requirements,"Federal mandate requiring dual credit score model support across all origination systems. Requires data model changes and new vendor integration.",Change,RED,Regulatory Mandated Change,FHFA compliance
+Redesign identity verification for zero-trust architecture,"Security mandate requiring complete overhaul of authentication and authorization framework across all services.",Change,RED,Regulatory Mandated Change,Zero-trust architecture
+Build AI-powered document classification pipeline,"Enterprise initiative to automate loan document intake using ML. Multi-team effort across engineering and operations.",Change,ORANGE,Enterprise Strategic Priority,AI Infrastructure Enablement
+Loan Quality Center real-time scoring integration,"Strategic transformation to enable real-time quality scoring at point of origination rather than post-close.",Change,ORANGE,Enterprise Strategic Priority,Loan Quality Center Transformation
+Implement Treasury position reconciliation dashboard,"Division priority to give Treasury real-time visibility into market risk positions. Requested by Treasury SVP.",Change,YELLOW,Top Divisional Priority,Treasury Market Risk
+Build self-service data catalog for CDO team,"CDO initiative to improve data discoverability. Divisional priority but not enterprise-wide.",Change,YELLOW,Top Divisional Priority,CDO Data & Services
+Prototype chatbot for internal HR FAQ,"Exploratory AI use case. Low priority but could reduce HR ticket volume. Can be paused without impact.",Change,GREEN,Other Blocked Priority,AI use-case exploration
+Add export-to-PDF feature on monthly reports,"Nice-to-have enhancement requested by several users. Not tied to any strategic initiative.",Change,GREEN,Other Blocked Priority,Incremental improvements
+Automate test environment provisioning with Terraform,"Would save ~2hrs per sprint in manual setup. Valuable but deferrable.",Change,GREEN,Other Blocked Priority,Automation pilots
