@@ -24,6 +24,27 @@ Returns current system state.
 }
 ```
 
+### GET /api/waf-definitions
+
+Returns structured WAF framework definitions for the reference page.
+
+**Response:**
+```json
+{
+  "loaded": true,
+  "definitions": [
+    {
+      "run_change": "Run",
+      "color": "GRAY",
+      "category": "KTLO (Keep the Lights On)",
+      "description": "Non-discretionary, recurring work...",
+      "decision_rule": "Required to meet SLAs, legal...",
+      "examples": "Emergency break-fix; Prod outages; ..."
+    }
+  ]
+}
+```
+
 ---
 
 ## Classification

@@ -13,6 +13,7 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 | **Classify** | Live chat or batch classification for new stories during grooming |
 | **Analytics** | Upload JIRA data → AI verifies every story → insights (mismatches, trends, distributions, exports) |
 | **Epic Lineage** | Do related stories under an epic align? Tree view with per-epic WAF rollups |
+| **WAF Reference** | Browse all 8 WAF categories — definitions, decision rules, color codes, and examples |
 | **Ground Truth Loop** | Approve correct classifications to continuously improve AI accuracy |
 
 ## WAF Categories
@@ -58,6 +59,7 @@ The app auto-loads WAF definitions and ground truth from `sample-data/` on start
 | `/classify` | Classifier | Chat-based AI classification with epic tagging |
 | `/history` | Analytics | Upload data → AI verify → summary, sprint trends, monthly, timeline |
 | `/lineage` | Epic Lineage | Epic-to-story tree view and WAF rollup analytics |
+| `/waf-reference` | WAF Reference | Browse all 8 WAF categories with definitions and decision rules |
 
 ## Tech Stack
 
@@ -79,8 +81,9 @@ waf-classifier/
 │   ├── home.html                   # Home landing page
 │   ├── index.html                  # Classifier chat UI
 │   ├── dashboard.html              # Legacy (redirects to analytics)
-│   ├── history.html                # Analytics (5 tabs: summary, sprints, monthly, timeline, import)
-│   └── lineage.html                # Epic lineage tracking
+│   ├── history.html                # Analytics (5 tabs: upload, summary, sprints, monthly, timeline)
+│   ├── lineage.html                # Epic lineage tracking
+│   └── waf-reference.html          # WAF framework reference guide
 ├── sample-data/
 │   ├── waf-definitions.csv         # WAF framework (8 categories)
 │   ├── sample-ground-truth.csv     # 18 calibration examples

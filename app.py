@@ -683,6 +683,30 @@ def history():
     return send_from_directory("static", "history.html")
 
 
+@app.route("/waf-reference")
+def waf_reference():
+    return send_from_directory("static", "waf-reference.html")
+
+
+@app.route("/api/waf-definitions", methods=["GET"])
+def get_waf_definitions():
+    """Return loaded WAF definitions for the reference page."""
+    if waf_store["definitions"] is None:
+        return jsonify({"definitions": [], "loaded": False})
+
+    defs = []
+    for _, row in waf_store["definitions"].iterrows():
+        defs.append({
+            "run_change": str(row.get("Run/Change", "")),
+            "color": str(row.get("WAF Color", "")),
+            "category": str(row.get("WAF Category", "")),
+            "description": str(row.get("What This Work Is", "")),
+            "decision_rule": str(row.get("How to Decide (Tag Here If...)", "")),
+            "examples": str(row.get("Representative Examples", ""))
+        })
+    return jsonify({"definitions": defs, "loaded": True})
+
+
 @app.route("/api/dashboard/summary", methods=["GET"])
 def dashboard_summary():
     """Get summary stats for the dashboard."""

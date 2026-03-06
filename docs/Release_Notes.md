@@ -13,8 +13,10 @@ Consolidation release. Clarifies the three pillars: Classify, Analytics, Lineage
 - **Analytics page has 5 tabs**: Upload Data (default), Summary, Sprint Trends, Monthly Rollups, Timeline
 - **Post-save flow**: After saving verified data, insights auto-refresh and page navigates to Summary
 - **Existing data indicator**: Upload tab shows count of verified records already in the database with link to insights
-- **Home page simplified**: 3 cards — Classify, Analytics, Epic Lineage
-- **Navigation simplified**: All pages link to single "Analytics" instead of separate Dashboard/History
+- **WAF Reference page**: New `/waf-reference` page shows all 8 categories with definitions, decision rules, color codes, and examples. Pulls live data from loaded WAF definitions.
+- **New API endpoint**: `GET /api/waf-definitions` returns structured WAF framework data
+- **Home page**: 4 cards — Classify, Analytics, Epic Lineage, WAF Reference
+- **Navigation updated**: All pages now include WAF Reference link
 - `/dashboard` route redirects to `/history` for backward compatibility
 
 ---

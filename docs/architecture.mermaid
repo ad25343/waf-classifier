@@ -7,12 +7,13 @@ graph TB
         CLASS[index.html<br/>1. Classify]
         HIST[history.html<br/>2. Analytics<br/>Upload → Verify → Insights]
         LIN[lineage.html<br/>3. Epic Lineage]
+        WAFREF[waf-reference.html<br/>WAF Reference]
         CHARTJS[Chart.js 4.4.1]
     end
 
     subgraph Flask["Flask Server (app.py)"]
-        ROUTES[Page Routes<br/>/ /classify /history /lineage]
-        
+        ROUTES[Page Routes<br/>/ /classify /history /lineage /waf-reference]
+
         subgraph APIs["API Endpoints"]
             CLASSIFY["/api/classify<br/>/api/batch-classify"]
             UPLOAD["/api/upload-waf<br/>/api/upload-ground-truth"]
@@ -20,6 +21,7 @@ graph TB
             HISTAPI["/api/history/sprints<br/>/api/history/monthly<br/>/api/history/timeline<br/>/api/history/export<br/>/api/history/export-xlsx"]
             BULKAPI["/api/bulk-verify<br/>/api/bulk-verify/save<br/>/api/history/import"]
             EPICAPI["/api/epics<br/>/api/epics/summary<br/>/api/epics/assign<br/>/api/epics/autocomplete"]
+            WAFAPI["/api/waf-definitions"]
         end
     end
 
@@ -44,6 +46,7 @@ graph TB
     HIST --> HISTAPI
     HIST --> BULKAPI
     LIN --> EPICAPI
+    WAFREF --> WAFAPI
     CLASS --> UPLOAD
 
     CLASSIFY --> CLAUDE
@@ -60,6 +63,7 @@ graph TB
     UPLOAD --> GTMEM
     CLASSIFY --> WAFMEM
     CLASSIFY --> GTMEM
+    WAFAPI --> WAFMEM
 
     SAMPLE -.->|auto-load on startup| WAFMEM
     SAMPLE -.->|auto-load on startup| GTMEM
