@@ -1,0 +1,74 @@
+---
+title: WAF Classifier — System Architecture
+---
+graph TB
+    subgraph Browser["Browser (Frontend)"]
+        HOME[home.html<br/>Landing Page]
+        CLASS[index.html<br/>Classifier Chat]
+        DASH[dashboard.html<br/>Real-Time Dashboard]
+        HIST[history.html<br/>Historical Analytics]
+        LIN[lineage.html<br/>Epic Lineage]
+        CHARTJS[Chart.js 4.4.1]
+    end
+
+    subgraph Flask["Flask Server (app.py)"]
+        ROUTES[Page Routes<br/>/ /classify /dashboard<br/>/history /lineage]
+        
+        subgraph APIs["API Endpoints"]
+            CLASSIFY["/api/classify<br/>/api/batch-classify"]
+            UPLOAD["/api/upload-waf<br/>/api/upload-ground-truth"]
+            DASHAPI["/api/dashboard/summary"]
+            HISTAPI["/api/history/sprints<br/>/api/history/monthly<br/>/api/history/timeline<br/>/api/history/export<br/>/api/history/export-xlsx"]
+            BULKAPI["/api/bulk-verify<br/>/api/bulk-verify/save<br/>/api/history/import"]
+            EPICAPI["/api/epics<br/>/api/epics/summary<br/>/api/epics/assign<br/>/api/epics/autocomplete"]
+        end
+    end
+
+    subgraph Storage["Data Layer"]
+        SQLITE[(SQLite<br/>waf_history.db)]
+        WAFMEM[In-Memory<br/>WAF Definitions]
+        GTMEM[In-Memory<br/>Ground Truth]
+    end
+
+    subgraph External["External Services"]
+        CLAUDE[Anthropic Claude API<br/>claude-sonnet-4-5-20250929]
+    end
+
+    subgraph Files["File System"]
+        SAMPLE[sample-data/<br/>waf-definitions.csv<br/>sample-ground-truth.csv]
+        EXPORTS[Excel/CSV<br/>Exports]
+    end
+
+    HOME --> ROUTES
+    CLASS --> CLASSIFY
+    DASH --> DASHAPI
+    HIST --> HISTAPI
+    HIST --> BULKAPI
+    LIN --> EPICAPI
+    CLASS --> UPLOAD
+
+    CLASSIFY --> CLAUDE
+    BULKAPI --> CLAUDE
+
+    CLASSIFY --> SQLITE
+    DASHAPI --> SQLITE
+    HISTAPI --> SQLITE
+    BULKAPI --> SQLITE
+    EPICAPI --> SQLITE
+    HISTAPI --> EXPORTS
+
+    UPLOAD --> WAFMEM
+    UPLOAD --> GTMEM
+    CLASSIFY --> WAFMEM
+    CLASSIFY --> GTMEM
+
+    SAMPLE -.->|auto-load on startup| WAFMEM
+    SAMPLE -.->|auto-load on startup| GTMEM
+
+    SQLITE -->|classifications<br/>sessions| SQLITE
+    
+    style Browser fill:#EFF6FF,stroke:#3B82F6
+    style Flask fill:#FFF7ED,stroke:#F97316
+    style Storage fill:#F0FDF4,stroke:#22C55E
+    style External fill:#FEF2F2,stroke:#EF4444
+    style Files fill:#F5F3FF,stroke:#8B5CF6

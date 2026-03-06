@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Classifier</title>
+    <style>
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d27;
+            --bg-tertiary: #242736;
+            --border: #353849;
+            --text-primary: #e4e5ea;
+            --text-secondary: #9395a5;
+            --text-muted: #6b6e80;
+            --accent: #6c8aff;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --purple: #a78bfa;
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: 700; color: white;
+        }
+
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        .main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 32px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .menu-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(108, 138, 255, 0.15);
+        }
+
+        .menu-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        .menu-card.classify::before { background: linear-gradient(90deg, var(--accent), var(--purple)); }
+        .menu-card.dashboard::before { background: linear-gradient(90deg, var(--success), #34d399); }
+        .menu-card.history::before { background: linear-gradient(90deg, var(--warning), var(--error)); }
+        .menu-card.lineage::before { background: linear-gradient(90deg, #60a5fa, var(--accent)); }
+        .menu-card.import::before { background: linear-gradient(90deg, var(--purple), #f472b6); }
+
+        .card-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .classify .card-icon { background: rgba(108,138,255,0.15); }
+        .dashboard .card-icon { background: rgba(74,222,128,0.15); }
+        .history .card-icon { background: rgba(251,191,36,0.15); }
+        .lineage .card-icon { background: rgba(96,165,250,0.15); }
+        .import .card-icon { background: rgba(167,139,250,0.15); }
+
+        .menu-card h2 {
+            font-size: 18px; font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .menu-card p {
+            font-size: 13px; color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .card-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        .classify .card-badge { background: rgba(108,138,255,0.15); color: var(--accent); }
+        .dashboard .card-badge { background: rgba(74,222,128,0.15); color: var(--success); }
+        .history .card-badge { background: rgba(251,191,36,0.15); color: var(--warning); }
+        .lineage .card-badge { background: rgba(96,165,250,0.15); color: #60a5fa; }
+        .import .card-badge { background: rgba(167,139,250,0.15); color: var(--purple); }
+
+        .status-bar {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 12px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .status-pills { display: flex; gap: 12px; }
+
+        .status-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+        }
+
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .dot.green { background: var(--success); }
+        .dot.yellow { background: var(--warning); }
+        .dot.red { background: var(--error); }
+
+        @media (max-width: 700px) {
+            .menu-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo">W</div>
+    <div class="header-text">
+        <h1>WAF Classifier</h1>
+        <p>Work Alignment Framework — Classify, Monitor, and Improve</p>
+    </div>
+</div>
+
+<div class="main">
+    <div class="menu-grid">
+        <a href="/classify" class="menu-card classify">
+            <div class="card-icon">💬</div>
+            <h2>Classify Stories</h2>
+            <p>AI-powered WAF classification for JIRA stories. Chat with the classifier, get recommendations, flag mismatches, and approve to ground truth.</p>
+            <span class="card-badge">Scrum Teams</span>
+        </a>
+
+        <a href="/dashboard" class="menu-card dashboard">
+            <div class="card-icon">📊</div>
+            <h2>Dashboard</h2>
+            <p>Real-time snapshot of classification activity. KPIs, category distribution, confidence breakdown, and recent classifications.</p>
+            <span class="card-badge">PMOs & Leads</span>
+        </a>
+
+        <a href="/history" class="menu-card history">
+            <div class="card-icon">📈</div>
+            <h2>Historical View</h2>
+            <p>Sprint-over-sprint trends, monthly rollups with period comparisons, and a full filterable timeline for deep analysis.</p>
+            <span class="card-badge">Leadership</span>
+        </a>
+
+        <a href="/lineage" class="menu-card lineage">
+            <div class="card-icon">🔗</div>
+            <h2>Epic Lineage</h2>
+            <p>Map stories and features to parent epics. See how work rolls up with tree views and per-epic WAF dashboards.</p>
+            <span class="card-badge">Scrum Teams & PMOs</span>
+        </a>
+
+        <a href="/history?tab=import" class="menu-card import" id="import-card">
+            <div class="card-icon">📁</div>
+            <h2>Verify & Import</h2>
+            <p>Upload JIRA exports — AI verifies every story's WAF tag, flags mismatches, and you review side-by-side before saving. CSV and Excel supported.</p>
+            <span class="card-badge">All Teams</span>
+        </a>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div class="status-pills">
+        <div class="status-pill">
+            <div class="dot" id="api-dot"></div>
+            <span id="api-status">Checking...</span>
+        </div>
+        <div class="status-pill">
+            <div class="dot" id="waf-dot"></div>
+            <span id="waf-status">WAF Definitions</span>
+        </div>
+        <div class="status-pill">
+            <div class="dot" id="gt-dot"></div>
+            <span id="gt-status">Ground Truth</span>
+        </div>
+        <div class="status-pill" id="db-pill">
+            <div class="dot" id="db-dot"></div>
+            <span id="db-status">History DB</span>
+        </div>
+    </div>
+    <div id="version-info">v1.1</div>
+</div>
+
+<script>
+async function checkStatus() {
+    try {
+        const [statusRes, dashRes] = await Promise.all([
+            fetch('/api/status'),
+            fetch('/api/dashboard/summary')
+        ]);
+        const status = await statusRes.json();
+        const dash = await dashRes.json();
+
+        // API
+        const apiDot = document.getElementById('api-dot');
+        const apiText = document.getElementById('api-status');
+        if (status.api_key_configured) {
+            apiDot.className = 'dot green';
+            apiText.textContent = 'API Connected';
+        } else {
+            apiDot.className = 'dot red';
+            apiText.textContent = 'API Key Missing';
+        }
+
+        // WAF
+        const wafDot = document.getElementById('waf-dot');
+        const wafText = document.getElementById('waf-status');
+        if (status.waf_loaded) {
+            wafDot.className = 'dot green';
+            wafText.textContent = `WAF: ${status.waf_categories.length} categories`;
+        } else {
+            wafDot.className = 'dot yellow';
+            wafText.textContent = 'WAF: Not loaded';
+        }
+
+        // Ground Truth
+        const gtDot = document.getElementById('gt-dot');
+        const gtText = document.getElementById('gt-status');
+        if (status.ground_truth_loaded) {
+            gtDot.className = 'dot green';
+            gtText.textContent = `GT: ${status.ground_truth_count} examples`;
+        } else {
+            gtDot.className = 'dot yellow';
+            gtText.textContent = 'GT: Not loaded';
+        }
+
+        // DB
+        const dbDot = document.getElementById('db-dot');
+        const dbText = document.getElementById('db-status');
+        dbDot.className = 'dot green';
+        dbText.textContent = `History: ${dash.total_classifications} records`;
+
+    } catch (err) {
+        console.error('Status check failed:', err);
+    }
+}
+
+// Import card already links to /history?tab=import via href
+
+checkStatus();
+</script>
+</body>
+</html>

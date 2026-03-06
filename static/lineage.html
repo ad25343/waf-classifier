@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Classifier - Epic Lineage</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d27;
+            --bg-tertiary: #242736;
+            --border: #353849;
+            --text-primary: #e4e5ea;
+            --text-secondary: #9395a5;
+            --text-muted: #6b6e80;
+            --accent: #6c8aff;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --purple: #a78bfa;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 12px; }
+
+        .logo {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: white;
+        }
+
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .header h1 span { color: var(--text-secondary); font-weight: 400; }
+
+        .nav-links { display: flex; gap: 8px; }
+
+        .nav-link {
+            color: var(--accent); text-decoration: none; font-size: 13px;
+            padding: 6px 14px; border: 1px solid var(--accent); border-radius: 20px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover { background: var(--accent); color: white; }
+
+        .content { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+        /* Two-panel layout */
+        .layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            min-height: calc(100vh - 120px);
+        }
+
+        /* Left panel: Epic list */
+        .epic-list-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px; font-weight: 600;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .search-box {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        .search-box input::placeholder { color: var(--text-muted); }
+
+        .epic-items {
+            flex: 1; overflow-y: auto;
+        }
+
+        .epic-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .epic-item:hover { background: var(--bg-tertiary); }
+        .epic-item.active { background: var(--bg-tertiary); border-left: 3px solid var(--accent); }
+
+        .epic-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .epic-meta {
+            font-size: 12px; color: var(--text-muted);
+            display: flex; gap: 12px;
+        }
+
+        .epic-count { color: var(--accent); font-weight: 500; }
+        .epic-mismatch { color: var(--error); }
+
+        /* Right panel: Detail */
+        .detail-panel {
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+        }
+
+        .card-title {
+            font-size: 14px; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        /* KPI row */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .kpi {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+
+        .kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+
+        /* Chart grid */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-container { position: relative; height: 220px; }
+
+        /* Tree view */
+        .tree { margin-top: 8px; }
+
+        .tree-feature {
+            margin-bottom: 4px;
+        }
+
+        .feature-header {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 13px;
+        }
+        .feature-header:hover { background: var(--bg-hover, #2d3045); }
+
+        .feature-toggle {
+            font-size: 10px; color: var(--text-muted);
+            transition: transform 0.2s;
+            width: 16px;
+        }
+        .feature-toggle.open { transform: rotate(90deg); }
+
+        .feature-name { font-weight: 500; flex: 1; }
+        .feature-count { font-size: 12px; color: var(--text-muted); }
+
+        .story-list {
+            display: none;
+            margin-left: 24px;
+            border-left: 2px solid var(--border);
+            padding-left: 12px;
+        }
+        .story-list.open { display: block; }
+
+        .story-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(53,56,73,0.5);
+            font-size: 13px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .story-title { flex: 1; color: var(--text-primary); }
+
+        .color-dot {
+            display: inline-block; width: 10px; height: 10px;
+            border-radius: 50%; flex-shrink: 0;
+        }
+
+        .badge {
+            padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
+            flex-shrink: 0;
+        }
+        .badge.high { background: rgba(74,222,128,0.15); color: var(--success); }
+        .badge.medium { background: rgba(251,191,36,0.15); color: var(--warning); }
+        .badge.low { background: rgba(248,113,113,0.15); color: var(--error); }
+        .badge.mismatch { background: rgba(248,113,113,0.15); color: var(--error); }
+        .badge.approved { background: rgba(74,222,128,0.15); color: var(--success); }
+
+        /* Assign epic modal */
+        .assign-bar {
+            display: flex; gap: 8px; align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .assign-bar input, .assign-bar select {
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .assign-bar input { flex: 1; }
+
+        .btn {
+            padding: 8px 16px; border-radius: 8px; border: none;
+            font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #5a78ee; }
+        .btn-outline { background: none; color: var(--accent); border: 1px solid var(--accent); }
+        .btn-outline:hover { background: var(--accent); color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--text-muted);
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+        /* "All Epics" overview cards */
+        .epic-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .epic-summary-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .epic-summary-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .epic-summary-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+
+        .mini-stats {
+            display: flex; gap: 16px; margin-bottom: 12px;
+        }
+
+        .mini-stat-value { font-size: 18px; font-weight: 700; }
+        .mini-stat-label { font-size: 11px; color: var(--text-muted); }
+
+        .cat-bar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 12px; }
+        .cat-bar-label { width: 120px; color: var(--text-secondary); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cat-bar-track { flex: 1; height: 14px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
+        .cat-bar-fill { height: 100%; border-radius: 3px; }
+        .cat-bar-count { width: 24px; color: var(--text-muted); font-size: 11px; }
+
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
+            .kpi-row { grid-template-columns: repeat(3, 1fr); }
+            .chart-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo">W</div>
+        <h1>WAF Classifier <span>| Epic Lineage</span></h1>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/classify" class="nav-link">Classifier</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/history" class="nav-link">History</a>
+    </div>
+</div>
+
+<div class="content">
+    <div class="layout">
+        <!-- Left: Epic list -->
+        <div class="epic-list-panel">
+            <div class="panel-header">
+                <span>Epics</span>
+                <span id="epic-total-count" style="font-size:12px;color:var(--text-muted);font-weight:400;"></span>
+            </div>
+            <div class="search-box">
+                <input type="text" id="epic-search" placeholder="Search epics..." oninput="filterEpics()">
+            </div>
+            <div class="epic-items" id="epic-list">
+                <div class="empty-state" style="padding:40px 20px;">
+                    <div class="icon">🔗</div>
+                    <p style="font-size:13px;">No epics found. Tag stories with an epic in the classifier or import files with an Epic column.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Detail -->
+        <div class="detail-panel" id="detail-panel">
+            <!-- Default: All epics overview -->
+            <div id="overview-view">
+                <div class="card">
+                    <div class="card-title">All Epics Overview</div>
+                    <div class="epic-cards-grid" id="epic-cards"></div>
+                </div>
+            </div>
+
+            <!-- Single epic detail view (hidden by default) -->
+            <div id="epic-detail-view" style="display:none;">
+                <!-- KPIs -->
+                <div class="kpi-row" id="epic-kpis"></div>
+
+                <!-- Charts -->
+                <div class="chart-grid">
+                    <div class="card">
+                        <div class="card-title">WAF Category Breakdown</div>
+                        <div class="chart-container"><canvas id="epicCatChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Run vs Change</div>
+                        <div class="chart-container"><canvas id="epicRcChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Tree: Features -> Stories -->
+                <div class="card">
+                    <div class="card-title" id="tree-title">Story Lineage</div>
+                    <div class="tree" id="tree-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const WAF_COLORS_MAP = {
+    GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
+    ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"
+};
+
+const CHART_PALETTE = [
+    "#6c8aff", "#a78bfa", "#4ade80", "#fbbf24", "#f87171",
+    "#60a5fa", "#f472b6", "#34d399", "#818cf8", "#fb923c"
+];
+
+let charts = {};
+let allEpicData = [];
+let epicListData = [];
+
+// ── Load all data ──
+async function loadData() {
+    try {
+        const [listRes, summaryRes] = await Promise.all([
+            fetch('/api/epics'),
+            fetch('/api/epics/summary')
+        ]);
+        const listData = await listRes.json();
+        const summaryData = await summaryRes.json();
+
+        epicListData = listData.epics || [];
+        allEpicData = summaryData.epics || [];
+
+        document.getElementById('epic-total-count').textContent = `${epicListData.length} epics`;
+
+        renderEpicList();
+        renderOverview();
+    } catch (err) {
+        console.error('Failed to load epic data:', err);
+    }
+}
+
+function renderEpicList() {
+    const container = document.getElementById('epic-list');
+    if (epicListData.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="padding:40px 20px;">
+                <div class="icon">🔗</div>
+                <p style="font-size:13px;">No epics found. Tag stories with an epic in the classifier or import files with an Epic column.</p>
+            </div>`;
+        return;
+    }
+
+    // Add "All Epics" option at top
+    let html = `<div class="epic-item active" onclick="showOverview(this)">
+        <div class="epic-name">All Epics</div>
+        <div class="epic-meta">
+            <span class="epic-count">${epicListData.reduce((s, e) => s + e.story_count, 0)} stories</span>
+        </div>
+    </div>`;
+
+    html += epicListData.map(e => `
+        <div class="epic-item" data-epic="${e.name}" onclick="selectEpic('${e.name.replace(/'/g, "\\'")}', this)">
+            <div class="epic-name">${e.name}</div>
+            <div class="epic-meta">
+                <span class="epic-count">${e.story_count} stories</span>
+                ${e.mismatches > 0 ? `<span class="epic-mismatch">${e.mismatches} mismatches</span>` : ''}
+                ${e.approved > 0 ? `<span style="color:var(--success)">${e.approved} approved</span>` : ''}
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = html;
+}
+
+function filterEpics() {
+    const q = document.getElementById('epic-search').value.toLowerCase();
+    document.querySelectorAll('.epic-item[data-epic]').forEach(el => {
+        const name = el.dataset.epic.toLowerCase();
+        el.style.display = name.includes(q) ? '' : 'none';
+    });
+}
+
+function showOverview(el) {
+    document.querySelectorAll('.epic-item').forEach(e => e.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.getElementById('overview-view').style.display = 'block';
+    document.getElementById('epic-detail-view').style.display = 'none';
+}
+
+function renderOverview() {
+    const container = document.getElementById('epic-cards');
+    if (allEpicData.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="icon">🔗</div>
+            <p>No epic data yet. Import files with an Epic column or tag stories in the classifier.</p></div>`;
+        return;
+    }
+
+    container.innerHTML = allEpicData.map((epic, idx) => {
+        const allCats = Object.entries(epic.categories).sort((a, b) => b[1] - a[1]);
+        const maxCat = allCats.length > 0 ? allCats[0][1] : 1;
+
+        return `
+            <div class="epic-summary-card" onclick="selectEpicByName('${epic.epic.replace(/'/g, "\\'")}')">
+                <h3>${epic.epic}</h3>
+                <div class="mini-stats">
+                    <div>
+                        <div class="mini-stat-value" style="color:var(--accent)">${epic.total_stories}</div>
+                        <div class="mini-stat-label">Stories</div>
+                    </div>
+                    <div>
+                        <div class="mini-stat-value" style="color:var(--success)">${epic.approved}</div>
+                        <div class="mini-stat-label">Approved</div>
+                    </div>
+                    <div>
+                        <div class="mini-stat-value" style="color:var(--error)">${epic.mismatches}</div>
+                        <div class="mini-stat-label">Mismatches</div>
+                    </div>
+                </div>
+                ${allCats.slice(0, 4).map(([cat, cnt], ci) => `
+                    <div class="cat-bar-row">
+                        <div class="cat-bar-label">${cat}</div>
+                        <div class="cat-bar-track">
+                            <div class="cat-bar-fill" style="width:${Math.round(cnt/maxCat*100)}%;background:${CHART_PALETTE[ci % CHART_PALETTE.length]}"></div>
+                        </div>
+                        <div class="cat-bar-count">${cnt}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }).join('');
+}
+
+function selectEpicByName(name) {
+    const item = document.querySelector(`.epic-item[data-epic="${name}"]`);
+    if (item) selectEpic(name, item);
+}
+
+function selectEpic(name, el) {
+    document.querySelectorAll('.epic-item').forEach(e => e.classList.remove('active'));
+    if (el) el.classList.add('active');
+
+    document.getElementById('overview-view').style.display = 'none';
+    document.getElementById('epic-detail-view').style.display = 'block';
+
+    const epic = allEpicData.find(e => e.epic === name);
+    if (!epic) return;
+
+    renderEpicDetail(epic);
+}
+
+function renderEpicDetail(epic) {
+    // KPIs
+    document.getElementById('epic-kpis').innerHTML = `
+        <div class="kpi">
+            <div class="kpi-label">Stories</div>
+            <div class="kpi-value" style="color:var(--accent)">${epic.total_stories}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Features</div>
+            <div class="kpi-value" style="color:var(--purple)">${epic.features.length}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Approved</div>
+            <div class="kpi-value" style="color:var(--success)">${epic.approved}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Mismatches</div>
+            <div class="kpi-value" style="color:var(--error)">${epic.mismatches}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Mismatch Rate</div>
+            <div class="kpi-value" style="color:var(--warning)">${epic.mismatch_rate}%</div>
+        </div>
+    `;
+
+    // Category chart
+    const cats = Object.entries(epic.categories).sort((a, b) => b[1] - a[1]);
+    destroyChart('epicCatChart');
+    charts['epicCatChart'] = new Chart(document.getElementById('epicCatChart'), {
+        type: 'bar',
+        data: {
+            labels: cats.map(c => c[0]),
+            datasets: [{
+                data: cats.map(c => c[1]),
+                backgroundColor: CHART_PALETTE.slice(0, cats.length),
+                borderRadius: 6, barThickness: 22,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#6b6e80' }, grid: { color: '#353849' } },
+                y: { ticks: { color: '#9395a5', font: { size: 11 } }, grid: { display: false } }
+            }
+        }
+    });
+
+    // Run/Change chart
+    const rc = Object.entries(epic.run_change);
+    destroyChart('epicRcChart');
+    if (rc.length > 0) {
+        charts['epicRcChart'] = new Chart(document.getElementById('epicRcChart'), {
+            type: 'doughnut',
+            data: {
+                labels: rc.map(r => r[0]),
+                datasets: [{
+                    data: rc.map(r => r[1]),
+                    backgroundColor: ['#6c8aff', '#a78bfa'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: { legend: { position: 'right', labels: { color: '#9395a5', padding: 12 } } }
+            }
+        });
+    }
+
+    // Tree view
+    document.getElementById('tree-title').textContent = `${epic.epic} — Story Lineage`;
+
+    const treeHtml = epic.features.map((feat, fi) => {
+        const storiesHtml = feat.stories.map(s => {
+            const dotColor = WAF_COLORS_MAP[s.color] || '#6c8aff';
+            const confClass = (s.confidence || '').toLowerCase();
+            const title = s.title.length > 60 ? s.title.substring(0, 60) + '...' : s.title;
+            let status = '';
+            if (s.approved) status = '<span class="badge approved">Approved</span>';
+            else if (s.mismatch) status = '<span class="badge mismatch">Mismatch</span>';
+
+            return `<div class="story-item">
+                <span class="color-dot" style="background:${dotColor}"></span>
+                <span class="story-title" title="${s.title}">${title}</span>
+                <span style="font-size:12px;color:var(--text-muted);">${s.category}</span>
+                <span class="badge ${confClass}">${s.confidence || '—'}</span>
+                ${status}
+            </div>`;
+        }).join('');
+
+        return `
+            <div class="tree-feature">
+                <div class="feature-header" onclick="toggleFeature(this)">
+                    <span class="feature-toggle">▶</span>
+                    <span class="feature-name">${feat.name}</span>
+                    <span class="feature-count">${feat.story_count} stories</span>
+                    ${Object.entries(feat.categories).map(([c, n]) =>
+                        `<span style="font-size:11px;color:var(--text-muted);margin-left:4px;">${c}: ${n}</span>`
+                    ).join('')}
+                </div>
+                <div class="story-list">${storiesHtml}</div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('tree-container').innerHTML = treeHtml;
+
+    // Auto-expand first feature
+    const firstToggle = document.querySelector('.feature-header');
+    if (firstToggle) toggleFeature(firstToggle);
+}
+
+function toggleFeature(header) {
+    const toggle = header.querySelector('.feature-toggle');
+    const list = header.nextElementSibling;
+    toggle.classList.toggle('open');
+    list.classList.toggle('open');
+}
+
+function destroyChart(id) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ── Initialize ──
+loadData();
+</script>
+</body>
+</html>

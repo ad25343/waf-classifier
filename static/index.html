@@ -785,10 +785,28 @@
             <h1>WAF Classifier <span>| Story Alignment Tool</span></h1>
         </div>
         <div class="status-pills">
+            <a href="/" style="text-decoration:none;">
+                <div class="pill" style="background:rgba(108,138,255,0.1);color:#6c8aff;cursor:pointer;">
+                    <span>🏠</span>
+                    <span>Home</span>
+                </div>
+            </a>
             <a href="/dashboard" style="text-decoration:none;">
                 <div class="pill" style="background:rgba(167,139,250,0.1);color:#a78bfa;cursor:pointer;">
                     <span>📊</span>
                     <span>Dashboard</span>
+                </div>
+            </a>
+            <a href="/history" style="text-decoration:none;">
+                <div class="pill" style="background:rgba(251,191,36,0.1);color:#fbbf24;cursor:pointer;">
+                    <span>📈</span>
+                    <span>History</span>
+                </div>
+            </a>
+            <a href="/lineage" style="text-decoration:none;">
+                <div class="pill" style="background:rgba(96,165,250,0.1);color:#60a5fa;cursor:pointer;">
+                    <span>🔗</span>
+                    <span>Lineage</span>
                 </div>
             </a>
             <div class="pill" id="api-pill">
@@ -902,6 +920,16 @@
             </div>
 
             <div class="chat-input-area">
+                <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <input type="text" id="epic-input" placeholder="Epic (optional)"
+                        style="flex:1;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
+                        list="epic-suggestions">
+                    <input type="text" id="feature-input" placeholder="Parent Feature (optional)"
+                        style="flex:1;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
+                        list="feature-suggestions">
+                    <datalist id="epic-suggestions"></datalist>
+                    <datalist id="feature-suggestions"></datalist>
+                </div>
                 <div class="input-wrapper">
                     <textarea class="chat-input" id="chat-input"
                         placeholder="Paste a JIRA story title and description to classify..."
@@ -910,7 +938,7 @@
                     <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
                 </div>
                 <div class="input-hint">
-                    Press Enter to send · Shift+Enter for new line · Include current WAF tag for mismatch detection
+                    Press Enter to send · Shift+Enter for new line · Epic/Feature tags link this story to its lineage
                 </div>
             </div>
         </div>
@@ -1078,10 +1106,12 @@
             document.getElementById("send-btn").disabled = true;
 
             try {
+                const epic = document.getElementById("epic-input").value.trim();
+                const parentFeature = document.getElementById("feature-input").value.trim();
                 const res = await fetch("/api/classify", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message })
+                    body: JSON.stringify({ message, epic, parent_feature: parentFeature })
                 });
                 const data = await res.json();
 
@@ -1436,8 +1466,21 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
+        // Load epic/feature autocomplete suggestions
+        async function loadEpicSuggestions() {
+            try {
+                const res = await fetch("/api/epics/autocomplete");
+                const data = await res.json();
+                const epicList = document.getElementById("epic-suggestions");
+                const featList = document.getElementById("feature-suggestions");
+                epicList.innerHTML = data.epics.map(e => `<option value="${e}">`).join("");
+                featList.innerHTML = data.features.map(f => `<option value="${f}">`).join("");
+            } catch(e) {}
+        }
+
         // Init
         updateStatus();
+        loadEpicSuggestions();
     </script>
 </body>
 </html>
