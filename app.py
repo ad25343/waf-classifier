@@ -7,14 +7,89 @@ Supports ground truth examples for calibration.
 
 import os
 import json
+import csv
+import sqlite3
+from datetime import datetime
 import pandas as pd
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, g
 from anthropic import Anthropic
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max upload
 app.secret_key = os.urandom(24)
+
+DB_PATH = os.path.join(os.path.dirname(__file__), "waf_history.db")
+
+
+# ── SQLite Database ────────────────────────────────────────────────────
+
+def get_db():
+    """Get database connection for current request."""
+    if "db" not in g:
+        g.db = sqlite3.connect(DB_PATH)
+        g.db.row_factory = sqlite3.Row
+    return g.db
+
+
+@app.teardown_appcontext
+def close_db(exception):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+
+def init_db():
+    """Create tables if they don't exist."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS classifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            story_title TEXT NOT NULL,
+            story_description TEXT,
+            waf_category TEXT NOT NULL,
+            waf_subcategory TEXT,
+            waf_color TEXT,
+            run_change TEXT,
+            confidence TEXT,
+            was_mismatch INTEGER DEFAULT 0,
+            original_tag TEXT,
+            approved INTEGER DEFAULT 0,
+            team TEXT DEFAULT 'default',
+            user_name TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_start TEXT NOT NULL,
+            session_end TEXT,
+            stories_classified INTEGER DEFAULT 0,
+            mismatches_found INTEGER DEFAULT 0,
+            approvals INTEGER DEFAULT 0,
+            team TEXT DEFAULT 'default'
+        );
+    """)
+    conn.close()
+
+
+def save_classification(title, description, category, subcategory, color,
+                        run_change, confidence, was_mismatch=False,
+                        original_tag="", approved=False, team="default"):
+    """Save a classification to the database."""
+    db = get_db()
+    db.execute(
+        """INSERT INTO classifications
+           (timestamp, story_title, story_description, waf_category,
+            waf_subcategory, waf_color, run_change, confidence,
+            was_mismatch, original_tag, approved, team)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (datetime.now().isoformat(), title, description, category,
+         subcategory, color, run_change, confidence,
+         1 if was_mismatch else 0, original_tag, 1 if approved else 0, team)
+    )
+    db.commit()
+    return db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
 # In-memory store for WAF definitions
 waf_store = {
@@ -382,6 +457,28 @@ def classify():
         assistant_message = response.content[0].text
         chat_history.append({"role": "assistant", "content": assistant_message})
 
+        # Auto-save classification to history if response contains a recommendation
+        if "Recommended WAF Category" in assistant_message or "WAF Category:" in assistant_message:
+            try:
+                import re
+                cat_match = re.search(r"(?:Recommended )?WAF Category:?\*?\*?\s*(.+?)(?:\n|$)", assistant_message, re.I)
+                conf_match = re.search(r"Confidence:?\*?\*?\s*(.+?)(?:\n|$)", assistant_message, re.I)
+                color_match = re.search(r"WAF Color:?\*?\*?\s*(.+?)(?:\n|$)", assistant_message, re.I)
+                mismatch = "Mismatch" in assistant_message or "\u26a0\ufe0f" in assistant_message
+
+                save_classification(
+                    title=user_message[:200],
+                    description=user_message,
+                    category=cat_match.group(1).strip().strip("*") if cat_match else "",
+                    subcategory="",
+                    color=color_match.group(1).strip().strip("*") if color_match else "",
+                    run_change="",
+                    confidence=conf_match.group(1).strip().strip("*") if conf_match else "",
+                    was_mismatch=mismatch,
+                )
+            except Exception:
+                pass  # Best-effort save
+
         return jsonify({
             "response": assistant_message,
             "waf_loaded": waf_store["definitions"] is not None,
@@ -506,7 +603,6 @@ def approve_classification():
     file_exists = os.path.exists(gt_file)
 
     try:
-        import csv
         with open(gt_file, "a", newline="") as f:
             writer = csv.writer(f)
             if not file_exists:
@@ -538,12 +634,113 @@ def approve_classification():
         f"{len(ground_truth_store['stats'])} categories"
     )
 
+    # 3. Save to database as approved
+    try:
+        save_classification(title, description, waf_category, waf_subcategory,
+                            waf_color, run_change, "HIGH", approved=True)
+    except Exception:
+        pass  # DB save is best-effort, don't fail the request
+
     return jsonify({
         "success": True,
         "example_count": ground_truth_store["example_count"],
         "stats": ground_truth_store["stats"],
-        "message": f"Saved to ground truth: {title} → {waf_category}"
+        "message": f"Saved to ground truth: {title} \u2192 {waf_category}"
     })
+
+
+# ── Dashboard API ──────────────────────────────────────────────────────
+
+@app.route("/dashboard")
+def dashboard():
+    return send_from_directory("static", "dashboard.html")
+
+
+@app.route("/api/dashboard/summary", methods=["GET"])
+def dashboard_summary():
+    """Get summary stats for the dashboard."""
+    db = get_db()
+    total = db.execute("SELECT COUNT(*) FROM classifications").fetchone()[0]
+    approved = db.execute("SELECT COUNT(*) FROM classifications WHERE approved=1").fetchone()[0]
+    mismatches = db.execute("SELECT COUNT(*) FROM classifications WHERE was_mismatch=1").fetchone()[0]
+
+    # Category distribution
+    categories = db.execute(
+        "SELECT waf_category, COUNT(*) as cnt FROM classifications GROUP BY waf_category ORDER BY cnt DESC"
+    ).fetchall()
+
+    # Color distribution
+    colors = db.execute(
+        "SELECT waf_color, COUNT(*) as cnt FROM classifications WHERE waf_color != '' GROUP BY waf_color ORDER BY cnt DESC"
+    ).fetchall()
+
+    # Confidence distribution
+    confidence = db.execute(
+        "SELECT confidence, COUNT(*) as cnt FROM classifications WHERE confidence != '' GROUP BY confidence ORDER BY cnt DESC"
+    ).fetchall()
+
+    # Run/Change distribution
+    run_change = db.execute(
+        "SELECT run_change, COUNT(*) as cnt FROM classifications WHERE run_change != '' GROUP BY run_change ORDER BY cnt DESC"
+    ).fetchall()
+
+    # Daily trend (last 30 days)
+    daily = db.execute(
+        """SELECT DATE(timestamp) as day, COUNT(*) as cnt
+           FROM classifications
+           GROUP BY DATE(timestamp)
+           ORDER BY day DESC LIMIT 30"""
+    ).fetchall()
+
+    # Recent classifications
+    recent = db.execute(
+        """SELECT id, timestamp, story_title, waf_category, waf_color,
+                  confidence, was_mismatch, approved
+           FROM classifications ORDER BY id DESC LIMIT 20"""
+    ).fetchall()
+
+    return jsonify({
+        "total_classifications": total,
+        "total_approved": approved,
+        "total_mismatches": mismatches,
+        "approval_rate": round(approved / total * 100, 1) if total > 0 else 0,
+        "categories": [{"name": r["waf_category"], "count": r["cnt"]} for r in categories],
+        "colors": [{"name": r["waf_color"], "count": r["cnt"]} for r in colors],
+        "confidence": [{"name": r["confidence"], "count": r["cnt"]} for r in confidence],
+        "run_change": [{"name": r["run_change"], "count": r["cnt"]} for r in run_change],
+        "daily_trend": [{"date": r["day"], "count": r["cnt"]} for r in reversed(list(daily))],
+        "recent": [{
+            "id": r["id"], "timestamp": r["timestamp"], "title": r["story_title"],
+            "category": r["waf_category"], "color": r["waf_color"],
+            "confidence": r["confidence"], "mismatch": bool(r["was_mismatch"]),
+            "approved": bool(r["approved"])
+        } for r in recent]
+    })
+
+
+@app.route("/api/dashboard/save", methods=["POST"])
+def dashboard_save():
+    """Manually save a classification from the chat to history."""
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    try:
+        row_id = save_classification(
+            title=data.get("title", ""),
+            description=data.get("description", ""),
+            category=data.get("waf_category", ""),
+            subcategory=data.get("waf_subcategory", ""),
+            color=data.get("waf_color", ""),
+            run_change=data.get("run_change", ""),
+            confidence=data.get("confidence", ""),
+            was_mismatch=data.get("was_mismatch", False),
+            original_tag=data.get("original_tag", ""),
+            approved=data.get("approved", False),
+        )
+        return jsonify({"success": True, "id": row_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 def auto_load_sample_data():
@@ -584,7 +781,10 @@ if __name__ == "__main__":
     print(f"\n{'='*60}")
     print(f"  WAF Category Classifier")
     print(f"  Running at: http://localhost:{port}")
+    print(f"  Dashboard:  http://localhost:{port}/dashboard")
     print(f"  API Key configured: {bool(os.environ.get('ANTHROPIC_API_KEY'))}")
+    init_db()
+    print(f"  Database initialized: {DB_PATH}")
     auto_load_sample_data()
     print(f"{'='*60}\n")
     app.run(host="0.0.0.0", port=port, debug=True)

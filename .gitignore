@@ -26,3 +26,6 @@ Thumbs.db
 # Analysis artifacts (generated, not source)
 WAF_Classification_Analysis.xlsx
 WAF_Classified_Stories.xlsx
+
+# Database (local history)
+waf_history.db
