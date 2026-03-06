@@ -167,13 +167,23 @@
         }
 
         .legend {
-            display: flex; gap: 16px; flex-wrap: wrap;
+            display: flex; gap: 8px; flex-wrap: wrap;
             margin-bottom: 24px; padding: 16px 20px;
             background: var(--bg-secondary); border: 1px solid var(--border);
             border-radius: var(--radius);
         }
-        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
-        .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+        .legend-item {
+            display: flex; align-items: center; gap: 8px; font-size: 13px;
+            color: var(--text-secondary); cursor: pointer; padding: 8px 14px;
+            border-radius: 8px; border: 2px solid transparent;
+            transition: all 0.25s ease; user-select: none;
+        }
+        .legend-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .legend-item.active { border-color: var(--accent); background: rgba(232,148,74,0.1); color: var(--text-primary); font-weight: 600; }
+        .legend-dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+
+        .category-card.dimmed { opacity: 0.15; transform: scale(0.98); }
+        .category-card.highlighted { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
         .loading { text-align: center; padding: 60px; color: var(--text-muted); }
 
@@ -212,12 +222,12 @@
     </p>
 
     <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div> Gray — KTLO</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#1f2937; border:1px solid #4b5563"></div> Black — Maintenance</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> Red — Regulatory</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ea580c"></div> Orange — Enterprise</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ca8a04"></div> Yellow — Divisional</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Green — Other</div>
+        <div class="legend-item" data-color="GRAY" onclick="filterByColor('GRAY', this)"><div class="legend-dot" style="background:#6b7280"></div> Gray — KTLO</div>
+        <div class="legend-item" data-color="BLACK" onclick="filterByColor('BLACK', this)"><div class="legend-dot" style="background:#1f2937; border:1px solid #4b5563"></div> Black — Maintenance</div>
+        <div class="legend-item" data-color="RED" onclick="filterByColor('RED', this)"><div class="legend-dot" style="background:#dc2626"></div> Red — Regulatory</div>
+        <div class="legend-item" data-color="ORANGE" onclick="filterByColor('ORANGE', this)"><div class="legend-dot" style="background:#ea580c"></div> Orange — Enterprise</div>
+        <div class="legend-item" data-color="YELLOW" onclick="filterByColor('YELLOW', this)"><div class="legend-dot" style="background:#ca8a04"></div> Yellow — Divisional</div>
+        <div class="legend-item" data-color="GREEN" onclick="filterByColor('GREEN', this)"><div class="legend-dot" style="background:#16a34a"></div> Green — Other</div>
     </div>
 
     <div id="categories-container">
@@ -261,7 +271,7 @@ async function loadDefinitions() {
 
 function renderCard(cat) {
     const examples = cat.examples ? cat.examples.split(';').map(e => e.trim()).filter(Boolean) : [];
-    return '<div class="category-card">' +
+    return '<div class="category-card" data-color="' + cat.color + '">' +
         '<div class="color-badge color-' + cat.color + '">' + cat.color + '</div>' +
         '<div class="card-content">' +
             '<h3>' + cat.category + '</h3>' +
@@ -270,6 +280,44 @@ function renderCard(cat) {
             (examples.length > 0 ? '<div class="examples">' + examples.map(e => '<span class="example-tag">' + e + '</span>').join('') + '</div>' : '') +
         '</div>' +
     '</div>';
+}
+
+let activeFilter = null;
+
+function filterByColor(color, el) {
+    const cards = document.querySelectorAll('.category-card');
+    const legendItems = document.querySelectorAll('.legend-item');
+
+    // Toggle off if clicking the same filter
+    if (activeFilter === color) {
+        activeFilter = null;
+        legendItems.forEach(li => li.classList.remove('active'));
+        cards.forEach(c => { c.classList.remove('dimmed', 'highlighted'); });
+        return;
+    }
+
+    activeFilter = color;
+
+    // Highlight active legend item
+    legendItems.forEach(li => li.classList.remove('active'));
+    el.classList.add('active');
+
+    // Dim non-matching cards, highlight matching
+    cards.forEach(c => {
+        if (c.dataset.color === color) {
+            c.classList.remove('dimmed');
+            c.classList.add('highlighted');
+        } else {
+            c.classList.add('dimmed');
+            c.classList.remove('highlighted');
+        }
+    });
+
+    // Scroll to first matching card
+    const firstMatch = document.querySelector('.category-card[data-color="' + color + '"]');
+    if (firstMatch) {
+        firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 }
 
 loadDefinitions();
