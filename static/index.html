@@ -62,7 +62,7 @@
         .logo {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            background: linear-gradient(135deg, var(--accent), #d4722a);
             border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
@@ -779,7 +779,7 @@
         .hamburger {
             display: flex; flex-direction: column; gap: 5px;
             background: none; border: none; cursor: pointer;
-            padding: 8px; z-index: 1001; margin-left: auto; margin-right: 8px;
+            padding: 8px; z-index: 1001; margin-right: 12px;
         }
         .hamburger span {
             display: block; width: 22px; height: 2px;
@@ -797,14 +797,14 @@
         .nav-overlay.open { display: block; }
 
         .nav-menu {
-            position: fixed; top: 0; right: -300px;
+            position: fixed; top: 0; left: -300px;
             width: 300px; height: 100vh;
-            background: var(--bg-secondary); border-left: 1px solid var(--border);
+            background: var(--bg-secondary); border-right: 1px solid var(--border);
             padding: 80px 24px 24px;
             display: flex; flex-direction: column; gap: 4px;
-            transition: right 0.3s ease; z-index: 1000;
+            transition: left 0.3s ease; z-index: 1000;
         }
-        .nav-menu.open { right: 0; }
+        .nav-menu.open { left: 0; }
         .nav-menu a {
             color: var(--text-secondary); text-decoration: none;
             font-size: 15px; padding: 14px 16px; border-radius: 10px;
@@ -829,35 +829,14 @@
 
     <!-- Header -->
     <div class="header">
+        <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
         <div class="header-left">
             <div class="logo">W</div>
             <h1>WAF Classifier <span>| Story Alignment Tool</span></h1>
         </div>
         <div class="status-pills">
-            <a href="/" style="text-decoration:none;">
-                <div class="pill" style="background:rgba(232,148,74,0.12);color:#6c8aff;cursor:pointer;">
-                    <span>🏠</span>
-                    <span>Home</span>
-                </div>
-            </a>
-            <a href="/history" style="text-decoration:none;">
-                <div class="pill" style="background:rgba(167,139,250,0.1);color:#a78bfa;cursor:pointer;">
-                    <span>📊</span>
-                    <span>Analytics</span>
-                </div>
-            </a>
-            <a href="/lineage" style="text-decoration:none;">
-                <div class="pill" style="background:rgba(96,165,250,0.1);color:#60a5fa;cursor:pointer;">
-                    <span>🔗</span>
-                    <span>Lineage</span>
-                </div>
-            </a>
-            <a href="/waf-reference" style="text-decoration:none;">
-                <div class="pill" style="background:rgba(251,191,36,0.1);color:#fbbf24;cursor:pointer;">
-                    <span>📖</span>
-                    <span>WAF Reference</span>
-                </div>
-            </a>
             <div class="pill" id="api-pill">
                 <span class="dot"></span>
                 <span id="api-status-text">Checking API...</span>

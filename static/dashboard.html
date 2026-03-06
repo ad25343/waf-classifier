@@ -14,11 +14,11 @@
             --text-primary: #e4e5ea;
             --text-secondary: #9395a5;
             --text-muted: #6b6e80;
-            --accent: #6c8aff;
+            --accent: #e8944a;
             --success: #4ade80;
             --warning: #fbbf24;
             --error: #f87171;
-            --purple: #a78bfa;
+            --purple: #c084fc;
             --radius: 12px;
         }
 
@@ -241,7 +241,7 @@ const WAF_COLORS_MAP = {
 };
 
 const CHART_PALETTE = [
-    "#6c8aff", "#a78bfa", "#4ade80", "#fbbf24", "#f87171",
+    "#e8944a", "#c084fc", "#4ade80", "#fbbf24", "#f87171",
     "#60a5fa", "#f472b6", "#34d399"
 ];
 
@@ -278,10 +278,10 @@ async function loadDashboard() {
 
         // Run/Change Chart (doughnut)
         renderDoughnut("runChangeChart", data.run_change,
-            {"Run": "#6c8aff", "Change": "#a78bfa"});
+            {"Run": "#e8944a", "Change": "#c084fc"});
 
         // Color Chart (doughnut)
-        const colorColors = data.colors.map(c => WAF_COLORS_MAP[c.name] || "#6c8aff");
+        const colorColors = data.colors.map(c => WAF_COLORS_MAP[c.name] || "#e8944a");
         renderDoughnutRaw("colorChart",
             data.colors.map(c => c.name),
             data.colors.map(c => c.count),
@@ -324,7 +324,7 @@ function renderBarChart(id, items) {
 }
 
 function renderDoughnut(id, items, colorMap) {
-    const colors = items.map(i => colorMap[i.name] || "#6c8aff");
+    const colors = items.map(i => colorMap[i.name] || "#e8944a");
     renderDoughnutRaw(id, items.map(i => i.name), items.map(i => i.count), colors);
 }
 
@@ -357,8 +357,8 @@ function renderTrend(id, items) {
             datasets: [{
                 label: "Classifications",
                 data: items.map(i => i.count),
-                borderColor: "#6c8aff", backgroundColor: "rgba(108,138,255,0.1)",
-                fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#6c8aff"
+                borderColor: "#e8944a", backgroundColor: "rgba(232,148,74,0.12)",
+                fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#e8944a"
             }]
         },
         options: {
@@ -381,7 +381,7 @@ function renderRecent(items) {
     tbody.innerHTML = items.map(r => {
         const time = new Date(r.timestamp).toLocaleString();
         const title = r.title.length > 60 ? r.title.substring(0, 60) + "..." : r.title;
-        const dotColor = WAF_COLORS_MAP[r.color] || "#6c8aff";
+        const dotColor = WAF_COLORS_MAP[r.color] || "#e8944a";
         const confClass = (r.confidence || "").toLowerCase();
         let status = "";
         if (r.approved) status = '<span class="badge approved">Approved</span>';

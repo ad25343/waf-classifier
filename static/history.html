@@ -15,6 +15,7 @@
             --text-secondary: #9ca0b0;
             --text-muted: #6c7086;
             --accent: #e8944a;
+            --accent-hover: #d4832f;
             --success: #4ade80;
             --warning: #fbbf24;
             --error: #f87171;
@@ -74,14 +75,14 @@
         .nav-overlay.open { display: block; }
 
         .nav-menu {
-            position: fixed; top: 0; right: -300px;
+            position: fixed; top: 0; left: -300px;
             width: 300px; height: 100vh;
-            background: var(--bg-secondary); border-left: 1px solid var(--border);
+            background: var(--bg-secondary); border-right: 1px solid var(--border);
             padding: 80px 24px 24px;
             display: flex; flex-direction: column; gap: 4px;
-            transition: right 0.3s ease; z-index: 1000;
+            transition: left 0.3s ease; z-index: 1000;
         }
-        .nav-menu.open { right: 0; }
+        .nav-menu.open { left: 0; }
         .nav-menu a {
             color: var(--text-secondary); text-decoration: none;
             font-size: 15px; padding: 14px 16px; border-radius: 10px;
@@ -198,7 +199,7 @@
         }
 
         .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: #5a78ee; }
+        .btn-primary:hover { background: var(--accent-hover, #d4832f); }
 
         .btn-outline {
             background: none; color: var(--accent);
@@ -330,13 +331,13 @@
 <body>
 
 <div class="header">
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
     <div class="header-left">
         <div class="logo">W</div>
         <h1>WAF Classifier <span>| Analytics</span></h1>
     </div>
-    <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
-        <span></span><span></span><span></span>
-    </button>
 </div>
 
 <div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
@@ -657,7 +658,7 @@ const WAF_COLORS_MAP = {
 };
 
 const CHART_PALETTE = [
-    "#e8944a", "#a78bfa", "#4ade80", "#fbbf24", "#f87171",
+    "#e8944a", "#c084fc", "#4ade80", "#fbbf24", "#f87171",
     "#60a5fa", "#f472b6", "#34d399", "#818cf8", "#fb923c"
 ];
 
@@ -679,11 +680,6 @@ document.querySelectorAll('.tab').forEach(tab => {
 // ════════════════════════════════════════════════════════════════
 // SUMMARY (merged dashboard)
 // ════════════════════════════════════════════════════════════════
-
-const WAF_COLORS_MAP = {
-    GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
-    ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"
-};
 
 async function loadSummary() {
     try {
@@ -735,7 +731,7 @@ async function loadSummary() {
 
         // Run/Change Doughnut
         renderSumDoughnut("sumRunChangeChart", data.run_change,
-            {"Run": "#e8944a", "Change": "#a78bfa"});
+            {"Run": "#e8944a", "Change": "#c084fc"});
 
         // Color Doughnut
         const colorColors = data.colors.map(c => WAF_COLORS_MAP[c.name] || "#e8944a");
@@ -980,7 +976,7 @@ function renderSprintCharts() {
             }, {
                 label: 'Change',
                 data: sprintData.map(s => s.run_change['Change'] || 0),
-                backgroundColor: '#a78bfa',
+                backgroundColor: '#c084fc',
                 borderRadius: 2,
             }]
         },

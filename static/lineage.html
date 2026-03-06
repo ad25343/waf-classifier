@@ -15,6 +15,7 @@
             --text-secondary: #9ca0b0;
             --text-muted: #6c7086;
             --accent: #e8944a;
+            --accent-hover: #d4832f;
             --success: #4ade80;
             --warning: #fbbf24;
             --error: #f87171;
@@ -72,14 +73,14 @@
         .nav-overlay.open { display: block; }
 
         .nav-menu {
-            position: fixed; top: 0; right: -300px;
+            position: fixed; top: 0; left: -300px;
             width: 300px; height: 100vh;
-            background: var(--bg-secondary); border-left: 1px solid var(--border);
+            background: var(--bg-secondary); border-right: 1px solid var(--border);
             padding: 80px 24px 24px;
             display: flex; flex-direction: column; gap: 4px;
-            transition: right 0.3s ease; z-index: 1000;
+            transition: left 0.3s ease; z-index: 1000;
         }
-        .nav-menu.open { right: 0; }
+        .nav-menu.open { left: 0; }
         .nav-menu a {
             color: var(--text-secondary); text-decoration: none;
             font-size: 15px; padding: 14px 16px; border-radius: 10px;
@@ -281,7 +282,7 @@
             font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
         }
         .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: #5a78ee; }
+        .btn-primary:hover { background: var(--accent-hover, #d4832f); }
         .btn-outline { background: none; color: var(--accent); border: 1px solid var(--accent); }
         .btn-outline:hover { background: var(--accent); color: white; }
         .btn-sm { padding: 6px 12px; font-size: 12px; }
@@ -336,13 +337,13 @@
 <body>
 
 <div class="header">
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
     <div class="header-left">
         <div class="logo">W</div>
         <h1>WAF Classifier <span>| Epic Lineage</span></h1>
     </div>
-    <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
-        <span></span><span></span><span></span>
-    </button>
 </div>
 
 <div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
@@ -639,7 +640,7 @@ function renderEpicDetail(epic) {
 
     const treeHtml = epic.features.map((feat, fi) => {
         const storiesHtml = feat.stories.map(s => {
-            const dotColor = WAF_COLORS_MAP[s.color] || '#6c8aff';
+            const dotColor = WAF_COLORS_MAP[s.color] || '#e8944a';
             const confClass = (s.confidence || '').toLowerCase();
             const title = s.title.length > 60 ? s.title.substring(0, 60) + '...' : s.title;
             let status = '';
