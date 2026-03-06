@@ -314,15 +314,15 @@
 <div class="content">
     <!-- Tab Navigation -->
     <div class="tabs">
-        <button class="tab active" data-tab="summary">Summary</button>
+        <button class="tab active" data-tab="import">Upload Data</button>
+        <button class="tab" data-tab="summary">Summary</button>
         <button class="tab" data-tab="sprints">Sprint Trends</button>
         <button class="tab" data-tab="monthly">Monthly Rollups</button>
         <button class="tab" data-tab="timeline">Timeline</button>
-        <button class="tab" data-tab="import">Verify & Import</button>
     </div>
 
-    <!-- ═══ SUMMARY (merged dashboard) ═══ -->
-    <div class="tab-panel active" id="panel-summary">
+    <!-- ═══ SUMMARY ═══ -->
+    <div class="tab-panel" id="panel-summary">
         <div id="summary-empty" style="display:none;text-align:center;padding:60px 20px;color:var(--text-muted);">
             <div style="font-size:48px;margin-bottom:16px;">📊</div>
             <p style="font-size:14px;">No classification history yet. Start classifying stories and the summary will populate.</p>
@@ -504,18 +504,18 @@
         <div class="pagination" id="timeline-pagination"></div>
     </div>
 
-    <!-- ═══ VERIFY & IMPORT ═══ -->
-    <div class="tab-panel" id="panel-import">
+    <!-- ═══ UPLOAD DATA (entry point) ═══ -->
+    <div class="tab-panel active" id="panel-import">
         <!-- Step 1: Upload -->
         <div id="import-step-upload">
             <div class="card">
                 <div class="card-title">
-                    <span>Verify & Import Classification Data</span>
+                    <span>Upload JIRA Data for AI Verification</span>
                     <span style="font-size:12px;color:var(--text-muted);font-weight:400;">Step 1 of 2 — Upload</span>
                 </div>
                 <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
-                    Upload a CSV or Excel file with stories. The AI will classify each story and compare
-                    its recommendation against any existing WAF tags in your file. You'll review the
+                    Upload a CSV or Excel file with your JIRA stories. The AI will classify each story against the
+                    WAF framework and compare its recommendation against any existing tags. You review the
                     results side-by-side before anything is saved.
                 </p>
                 <div style="display:flex;gap:16px;margin-bottom:16px;">
@@ -546,10 +546,24 @@
                         <tr><td style="color:var(--text-primary)">Description</td><td><span class="badge medium">Optional</span></td><td>Helps AI classify more accurately</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Category</td><td><span class="badge medium">Optional</span></td><td>Existing tag — AI will verify against this</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Color</td><td><span class="badge medium">Optional</span></td><td>GRAY, BLACK, RED, ORANGE, YELLOW, GREEN</td></tr>
-                        <tr><td style="color:var(--text-primary)">Run/Change</td><td><span class="badge medium">Optional</span></td><td>Run or Change</td></tr>
+                        <tr><td style="color:var(--text-primary)">Epic</td><td><span class="badge medium">Optional</span></td><td>Parent epic for lineage tracking</td></tr>
+                        <tr><td style="color:var(--text-primary)">Parent Feature</td><td><span class="badge medium">Optional</span></td><td>Feature grouping under the epic</td></tr>
                         <tr><td style="color:var(--text-primary)">Team</td><td><span class="badge medium">Optional</span></td><td>Team or squad name</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Show existing data count -->
+            <div class="card" id="existing-data-card" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div>
+                        <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">
+                            <span id="existing-count" style="color:var(--accent);">0</span> verified classifications in the database
+                        </div>
+                        <div style="font-size:13px;color:var(--text-secondary);">Use the Summary, Sprint Trends, Monthly, or Timeline tabs to explore insights.</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="document.querySelector('.tab[data-tab=summary]').click()">View Insights →</button>
+                </div>
             </div>
         </div>
 
@@ -1323,8 +1337,15 @@ async function saveVerified() {
             loadSprints();
             loadMonthly();
             loadTimeline(1);
-            // After 2s, go back to upload
-            setTimeout(backToUpload, 2000);
+            // Refresh insights and switch to Summary tab after 2s
+            loadSummary();
+            loadSprints();
+            loadMonthly();
+            loadTimeline(1);
+            setTimeout(() => {
+                backToUpload();
+                document.querySelector('.tab[data-tab="summary"]').click();
+            }, 2000);
         } else {
             alert('Save failed: ' + data.error);
             document.getElementById('save-verified-btn').textContent = 'Save Selected to History';
@@ -1388,6 +1409,14 @@ loadSummary();
 loadSprints();
 loadMonthly();
 loadTimeline(1);
+
+// Show existing data count on upload tab
+fetch('/api/dashboard/summary').then(r => r.json()).then(data => {
+    if (data.total_classifications > 0) {
+        document.getElementById('existing-data-card').style.display = 'block';
+        document.getElementById('existing-count').textContent = data.total_classifications;
+    }
+}).catch(() => {});
 
 // Auto-select tab from URL param
 const urlParams = new URLSearchParams(window.location.search);

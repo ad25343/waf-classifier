@@ -2,17 +2,16 @@
 title: WAF Classifier — System Architecture
 ---
 graph TB
-    subgraph Browser["Browser (Frontend)"]
+    subgraph Browser["Browser (3 Pillars)"]
         HOME[home.html<br/>Landing Page]
-        CLASS[index.html<br/>Classifier Chat]
-        DASH[dashboard.html<br/>Real-Time Dashboard]
-        HIST[history.html<br/>Historical Analytics]
-        LIN[lineage.html<br/>Epic Lineage]
+        CLASS[index.html<br/>1. Classify]
+        HIST[history.html<br/>2. Analytics<br/>Upload → Verify → Insights]
+        LIN[lineage.html<br/>3. Epic Lineage]
         CHARTJS[Chart.js 4.4.1]
     end
 
     subgraph Flask["Flask Server (app.py)"]
-        ROUTES[Page Routes<br/>/ /classify /dashboard<br/>/history /lineage]
+        ROUTES[Page Routes<br/>/ /classify /history /lineage]
         
         subgraph APIs["API Endpoints"]
             CLASSIFY["/api/classify<br/>/api/batch-classify"]
@@ -41,7 +40,7 @@ graph TB
 
     HOME --> ROUTES
     CLASS --> CLASSIFY
-    DASH --> DASHAPI
+    HIST --> DASHAPI
     HIST --> HISTAPI
     HIST --> BULKAPI
     LIN --> EPICAPI

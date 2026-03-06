@@ -10,11 +10,9 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 
 | Feature | Description |
 |---------|-------------|
-| **AI Classifier** | Chat-based single and batch story classification with mismatch detection |
-| **Analytics** | KPI summary, category/confidence/color charts, sprint trends, monthly rollups, filterable timeline |
-| **Bulk Verify & Import** | Upload JIRA exports, AI verifies each story, side-by-side review before saving |
-| **Epic Lineage** | Map stories → features → epics with tree view and per-epic WAF dashboards |
-| **Excel Export** | Formatted 3-sheet workbook (Summary, Monthly Rollups, Raw Data) |
+| **Classify** | Live chat or batch classification for new stories during grooming |
+| **Analytics** | Upload JIRA data → AI verifies every story → insights (mismatches, trends, distributions, exports) |
+| **Epic Lineage** | Do related stories under an epic align? Tree view with per-epic WAF rollups |
 | **Ground Truth Loop** | Approve correct classifications to continuously improve AI accuracy |
 
 ## WAF Categories
@@ -58,7 +56,7 @@ The app auto-loads WAF definitions and ground truth from `sample-data/` on start
 |-------|------|---------|
 | `/` | Home | Landing page with navigation cards and system status |
 | `/classify` | Classifier | Chat-based AI classification with epic tagging |
-| `/history` | Analytics | Summary, sprint trends, monthly rollups, timeline, verify & import |
+| `/history` | Analytics | Upload data → AI verify → summary, sprint trends, monthly, timeline |
 | `/lineage` | Epic Lineage | Epic-to-story tree view and WAF rollup analytics |
 
 ## Tech Stack

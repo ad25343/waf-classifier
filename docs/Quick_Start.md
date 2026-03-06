@@ -53,12 +53,13 @@ The AI will flag this as a mismatch and explain why.
 
 Click **Dashboard** to see real-time KPIs and charts. The dashboard shows classification volume, approval rates, mismatch counts, and category distributions. It auto-refreshes every 30 seconds.
 
-## Bulk Verify Existing Data
+## Analyze Historical JIRA Data
 
-1. Go to **Historical View** and click the **Verify & Import** tab
+1. Click **Analytics** from the home page — the Upload Data tab is the default entry point
 2. Upload a CSV or Excel file with columns: title, description, current WAF tag
-3. The AI classifies every story and shows a side-by-side comparison
+3. The AI verifies every story against the WAF framework and shows a side-by-side comparison
 4. Select the rows you want to keep and click **Save Selected**
+5. After saving, you're taken to the Summary tab to see insights — mismatches, trends, distributions
 
 ## Track Epic Lineage
 

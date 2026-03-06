@@ -4,15 +4,18 @@
 
 ## v2.1 — March 2026
 
-Consolidation release merging Dashboard and Historical View into a single Analytics page.
+Consolidation release. Clarifies the three pillars: Classify, Analytics, Lineage.
 
 ### Changes
 
-- **Merged Dashboard into Analytics**: The standalone Dashboard page is retired. Its KPI cards, distribution charts (category, confidence, Run/Change, color), daily trend line, and recent classifications table are now the default "Summary" tab in the Analytics page.
-- **Analytics page now has 5 tabs**: Summary, Sprint Trends, Monthly Rollups, Timeline, Verify & Import
-- **Home page updated**: 4 menu cards (Classify, Analytics, Epic Lineage, Verify & Import) in a 2x2 grid
-- **Navigation simplified**: "Dashboard" and "History" links replaced with single "Analytics" link across all pages
-- `/dashboard` route now redirects to `/history` for backward compatibility
+- **Analytics is now upload-first**: The Upload Data tab is the default entry point. Upload JIRA data → AI verifies every story → review side-by-side → save → explore insights.
+- **Merged Dashboard into Analytics**: KPI cards, distribution charts, daily trend, and recent table are now the "Summary" tab (no longer a separate page).
+- **Analytics page has 5 tabs**: Upload Data (default), Summary, Sprint Trends, Monthly Rollups, Timeline
+- **Post-save flow**: After saving verified data, insights auto-refresh and page navigates to Summary
+- **Existing data indicator**: Upload tab shows count of verified records already in the database with link to insights
+- **Home page simplified**: 3 cards — Classify, Analytics, Epic Lineage
+- **Navigation simplified**: All pages link to single "Analytics" instead of separate Dashboard/History
+- `/dashboard` route redirects to `/history` for backward compatibility
 
 ---
 
