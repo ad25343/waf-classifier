@@ -7,18 +7,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root {
-            --bg-primary: #0f1117;
-            --bg-secondary: #1a1d27;
-            --bg-tertiary: #242736;
-            --border: #353849;
-            --text-primary: #e4e5ea;
-            --text-secondary: #9395a5;
-            --text-muted: #6b6e80;
-            --accent: #6c8aff;
+            --bg-primary: #111318;
+            --bg-secondary: #1a1c25;
+            --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1;
+            --text-secondary: #9ca0b0;
+            --text-muted: #6c7086;
+            --accent: #e8944a;
             --success: #4ade80;
             --warning: #fbbf24;
             --error: #f87171;
-            --purple: #a78bfa;
+            --purple: #c084fc;
             --radius: 12px;
         }
 
@@ -42,7 +42,7 @@
 
         .logo {
             width: 36px; height: 36px;
-            background: linear-gradient(135deg, var(--accent), var(--purple));
+            background: linear-gradient(135deg, var(--accent), #d4722a);
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
             font-size: 18px; font-weight: 700; color: white;
         }
@@ -50,14 +50,44 @@
         .header h1 { font-size: 18px; font-weight: 600; }
         .header h1 span { color: var(--text-secondary); font-weight: 400; }
 
-        .nav-links { display: flex; gap: 8px; }
-
-        .nav-link {
-            color: var(--accent); text-decoration: none; font-size: 13px;
-            padding: 6px 14px; border: 1px solid var(--accent); border-radius: 20px;
-            transition: all 0.2s;
+        /* Hamburger */
+        .hamburger {
+            display: flex; flex-direction: column; gap: 5px;
+            background: none; border: none; cursor: pointer;
+            padding: 8px; z-index: 1001;
         }
-        .nav-link:hover { background: var(--accent); color: white; }
+        .hamburger span {
+            display: block; width: 22px; height: 2px;
+            background: var(--text-secondary); border-radius: 2px;
+            transition: all 0.3s;
+        }
+        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        .nav-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;
+        }
+        .nav-overlay.open { display: block; }
+
+        .nav-menu {
+            position: fixed; top: 0; right: -300px;
+            width: 300px; height: 100vh;
+            background: var(--bg-secondary); border-left: 1px solid var(--border);
+            padding: 80px 24px 24px;
+            display: flex; flex-direction: column; gap: 4px;
+            transition: right 0.3s ease; z-index: 1000;
+        }
+        .nav-menu.open { right: 0; }
+        .nav-menu a {
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 15px; padding: 14px 16px; border-radius: 10px;
+            transition: all 0.2s; display: flex; align-items: center; gap: 12px;
+        }
+        .nav-menu a:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+        .nav-menu a .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+        .nav-menu .nav-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px 4px; }
 
         .content { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
 
@@ -310,13 +340,20 @@
         <div class="logo">W</div>
         <h1>WAF Classifier <span>| Epic Lineage</span></h1>
     </div>
-    <div class="nav-links">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/classify" class="nav-link">Classifier</a>
-        <a href="/history" class="nav-link">Analytics</a>
-        <a href="/waf-reference" class="nav-link">WAF Ref</a>
-    </div>
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
 </div>
+
+<div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
+<nav class="nav-menu" id="nav-menu">
+    <div class="nav-label">Navigate</div>
+    <a href="/"><span class="nav-icon">🏠</span> Home</a>
+    <a href="/classify"><span class="nav-icon">💬</span> Classifier</a>
+    <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
+    <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
+    <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+</nav>
 
 <div class="content">
     <div class="layout">
@@ -375,14 +412,20 @@
 </div>
 
 <script>
+function toggleNav() {
+    document.querySelector('.hamburger').classList.toggle('active');
+    document.getElementById('nav-menu').classList.toggle('open');
+    document.getElementById('nav-overlay').classList.toggle('open');
+}
+
 const WAF_COLORS_MAP = {
     GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
     ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"
 };
 
 const CHART_PALETTE = [
-    "#6c8aff", "#a78bfa", "#4ade80", "#fbbf24", "#f87171",
-    "#60a5fa", "#f472b6", "#34d399", "#818cf8", "#fb923c"
+    "#e8944a", "#c084fc", "#4ade80", "#fbbf24", "#f87171",
+    "#2dd4bf", "#f472b6", "#34d399", "#818cf8", "#fb923c"
 ];
 
 let charts = {};
@@ -579,7 +622,7 @@ function renderEpicDetail(epic) {
                 labels: rc.map(r => r[0]),
                 datasets: [{
                     data: rc.map(r => r[1]),
-                    backgroundColor: ['#6c8aff', '#a78bfa'],
+                    backgroundColor: ['#e8944a', '#c084fc'],
                     borderWidth: 0,
                 }]
             },

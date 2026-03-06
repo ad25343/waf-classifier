@@ -6,18 +6,20 @@
     <title>WAF Classifier - WAF Reference</title>
     <style>
         :root {
-            --bg-primary: #0f1117;
-            --bg-secondary: #1a1d27;
-            --bg-tertiary: #242736;
-            --border: #353849;
-            --text-primary: #e4e5ea;
-            --text-secondary: #9395a5;
-            --text-muted: #6b6e80;
-            --accent: #6c8aff;
+            --bg-primary: #111318;
+            --bg-secondary: #1a1c25;
+            --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1;
+            --text-secondary: #9ca0b0;
+            --text-muted: #6c7086;
+            --accent: #e8944a;
+            --accent-hover: #d4832f;
             --success: #4ade80;
             --warning: #fbbf24;
             --error: #f87171;
-            --purple: #a78bfa;
+            --teal: #2dd4bf;
+            --purple: #c084fc;
             --radius: 12px;
         }
 
@@ -34,43 +36,57 @@
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
             padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between;
         }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
 
         .logo {
             width: 36px; height: 36px;
-            background: linear-gradient(135deg, var(--accent), var(--purple));
+            background: linear-gradient(135deg, var(--accent), #d4722a);
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
             font-size: 18px; font-weight: 700; color: white;
         }
 
         .header h1 { font-size: 18px; font-weight: 600; }
 
-        .nav-links {
-            display: flex; gap: 16px;
+        .hamburger {
+            display: flex; flex-direction: column; gap: 5px;
+            background: none; border: none; cursor: pointer;
+            padding: 8px; z-index: 1001;
         }
+        .hamburger span {
+            display: block; width: 22px; height: 2px;
+            background: var(--text-secondary); border-radius: 2px;
+            transition: all 0.3s;
+        }
+        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 13px;
-            padding: 6px 12px;
-            border-radius: 8px;
-            transition: all 0.2s;
+        .nav-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;
         }
+        .nav-overlay.open { display: block; }
 
-        .nav-links a:hover {
-            color: var(--text-primary);
-            background: var(--bg-tertiary);
+        .nav-menu {
+            position: fixed; top: 0; right: -300px;
+            width: 300px; height: 100vh;
+            background: var(--bg-secondary); border-left: 1px solid var(--border);
+            padding: 80px 24px 24px;
+            display: flex; flex-direction: column; gap: 4px;
+            transition: right 0.3s ease; z-index: 1000;
         }
+        .nav-menu.open { right: 0; }
+        .nav-menu a {
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 15px; padding: 14px 16px; border-radius: 10px;
+            transition: all 0.2s; display: flex; align-items: center; gap: 12px;
+        }
+        .nav-menu a:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+        .nav-menu a .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+        .nav-menu .nav-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px 4px; }
 
         .content {
             max-width: 1100px;
@@ -91,7 +107,6 @@
             line-height: 1.5;
         }
 
-        /* Run / Change sections */
         .section-label {
             font-size: 12px;
             font-weight: 600;
@@ -121,16 +136,11 @@
         }
 
         .color-badge {
-            width: 56px;
-            height: 56px;
+            width: 56px; height: 56px;
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
 
         .color-GRAY { background: #6b7280; color: white; }
@@ -140,88 +150,36 @@
         .color-YELLOW { background: #ca8a04; color: white; }
         .color-GREEN { background: #16a34a; color: white; }
 
-        .card-content h3 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .card-content .description {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            margin-bottom: 12px;
-        }
-
+        .card-content h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+        .card-content .description { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
         .card-content .decision-rule {
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.5;
-            padding: 10px 14px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin-bottom: 10px;
+            font-size: 12px; color: var(--text-muted); line-height: 1.5;
+            padding: 10px 14px; background: var(--bg-tertiary);
+            border-radius: 8px; margin-bottom: 10px;
         }
+        .card-content .decision-rule strong { color: var(--text-secondary); }
 
-        .card-content .decision-rule strong {
-            color: var(--text-secondary);
-        }
-
-        .examples {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 8px;
-        }
-
+        .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .example-tag {
-            font-size: 11px;
-            padding: 3px 10px;
-            border-radius: 12px;
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
+            font-size: 11px; padding: 3px 10px; border-radius: 12px;
+            background: var(--bg-tertiary); color: var(--text-secondary);
             border: 1px solid var(--border);
         }
 
         .legend {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-            padding: 16px 20px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            display: flex; gap: 16px; flex-wrap: wrap;
+            margin-bottom: 24px; padding: 16px 20px;
+            background: var(--bg-secondary); border: 1px solid var(--border);
             border-radius: var(--radius);
         }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+        .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .legend-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 4px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px;
-            color: var(--text-muted);
-        }
+        .loading { text-align: center; padding: 60px; color: var(--text-muted); }
 
         @media (max-width: 700px) {
-            .category-card {
-                grid-template-columns: 1fr;
-            }
-            .color-badge {
-                width: 100%;
-                height: 36px;
-            }
+            .category-card { grid-template-columns: 1fr; }
+            .color-badge { width: 100%; height: 36px; }
         }
     </style>
 </head>
@@ -232,13 +190,20 @@
         <div class="logo">W</div>
         <h1>WAF Reference</h1>
     </div>
-    <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/classify">Classifier</a>
-        <a href="/history">Analytics</a>
-        <a href="/lineage">Lineage</a>
-    </div>
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
 </div>
+
+<div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
+<nav class="nav-menu" id="nav-menu">
+    <div class="nav-label">Navigate</div>
+    <a href="/"><span class="nav-icon">🏠</span> Home</a>
+    <a href="/classify"><span class="nav-icon">💬</span> Classifier</a>
+    <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
+    <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
+    <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+</nav>
 
 <div class="content">
     <h2 class="page-title">Work Alignment Framework</h2>
@@ -261,6 +226,12 @@
 </div>
 
 <script>
+function toggleNav() {
+    document.querySelector('.hamburger').classList.toggle('active');
+    document.getElementById('nav-menu').classList.toggle('open');
+    document.getElementById('nav-overlay').classList.toggle('open');
+}
+
 async function loadDefinitions() {
     const container = document.getElementById('categories-container');
     try {
@@ -276,13 +247,10 @@ async function loadDefinitions() {
         const changeCats = data.definitions.filter(d => d.run_change === 'Change');
 
         let html = '';
-
         html += '<div class="section-label">Run — Operational Work</div>';
         runCats.forEach(cat => { html += renderCard(cat); });
-
         html += '<div class="section-label">Change — Transformation Work</div>';
         changeCats.forEach(cat => { html += renderCard(cat); });
-
         container.innerHTML = html;
 
     } catch (err) {
@@ -293,23 +261,15 @@ async function loadDefinitions() {
 
 function renderCard(cat) {
     const examples = cat.examples ? cat.examples.split(';').map(e => e.trim()).filter(Boolean) : [];
-    return `
-        <div class="category-card">
-            <div class="color-badge color-${cat.color}">${cat.color}</div>
-            <div class="card-content">
-                <h3>${cat.category}</h3>
-                <p class="description">${cat.description}</p>
-                <div class="decision-rule">
-                    <strong>Tag here if:</strong> ${cat.decision_rule}
-                </div>
-                ${examples.length > 0 ? `
-                    <div class="examples">
-                        ${examples.map(e => `<span class="example-tag">${e}</span>`).join('')}
-                    </div>
-                ` : ''}
-            </div>
-        </div>
-    `;
+    return '<div class="category-card">' +
+        '<div class="color-badge color-' + cat.color + '">' + cat.color + '</div>' +
+        '<div class="card-content">' +
+            '<h3>' + cat.category + '</h3>' +
+            '<p class="description">' + cat.description + '</p>' +
+            '<div class="decision-rule"><strong>Tag here if:</strong> ' + cat.decision_rule + '</div>' +
+            (examples.length > 0 ? '<div class="examples">' + examples.map(e => '<span class="example-tag">' + e + '</span>').join('') + '</div>' : '') +
+        '</div>' +
+    '</div>';
 }
 
 loadDefinitions();

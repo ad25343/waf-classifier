@@ -6,18 +6,20 @@
     <title>WAF Classifier</title>
     <style>
         :root {
-            --bg-primary: #0f1117;
-            --bg-secondary: #1a1d27;
-            --bg-tertiary: #242736;
-            --border: #353849;
-            --text-primary: #e4e5ea;
-            --text-secondary: #9395a5;
-            --text-muted: #6b6e80;
-            --accent: #6c8aff;
+            --bg-primary: #111318;
+            --bg-secondary: #1a1c25;
+            --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1;
+            --text-secondary: #9ca0b0;
+            --text-muted: #6c7086;
+            --accent: #e8944a;
+            --accent-hover: #d4832f;
             --success: #4ade80;
             --warning: #fbbf24;
             --error: #f87171;
-            --purple: #a78bfa;
+            --teal: #2dd4bf;
+            --purple: #c084fc;
             --radius: 16px;
         }
 
@@ -32,10 +34,17 @@
             flex-direction: column;
         }
 
+        /* Header */
         .header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            padding: 20px 32px;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -43,7 +52,7 @@
 
         .logo {
             width: 42px; height: 42px;
-            background: linear-gradient(135deg, var(--accent), var(--purple));
+            background: linear-gradient(135deg, var(--accent), #d4722a);
             border-radius: 10px; display: flex; align-items: center; justify-content: center;
             font-size: 22px; font-weight: 700; color: white;
         }
@@ -51,6 +60,46 @@
         .header-text h1 { font-size: 22px; font-weight: 700; }
         .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
+        /* Hamburger */
+        .hamburger {
+            display: flex; flex-direction: column; gap: 5px;
+            background: none; border: none; cursor: pointer;
+            padding: 8px; z-index: 1001;
+        }
+        .hamburger span {
+            display: block; width: 22px; height: 2px;
+            background: var(--text-secondary); border-radius: 2px;
+            transition: all 0.3s;
+        }
+        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        .nav-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;
+        }
+        .nav-overlay.open { display: block; }
+
+        .nav-menu {
+            position: fixed; top: 0; right: -300px;
+            width: 300px; height: 100vh;
+            background: var(--bg-secondary); border-left: 1px solid var(--border);
+            padding: 80px 24px 24px;
+            display: flex; flex-direction: column; gap: 4px;
+            transition: right 0.3s ease; z-index: 1000;
+        }
+        .nav-menu.open { right: 0; }
+        .nav-menu a {
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 15px; padding: 14px 16px; border-radius: 10px;
+            transition: all 0.2s; display: flex; align-items: center; gap: 12px;
+        }
+        .nav-menu a:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+        .nav-menu a .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+        .nav-menu .nav-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px 4px; }
+
+        /* Main content */
         .main {
             flex: 1;
             display: flex;
@@ -82,7 +131,7 @@
         .menu-card:hover {
             border-color: var(--accent);
             transform: translateY(-4px);
-            box-shadow: 0 8px 32px rgba(108, 138, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(232, 148, 74, 0.12);
         }
 
         .menu-card::before {
@@ -93,11 +142,10 @@
             border-radius: var(--radius) var(--radius) 0 0;
         }
 
-        .menu-card.classify::before { background: linear-gradient(90deg, var(--accent), var(--purple)); }
-        .menu-card.dashboard::before { background: linear-gradient(90deg, var(--success), #34d399); }
-        .menu-card.history::before { background: linear-gradient(90deg, var(--warning), var(--error)); }
-        .menu-card.lineage::before { background: linear-gradient(90deg, #60a5fa, var(--accent)); }
-        .menu-card.import::before { background: linear-gradient(90deg, var(--purple), #f472b6); }
+        .menu-card.classify::before { background: linear-gradient(90deg, var(--accent), #d4722a); }
+        .menu-card.dashboard::before { background: linear-gradient(90deg, var(--teal), var(--success)); }
+        .menu-card.lineage::before { background: linear-gradient(90deg, var(--purple), #e879a8); }
+        .menu-card.import::before { background: linear-gradient(90deg, var(--warning), var(--accent)); }
 
         .card-icon {
             width: 48px; height: 48px;
@@ -107,11 +155,10 @@
             margin-bottom: 16px;
         }
 
-        .classify .card-icon { background: rgba(108,138,255,0.15); }
-        .dashboard .card-icon { background: rgba(74,222,128,0.15); }
-        .history .card-icon { background: rgba(251,191,36,0.15); }
-        .lineage .card-icon { background: rgba(96,165,250,0.15); }
-        .import .card-icon { background: rgba(167,139,250,0.15); }
+        .classify .card-icon { background: rgba(232,148,74,0.15); }
+        .dashboard .card-icon { background: rgba(45,212,191,0.15); }
+        .lineage .card-icon { background: rgba(192,132,252,0.15); }
+        .import .card-icon { background: rgba(251,191,36,0.15); }
 
         .menu-card h2 {
             font-size: 18px; font-weight: 600;
@@ -132,11 +179,10 @@
             margin-top: 12px;
         }
 
-        .classify .card-badge { background: rgba(108,138,255,0.15); color: var(--accent); }
-        .dashboard .card-badge { background: rgba(74,222,128,0.15); color: var(--success); }
-        .history .card-badge { background: rgba(251,191,36,0.15); color: var(--warning); }
-        .lineage .card-badge { background: rgba(96,165,250,0.15); color: #60a5fa; }
-        .import .card-badge { background: rgba(167,139,250,0.15); color: var(--purple); }
+        .classify .card-badge { background: rgba(232,148,74,0.15); color: var(--accent); }
+        .dashboard .card-badge { background: rgba(45,212,191,0.15); color: var(--teal); }
+        .lineage .card-badge { background: rgba(192,132,252,0.15); color: var(--purple); }
+        .import .card-badge { background: rgba(251,191,36,0.15); color: var(--warning); }
 
         .status-bar {
             background: var(--bg-secondary);
@@ -173,12 +219,27 @@
 <body>
 
 <div class="header">
-    <div class="logo">W</div>
-    <div class="header-text">
-        <h1>WAF Classifier</h1>
-        <p>Work Alignment Framework — Classify, Monitor, and Improve</p>
+    <div class="header-left">
+        <div class="logo">W</div>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Work Alignment Framework — Classify, Analyze, Align</p>
+        </div>
     </div>
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
 </div>
+
+<div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
+<nav class="nav-menu" id="nav-menu">
+    <div class="nav-label">Navigate</div>
+    <a href="/"><span class="nav-icon">🏠</span> Home</a>
+    <a href="/classify"><span class="nav-icon">💬</span> Classifier</a>
+    <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
+    <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
+    <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+</nav>
 
 <div class="main">
     <div class="menu-grid">
@@ -193,14 +254,14 @@
             <div class="card-icon">📊</div>
             <h2>Analytics</h2>
             <p>Upload JIRA data, AI verifies every story against the WAF framework, then explore insights — mismatches, trends, sprint and monthly breakdowns.</p>
-            <span class="card-badge">PMOs & Leadership</span>
+            <span class="card-badge">PMOs &amp; Leadership</span>
         </a>
 
         <a href="/lineage" class="menu-card lineage">
             <div class="card-icon">🔗</div>
             <h2>Epic Lineage</h2>
             <p>Map stories and features to parent epics. See how work rolls up with tree views and per-epic WAF dashboards.</p>
-            <span class="card-badge">Scrum Teams & PMOs</span>
+            <span class="card-badge">Scrum Teams &amp; PMOs</span>
         </a>
 
         <a href="/waf-reference" class="menu-card import">
@@ -231,10 +292,16 @@
             <span id="db-status">History DB</span>
         </div>
     </div>
-    <div id="version-info">v2.1</div>
+    <div id="version-info">v2.2</div>
 </div>
 
 <script>
+function toggleNav() {
+    document.querySelector('.hamburger').classList.toggle('active');
+    document.getElementById('nav-menu').classList.toggle('open');
+    document.getElementById('nav-overlay').classList.toggle('open');
+}
+
 async function checkStatus() {
     try {
         const [statusRes, dashRes] = await Promise.all([
@@ -244,7 +311,6 @@ async function checkStatus() {
         const status = await statusRes.json();
         const dash = await dashRes.json();
 
-        // API
         const apiDot = document.getElementById('api-dot');
         const apiText = document.getElementById('api-status');
         if (status.api_key_configured) {
@@ -255,40 +321,35 @@ async function checkStatus() {
             apiText.textContent = 'API Key Missing';
         }
 
-        // WAF
         const wafDot = document.getElementById('waf-dot');
         const wafText = document.getElementById('waf-status');
         if (status.waf_loaded) {
             wafDot.className = 'dot green';
-            wafText.textContent = `WAF: ${status.waf_categories.length} categories`;
+            wafText.textContent = 'WAF: ' + status.waf_categories.length + ' categories';
         } else {
             wafDot.className = 'dot yellow';
             wafText.textContent = 'WAF: Not loaded';
         }
 
-        // Ground Truth
         const gtDot = document.getElementById('gt-dot');
         const gtText = document.getElementById('gt-status');
         if (status.ground_truth_loaded) {
             gtDot.className = 'dot green';
-            gtText.textContent = `GT: ${status.ground_truth_count} examples`;
+            gtText.textContent = 'GT: ' + status.ground_truth_count + ' examples';
         } else {
             gtDot.className = 'dot yellow';
             gtText.textContent = 'GT: Not loaded';
         }
 
-        // DB
         const dbDot = document.getElementById('db-dot');
         const dbText = document.getElementById('db-status');
         dbDot.className = 'dot green';
-        dbText.textContent = `History: ${dash.total_classifications} records`;
+        dbText.textContent = 'History: ' + dash.total_classifications + ' records';
 
     } catch (err) {
         console.error('Status check failed:', err);
     }
 }
-
-// Import card already links to /history?tab=import via href
 
 checkStatus();
 </script>
