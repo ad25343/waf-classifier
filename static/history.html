@@ -321,6 +321,18 @@
 
         .mismatch-row td { background: rgba(248,113,113,0.05); }
 
+        .upload-history-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; border-radius: 8px; cursor: pointer;
+            background: var(--bg-tertiary); transition: all 0.2s;
+        }
+        .upload-history-item:hover { background: var(--bg-hover, #2d3148); border-left: 3px solid var(--accent); }
+        .upload-history-info { display: flex; flex-direction: column; gap: 2px; }
+        .upload-history-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+        .upload-history-meta { font-size: 12px; color: var(--text-muted); }
+        .upload-history-action { font-size: 13px; color: var(--accent); font-weight: 500; opacity: 0; transition: opacity 0.2s; }
+        .upload-history-item:hover .upload-history-action { opacity: 1; }
+
         @media (max-width: 900px) {
             .sprint-grid { grid-template-columns: 1fr; }
             .kpi-mini-row { grid-template-columns: repeat(2, 1fr); }
@@ -602,6 +614,14 @@
                         <div style="font-size:13px;color:var(--text-secondary);">Use the Summary, Sprint Trends, Monthly, or Timeline tabs to explore insights.</div>
                     </div>
                     <button class="btn btn-outline btn-sm" onclick="document.querySelector('.tab[data-tab=summary]').click()">View Insights →</button>
+                </div>
+            </div>
+
+            <!-- Upload History -->
+            <div class="card">
+                <div class="card-title">📋 Upload History</div>
+                <div id="upload-history-list" style="display:flex;flex-direction:column;gap:4px;">
+                    <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div>
                 </div>
             </div>
         </div>
@@ -1459,6 +1479,52 @@ if (tabParam) {
     const tabBtn = document.querySelector(`.tab[data-tab="${tabParam}"]`);
     if (tabBtn) tabBtn.click();
 }
+
+// ── Hamburger Nav Toggle ──
+function toggleNav() {
+    document.querySelector('.hamburger').classList.toggle('active');
+    document.getElementById('nav-menu').classList.toggle('open');
+    document.getElementById('nav-overlay').classList.toggle('open');
+}
+
+// ── Upload History ──
+function loadUploadHistory() {
+    fetch('/api/history/uploads')
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('upload-history-list');
+            if (!list) return;
+            if (!data.uploads || data.uploads.length === 0) {
+                list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">No previous uploads yet.</div>';
+                return;
+            }
+            list.innerHTML = data.uploads.map(u => `
+                <div class="upload-history-item" onclick="reloadUpload(${u.id})">
+                    <div class="upload-history-info">
+                        <span class="upload-history-name">${u.filename}</span>
+                        <span class="upload-history-meta">${u.row_count} rows &middot; ${new Date(u.uploaded_at).toLocaleDateString()} ${new Date(u.uploaded_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+                    </div>
+                    <span class="upload-history-action">Load →</span>
+                </div>
+            `).join('');
+        })
+        .catch(() => {});
+}
+
+function reloadUpload(uploadId) {
+    fetch(`/api/history/uploads/${uploadId}/reload`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector('.tab[data-tab="summary"]').click();
+                loadSummary();
+            }
+        })
+        .catch(err => console.error('Reload failed:', err));
+}
+
+// Load upload history on page load
+loadUploadHistory();
 </script>
 </body>
 </html>

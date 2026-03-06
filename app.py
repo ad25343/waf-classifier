@@ -71,6 +71,16 @@ def init_db():
             approvals INTEGER DEFAULT 0,
             team TEXT DEFAULT 'default'
         );
+
+        CREATE TABLE IF NOT EXISTS upload_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uploaded_at TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            row_count INTEGER DEFAULT 0,
+            imported_count INTEGER DEFAULT 0,
+            file_type TEXT DEFAULT '',
+            status TEXT DEFAULT 'completed'
+        );
     """)
     # Add epic columns if they don't exist (migration for existing DBs)
     try:
@@ -1079,9 +1089,56 @@ def history_import():
             imported += 1
         db.commit()
 
+        # Record in upload history
+        db.execute(
+            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
+               VALUES (?, ?, ?, ?, ?, 'completed')""",
+            (datetime.now().isoformat(), filename, len(df), imported, ext)
+        )
+        db.commit()
+
         return jsonify({"success": True, "imported": imported, "filename": filename})
     except Exception as e:
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
+
+
+@app.route("/api/history/uploads", methods=["GET"])
+def get_upload_history():
+    """Get list of past file uploads for analytics."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, uploaded_at, filename, row_count, imported_count, file_type, status "
+        "FROM upload_history ORDER BY uploaded_at DESC LIMIT 20"
+    ).fetchall()
+    uploads = [
+        {
+            "id": r["id"],
+            "uploaded_at": r["uploaded_at"],
+            "filename": r["filename"],
+            "row_count": r["row_count"],
+            "imported_count": r["imported_count"],
+            "file_type": r["file_type"],
+            "status": r["status"]
+        }
+        for r in rows
+    ]
+    return jsonify({"uploads": uploads})
+
+
+@app.route("/api/history/uploads/<int:upload_id>/reload", methods=["POST"])
+def reload_upload(upload_id):
+    """Reload a previously uploaded file by re-importing it from the uploads folder."""
+    db = get_db()
+    row = db.execute("SELECT filename FROM upload_history WHERE id = ?", (upload_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Upload not found"}), 404
+
+    filepath = os.path.join(UPLOAD_FOLDER, row["filename"])
+    if not os.path.exists(filepath):
+        return jsonify({"error": "Original file no longer available on disk"}), 404
+
+    return jsonify({"success": True, "filename": row["filename"],
+                     "message": "File still available. Use the Summary tab to view insights."})
 
 
 @app.route("/api/history/export", methods=["GET"])
@@ -1489,6 +1546,15 @@ def bulk_verify():
         matches = sum(1 for r in results if r["is_match"] is True)
         mismatches = sum(1 for r in results if r["is_match"] is False)
         untagged = sum(1 for r in results if r["is_match"] is None)
+
+        # Record in upload history
+        db = get_db()
+        db.execute(
+            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
+               VALUES (?, ?, ?, ?, ?, 'verified')""",
+            (datetime.now().isoformat(), filename, len(df), len(results), ext)
+        )
+        db.commit()
 
         return jsonify({
             "success": True,
