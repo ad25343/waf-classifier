@@ -11,7 +11,7 @@ import csv
 import sqlite3
 from datetime import datetime
 import pandas as pd
-from flask import Flask, request, jsonify, send_from_directory, g
+from flask import Flask, request, jsonify, send_from_directory, g, redirect
 from anthropic import Anthropic
 from werkzeug.utils import secure_filename
 
@@ -675,7 +675,7 @@ def approve_classification():
 
 @app.route("/dashboard")
 def dashboard():
-    return send_from_directory("static", "dashboard.html")
+    return redirect("/history")
 
 
 @app.route("/history")
@@ -1763,7 +1763,7 @@ if __name__ == "__main__":
     print(f"\n{'='*60}")
     print(f"  WAF Category Classifier")
     print(f"  Running at: http://localhost:{port}")
-    print(f"  Dashboard:  http://localhost:{port}/dashboard")
+    print(f"  Analytics:  http://localhost:{port}/history")
     print(f"  API Key configured: {bool(os.environ.get('ANTHROPIC_API_KEY'))}")
     init_db()
     print(f"  Database initialized: {DB_PATH}")

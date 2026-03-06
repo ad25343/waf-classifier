@@ -2,6 +2,20 @@
 
 ---
 
+## v2.1 — March 2026
+
+Consolidation release merging Dashboard and Historical View into a single Analytics page.
+
+### Changes
+
+- **Merged Dashboard into Analytics**: The standalone Dashboard page is retired. Its KPI cards, distribution charts (category, confidence, Run/Change, color), daily trend line, and recent classifications table are now the default "Summary" tab in the Analytics page.
+- **Analytics page now has 5 tabs**: Summary, Sprint Trends, Monthly Rollups, Timeline, Verify & Import
+- **Home page updated**: 4 menu cards (Classify, Analytics, Epic Lineage, Verify & Import) in a 2x2 grid
+- **Navigation simplified**: "Dashboard" and "History" links replaced with single "Analytics" link across all pages
+- `/dashboard` route now redirects to `/history` for backward compatibility
+
+---
+
 ## v2.0 — March 2026
 
 Major release expanding the platform from a single-page classifier into a full WAF management suite.

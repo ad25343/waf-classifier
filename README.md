@@ -11,8 +11,7 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 | Feature | Description |
 |---------|-------------|
 | **AI Classifier** | Chat-based single and batch story classification with mismatch detection |
-| **Real-Time Dashboard** | KPI cards, category/confidence/color charts, daily trend, recent activity |
-| **Historical Analytics** | Sprint trends (2-week windows), monthly rollups, filterable timeline |
+| **Analytics** | KPI summary, category/confidence/color charts, sprint trends, monthly rollups, filterable timeline |
 | **Bulk Verify & Import** | Upload JIRA exports, AI verifies each story, side-by-side review before saving |
 | **Epic Lineage** | Map stories → features → epics with tree view and per-epic WAF dashboards |
 | **Excel Export** | Formatted 3-sheet workbook (Summary, Monthly Rollups, Raw Data) |
@@ -59,8 +58,7 @@ The app auto-loads WAF definitions and ground truth from `sample-data/` on start
 |-------|------|---------|
 | `/` | Home | Landing page with navigation cards and system status |
 | `/classify` | Classifier | Chat-based AI classification with epic tagging |
-| `/dashboard` | Dashboard | Real-time KPIs and charts |
-| `/history` | Historical View | Sprint trends, monthly rollups, timeline, verify & import |
+| `/history` | Analytics | Summary, sprint trends, monthly rollups, timeline, verify & import |
 | `/lineage` | Epic Lineage | Epic-to-story tree view and WAF rollup analytics |
 
 ## Tech Stack
@@ -82,8 +80,8 @@ waf-classifier/
 ├── static/
 │   ├── home.html                   # Home landing page
 │   ├── index.html                  # Classifier chat UI
-│   ├── dashboard.html              # Real-time dashboard
-│   ├── history.html                # Historical analytics (4 tabs)
+│   ├── dashboard.html              # Legacy (redirects to analytics)
+│   ├── history.html                # Analytics (5 tabs: summary, sprints, monthly, timeline, import)
 │   └── lineage.html                # Epic lineage tracking
 ├── sample-data/
 │   ├── waf-definitions.csv         # WAF framework (8 categories)

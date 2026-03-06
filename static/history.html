@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAF Classifier - Historical View</title>
+    <title>WAF Classifier - Analytics</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root {
@@ -302,12 +302,11 @@
 <div class="header">
     <div class="header-left">
         <div class="logo">W</div>
-        <h1>WAF Classifier <span>| Historical View</span></h1>
+        <h1>WAF Classifier <span>| Analytics</span></h1>
     </div>
     <div class="nav-links">
         <a href="/" class="nav-link">Home</a>
         <a href="/classify" class="nav-link">Classifier</a>
-        <a href="/dashboard" class="nav-link">Dashboard</a>
         <a href="/lineage" class="nav-link">Lineage</a>
     </div>
 </div>
@@ -315,14 +314,86 @@
 <div class="content">
     <!-- Tab Navigation -->
     <div class="tabs">
-        <button class="tab active" data-tab="sprints">Sprint Trends</button>
+        <button class="tab active" data-tab="summary">Summary</button>
+        <button class="tab" data-tab="sprints">Sprint Trends</button>
         <button class="tab" data-tab="monthly">Monthly Rollups</button>
         <button class="tab" data-tab="timeline">Timeline</button>
-        <button class="tab" data-tab="import">Import Data</button>
+        <button class="tab" data-tab="import">Verify & Import</button>
+    </div>
+
+    <!-- ═══ SUMMARY (merged dashboard) ═══ -->
+    <div class="tab-panel active" id="panel-summary">
+        <div id="summary-empty" style="display:none;text-align:center;padding:60px 20px;color:var(--text-muted);">
+            <div style="font-size:48px;margin-bottom:16px;">📊</div>
+            <p style="font-size:14px;">No classification history yet. Start classifying stories and the summary will populate.</p>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-mini-row" id="summary-kpis">
+            <div class="kpi-mini">
+                <div class="kpi-mini-label">Total Classifications</div>
+                <div class="kpi-mini-value" style="color:var(--accent)" id="sum-total">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">All time</div>
+            </div>
+            <div class="kpi-mini">
+                <div class="kpi-mini-label">Approved to Ground Truth</div>
+                <div class="kpi-mini-value" style="color:var(--success)" id="sum-approved">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;" id="sum-approval-rate">—</div>
+            </div>
+            <div class="kpi-mini">
+                <div class="kpi-mini-label">Mismatches Detected</div>
+                <div class="kpi-mini-value" style="color:var(--warning)" id="sum-mismatches">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Stories with wrong tags</div>
+            </div>
+            <div class="kpi-mini">
+                <div class="kpi-mini-label">Ground Truth Examples</div>
+                <div class="kpi-mini-value" style="color:var(--purple)" id="sum-gt">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Calibration data</div>
+            </div>
+        </div>
+
+        <!-- Distribution Charts -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+            <div class="card">
+                <div class="card-title">WAF Category Distribution</div>
+                <div class="chart-container"><canvas id="sumCategoryChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">Confidence Breakdown</div>
+                <div class="chart-container"><canvas id="sumConfidenceChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">Run vs Change</div>
+                <div class="chart-container"><canvas id="sumRunChangeChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">WAF Color Distribution</div>
+                <div class="chart-container"><canvas id="sumColorChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Daily Trend -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-title">Classification Activity (Daily)</div>
+            <div class="chart-container short"><canvas id="sumTrendChart"></canvas></div>
+        </div>
+
+        <!-- Recent Table -->
+        <div class="card">
+            <div class="card-title">Recent Classifications</div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr><th>Time</th><th>Story</th><th>Category</th><th>Color</th><th>Confidence</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="sum-recent-table"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- ═══ SPRINT TRENDS ═══ -->
-    <div class="tab-panel active" id="panel-sprints">
+    <div class="tab-panel" id="panel-sprints">
         <div class="sprint-selector" id="sprint-pills"></div>
 
         <div class="kpi-mini-row" id="sprint-kpis"></div>
@@ -552,6 +623,150 @@ document.querySelectorAll('.tab').forEach(tab => {
     });
 });
 
+
+// ════════════════════════════════════════════════════════════════
+// SUMMARY (merged dashboard)
+// ════════════════════════════════════════════════════════════════
+
+const WAF_COLORS_MAP = {
+    GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
+    ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"
+};
+
+async function loadSummary() {
+    try {
+        const [dashRes, statusRes] = await Promise.all([
+            fetch("/api/dashboard/summary"),
+            fetch("/api/status")
+        ]);
+        const data = await dashRes.json();
+        const statusData = await statusRes.json();
+
+        if (data.total_classifications === 0) {
+            document.getElementById("summary-empty").style.display = "block";
+            document.getElementById("summary-kpis").style.display = "none";
+            return;
+        }
+
+        document.getElementById("sum-total").textContent = data.total_classifications;
+        document.getElementById("sum-approved").textContent = data.total_approved;
+        document.getElementById("sum-approval-rate").textContent = data.approval_rate + "% approval rate";
+        document.getElementById("sum-mismatches").textContent = data.total_mismatches;
+        document.getElementById("sum-gt").textContent = statusData.ground_truth_count || 0;
+
+        // Category Chart (horizontal bar)
+        destroyChart("sumCategoryChart");
+        const catCtx = document.getElementById("sumCategoryChart").getContext("2d");
+        charts["sumCategoryChart"] = new Chart(catCtx, {
+            type: "bar",
+            data: {
+                labels: data.categories.map(i => i.name),
+                datasets: [{
+                    data: data.categories.map(i => i.count),
+                    backgroundColor: CHART_PALETTE.slice(0, data.categories.length),
+                    borderRadius: 6, barThickness: 24
+                }]
+            },
+            options: {
+                indexAxis: "y", responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: "#6b6e80" }, grid: { color: "#353849" } },
+                    y: { ticks: { color: "#9395a5", font: { size: 11 } }, grid: { display: false } }
+                }
+            }
+        });
+
+        // Confidence Doughnut
+        renderSumDoughnut("sumConfidenceChart", data.confidence,
+            {"HIGH": "#4ade80", "MEDIUM": "#fbbf24", "LOW": "#f87171"});
+
+        // Run/Change Doughnut
+        renderSumDoughnut("sumRunChangeChart", data.run_change,
+            {"Run": "#6c8aff", "Change": "#a78bfa"});
+
+        // Color Doughnut
+        const colorColors = data.colors.map(c => WAF_COLORS_MAP[c.name] || "#6c8aff");
+        destroyChart("sumColorChart");
+        const colCtx = document.getElementById("sumColorChart").getContext("2d");
+        charts["sumColorChart"] = new Chart(colCtx, {
+            type: "doughnut",
+            data: {
+                labels: data.colors.map(c => c.name),
+                datasets: [{ data: data.colors.map(c => c.count), backgroundColor: colorColors, borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: "60%",
+                plugins: { legend: { position: "right", labels: { color: "#9395a5", padding: 12, font: { size: 12 } } } }
+            }
+        });
+
+        // Trend Line
+        destroyChart("sumTrendChart");
+        const trendCtx = document.getElementById("sumTrendChart").getContext("2d");
+        charts["sumTrendChart"] = new Chart(trendCtx, {
+            type: "line",
+            data: {
+                labels: data.daily_trend.map(i => i.date),
+                datasets: [{
+                    label: "Classifications", data: data.daily_trend.map(i => i.count),
+                    borderColor: "#6c8aff", backgroundColor: "rgba(108,138,255,0.1)",
+                    fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#6c8aff"
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: "#6b6e80", font: { size: 10 } }, grid: { color: "#353849" } },
+                    y: { beginAtZero: true, ticks: { color: "#6b6e80", stepSize: 1 }, grid: { color: "#353849" } }
+                }
+            }
+        });
+
+        // Recent Table
+        const tbody = document.getElementById("sum-recent-table");
+        if (data.recent.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No classifications yet</td></tr>';
+        } else {
+            tbody.innerHTML = data.recent.map(r => {
+                const time = new Date(r.timestamp).toLocaleString();
+                const title = r.title.length > 60 ? r.title.substring(0, 60) + "..." : r.title;
+                const dotColor = WAF_COLORS_MAP[r.color] || "#6c8aff";
+                const confClass = (r.confidence || "").toLowerCase();
+                let status = "";
+                if (r.approved) status = '<span class="badge high">Approved</span>';
+                else if (r.mismatch) status = '<span class="badge low">Mismatch</span>';
+                return `<tr>
+                    <td>${time}</td>
+                    <td style="color:var(--text-primary)">${title}</td>
+                    <td>${r.category}</td>
+                    <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:${dotColor}"></span>${r.color}</td>
+                    <td><span class="badge ${confClass}">${r.confidence || "—"}</span></td>
+                    <td>${status}</td>
+                </tr>`;
+            }).join("");
+        }
+    } catch (err) {
+        console.error("Summary load failed:", err);
+    }
+}
+
+function renderSumDoughnut(id, items, colorMap) {
+    destroyChart(id);
+    const ctx = document.getElementById(id).getContext("2d");
+    charts[id] = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+            labels: items.map(i => i.name),
+            datasets: [{ data: items.map(i => i.count), backgroundColor: items.map(i => colorMap[i.name] || "#6c8aff"), borderWidth: 0 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: "60%",
+            plugins: { legend: { position: "right", labels: { color: "#9395a5", padding: 12, font: { size: 12 } } } }
+        }
+    });
+}
 
 // ════════════════════════════════════════════════════════════════
 // SPRINT TRENDS
@@ -1169,6 +1384,7 @@ function chartOpts(indexAxis = 'x', beginAtZero = true) {
 }
 
 // ── Initialize ──
+loadSummary();
 loadSprints();
 loadMonthly();
 loadTimeline(1);

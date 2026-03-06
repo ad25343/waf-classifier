@@ -61,7 +61,7 @@
 
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
             max-width: 1000px;
             width: 100%;
@@ -189,18 +189,11 @@
             <span class="card-badge">Scrum Teams</span>
         </a>
 
-        <a href="/dashboard" class="menu-card dashboard">
+        <a href="/history" class="menu-card dashboard">
             <div class="card-icon">📊</div>
-            <h2>Dashboard</h2>
-            <p>Real-time snapshot of classification activity. KPIs, category distribution, confidence breakdown, and recent classifications.</p>
-            <span class="card-badge">PMOs & Leads</span>
-        </a>
-
-        <a href="/history" class="menu-card history">
-            <div class="card-icon">📈</div>
-            <h2>Historical View</h2>
-            <p>Sprint-over-sprint trends, monthly rollups with period comparisons, and a full filterable timeline for deep analysis.</p>
-            <span class="card-badge">Leadership</span>
+            <h2>Analytics</h2>
+            <p>KPI summary, category distributions, sprint trends, monthly rollups, and a full filterable timeline. All classification insights in one place.</p>
+            <span class="card-badge">PMOs & Leadership</span>
         </a>
 
         <a href="/lineage" class="menu-card lineage">
@@ -238,7 +231,7 @@
             <span id="db-status">History DB</span>
         </div>
     </div>
-    <div id="version-info">v1.1</div>
+    <div id="version-info">v2.1</div>
 </div>
 
 <script>
