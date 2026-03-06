@@ -176,7 +176,8 @@ def _extract_categories_from_df(df):
 
 
 def parse_waf_file(filepath, filename):
-    """Parse WAF definitions from uploaded file (CSV, Excel, or text)."""
+    """Parse WAF definitions from uploaded file (CSV, Excel, or text).
+    Returns (text, categories, df_or_none) — df is the DataFrame if structured, else None."""
     ext = filename.rsplit(".", 1)[-1].lower()
 
     if ext in ("csv", "tsv"):
@@ -184,18 +185,18 @@ def parse_waf_file(filepath, filename):
         df = pd.read_csv(filepath, sep=sep)
         text = df.to_string(index=False)
         categories = _extract_categories_from_df(df)
-        return text, categories
+        return text, categories, df
 
     elif ext in ("xlsx", "xls"):
         df = pd.read_excel(filepath)
         text = df.to_string(index=False)
         categories = _extract_categories_from_df(df)
-        return text, categories
+        return text, categories, df
 
     elif ext in ("txt", "md"):
         with open(filepath, "r") as f:
             text = f.read()
-        return text, []
+        return text, [], None
 
     elif ext == "json":
         with open(filepath, "r") as f:
@@ -203,12 +204,12 @@ def parse_waf_file(filepath, filename):
         text = json.dumps(data, indent=2)
         if isinstance(data, list):
             categories = [item.get("name", item.get("category", "")) for item in data if isinstance(item, dict)]
-        return text, categories
+        return text, categories, None
 
     else:
         with open(filepath, "r") as f:
             text = f.read()
-        return text, []
+        return text, [], None
 
 
 def parse_ground_truth(filepath, filename):
@@ -408,8 +409,8 @@ def upload_waf():
     file.save(filepath)
 
     try:
-        text, categories = parse_waf_file(filepath, filename)
-        waf_store["definitions"] = True
+        text, categories, df = parse_waf_file(filepath, filename)
+        waf_store["definitions"] = df  # Store DataFrame for /api/waf-definitions
         waf_store["raw_text"] = text
         waf_store["filename"] = filename
         waf_store["categories"] = categories
@@ -513,7 +514,7 @@ def classify():
 
         return jsonify({
             "response": assistant_message,
-            "waf_loaded": waf_store["definitions"] is not None,
+            "waf_loaded": waf_store["definitions"] is not None or bool(waf_store["raw_text"]),
             "ground_truth_loaded": ground_truth_store["loaded"]
         })
     except ValueError as e:
@@ -570,7 +571,7 @@ def status():
     api_key_set = bool(os.environ.get("ANTHROPIC_API_KEY"))
     return jsonify({
         "api_key_configured": api_key_set,
-        "waf_loaded": waf_store["definitions"] is not None,
+        "waf_loaded": waf_store["definitions"] is not None or bool(waf_store["raw_text"]),
         "waf_filename": waf_store["filename"],
         "waf_categories": [str(c) for c in waf_store["categories"]],
         "ground_truth_loaded": ground_truth_store["loaded"],
@@ -701,11 +702,16 @@ def waf_reference():
 @app.route("/api/waf-definitions", methods=["GET"])
 def get_waf_definitions():
     """Return loaded WAF definitions for the reference page."""
-    if waf_store["definitions"] is None:
+    df = waf_store["definitions"]
+    if df is None:
+        # No structured definitions loaded — check if raw text exists
+        if waf_store["raw_text"]:
+            return jsonify({"definitions": [], "loaded": True,
+                            "message": "WAF definitions loaded as text (no structured data available)"})
         return jsonify({"definitions": [], "loaded": False})
 
     defs = []
-    for _, row in waf_store["definitions"].iterrows():
+    for _, row in df.iterrows():
         defs.append({
             "run_change": str(row.get("Run/Change", "")),
             "color": str(row.get("WAF Color", "")),
@@ -1823,8 +1829,8 @@ def auto_load_sample_data():
     waf_file = os.path.join(sample_dir, "waf-definitions.csv")
     if os.path.exists(waf_file):
         try:
-            text, categories = parse_waf_file(waf_file, "waf-definitions.csv")
-            waf_store["definitions"] = True
+            text, categories, df = parse_waf_file(waf_file, "waf-definitions.csv")
+            waf_store["definitions"] = df  # Store DataFrame for /api/waf-definitions
             waf_store["raw_text"] = text
             waf_store["filename"] = "waf-definitions.csv"
             waf_store["categories"] = categories
