@@ -29,3 +29,11 @@ WAF_Classified_Stories.xlsx
 
 # Database (local history)
 waf_history.db
+
+# Runtime / temp
+server.log
+*.log
+.~lock.*
+
+# Claude Code
+.claude/
