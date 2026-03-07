@@ -461,6 +461,7 @@
             <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
                 <button class="btn btn-sm lin-view-btn active" onclick="linSwitchView('table', this)">Table View</button>
                 <button class="btn btn-sm lin-view-btn" onclick="linSwitchView('graph', this)">Graph View</button>
+                <button class="btn btn-sm lin-view-btn" onclick="linSwitchView('treemap', this)">Treemap</button>
                 <div style="flex:1;"></div>
                 <button class="btn btn-sm lin-story-filter active" data-sf="all" onclick="linStoryFilter('all',this)">All</button>
                 <button class="btn btn-sm lin-story-filter" data-sf="match" onclick="linStoryFilter('match',this)" style="color:var(--success);">Correct</button>
@@ -491,6 +492,18 @@
             <div id="lin-graph-view" style="display:none;">
                 <div class="card" id="lin-tree-card">
                     <div id="lin-tree-container"></div>
+                </div>
+            </div>
+
+            <!-- Treemap view -->
+            <div id="lin-treemap-view" style="display:none;">
+                <div class="card">
+                    <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                        <span style="font-size:12px;color:var(--text-muted);">Each box = one story &nbsp;·&nbsp; Color = WAF color &nbsp;·&nbsp; Red border = mismatch &nbsp;·&nbsp; Grouped by feature</span>
+                        <div id="lin-tm-legend" style="display:flex;gap:12px;flex-wrap:wrap;margin-left:auto;"></div>
+                    </div>
+                    <div id="lin-treemap-container" style="width:100%;"></div>
+                    <div id="lin-tm-tooltip" style="display:none;position:fixed;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:9999;max-width:280px;box-shadow:0 4px 16px rgba(0,0,0,0.4);"></div>
                 </div>
             </div>
         </div>
@@ -1450,6 +1463,120 @@ function linSwitchView(view, btn) {
     btn.classList.add('active');
     document.getElementById('lin-table-view').style.display = view === 'table' ? 'block' : 'none';
     document.getElementById('lin-graph-view').style.display = view === 'graph' ? 'block' : 'none';
+    document.getElementById('lin-treemap-view').style.display = view === 'treemap' ? 'block' : 'none';
+    if (view === 'treemap') linRenderTreemap();
+}
+
+// ── Treemap (squarified layout) ────────────────────────────────
+function linRenderTreemap() {
+    const stories = linGetFilteredStories();
+    const container = document.getElementById('lin-treemap-container');
+    const tooltip  = document.getElementById('lin-tm-tooltip');
+
+    if (stories.length === 0) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">No stories match this filter.</div>';
+        return;
+    }
+
+    // Group by feature
+    const groups = {};
+    stories.forEach(s => {
+        const g = s.feature || '(Direct)';
+        if (!groups[g]) groups[g] = [];
+        groups[g].push(s);
+    });
+
+    const W = container.clientWidth || 800;
+    const STORY_SIZE = 48;       // each story cell (px)
+    const GAP = 3;
+    const GROUP_PAD = 28;        // space for feature label
+    const GROUP_GAP = 10;
+    const COLS_PER_GROUP = Math.max(3, Math.floor((W - GROUP_GAP) / (STORY_SIZE + GAP)));
+
+    let html = '<div style="display:flex;flex-direction:column;gap:' + GROUP_GAP + 'px;">';
+
+    Object.entries(groups).forEach(([feat, strs]) => {
+        const rows = Math.ceil(strs.length / COLS_PER_GROUP);
+        html += '<div style="background:var(--bg-secondary);border-radius:8px;padding:8px 10px 10px;">';
+        html += '<div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">'
+            + feat + ' <span style="font-weight:400;color:var(--text-muted);">(' + strs.length + ')</span></div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:' + GAP + 'px;">';
+
+        strs.forEach((s, idx) => {
+            const bg   = WAF_COLORS_MAP[s.color] || '#e8944a';
+            const border = s.mismatch ? '2px solid #f87171' : '2px solid transparent';
+            const title = s.title.length > 60 ? s.title.substring(0,60)+'...' : s.title;
+            const confClass = (s.confidence||'').toLowerCase();
+
+            // Encode data for tooltip
+            const data = encodeURIComponent(JSON.stringify({
+                title: s.title,
+                feature: s.feature,
+                cat: s.category,
+                orig: s.original_tag,
+                color: s.color,
+                rc: s.run_change,
+                conf: s.confidence,
+                mismatch: s.mismatch,
+            }));
+
+            html += '<div class="tm-cell" data-info="' + data + '" '
+                + 'style="width:' + STORY_SIZE + 'px;height:' + STORY_SIZE + 'px;'
+                + 'background:' + bg + ';border:' + border + ';border-radius:6px;'
+                + 'cursor:pointer;position:relative;box-sizing:border-box;'
+                + (s.mismatch ? 'box-shadow:0 0 0 1px rgba(248,113,113,0.6);' : '')
+                + '">'
+                // Mismatch indicator dot
+                + (s.mismatch ? '<div style="position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:#f87171;border:1px solid rgba(255,255,255,0.6);"></div>' : '')
+                // Confidence bar at bottom
+                + '<div style="position:absolute;bottom:0;left:0;right:0;height:4px;border-radius:0 0 4px 4px;background:rgba(0,0,0,0.25);">'
+                + '<div style="height:100%;width:' + (confClass==='high'?'100':confClass==='medium'?'60':'30') + '%;background:rgba(255,255,255,0.5);border-radius:0 0 4px 4px;"></div></div>'
+                + '</div>';
+        });
+
+        html += '</div></div>';
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Build legend
+    const colorsUsed = [...new Set(stories.map(s => s.color).filter(Boolean))];
+    const legend = document.getElementById('lin-tm-legend');
+    legend.innerHTML = colorsUsed.map(c =>
+        '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);">'
+        + '<span style="width:12px;height:12px;border-radius:3px;background:' + (WAF_COLORS_MAP[c]||'#e8944a') + ';display:inline-block;"></span>' + c + '</span>'
+    ).join('') +
+    '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);">'
+    + '<span style="width:12px;height:12px;border-radius:3px;border:2px solid #f87171;display:inline-block;"></span>Mismatch</span>';
+
+    // Tooltip on hover
+    container.querySelectorAll('.tm-cell').forEach(cell => {
+        cell.addEventListener('mouseenter', function(e) {
+            const d = JSON.parse(decodeURIComponent(this.dataset.info));
+            const isMismatch = d.mismatch;
+            tooltip.innerHTML =
+                '<div style="font-weight:600;color:var(--text-primary);margin-bottom:6px;line-height:1.4;">' + d.title + '</div>'
+                + '<div style="color:var(--text-muted);margin-bottom:4px;">Feature: ' + (d.feature||'—') + '</div>'
+                + (isMismatch
+                    ? '<div style="margin-bottom:2px;">File Tag: <span style="color:#f87171;text-decoration:line-through;">' + (d.orig||'—') + '</span></div>'
+                    + '<div style="margin-bottom:2px;">AI Category: <span style="color:#4ade80;font-weight:600;">' + (d.cat||'—') + '</span></div>'
+                    : '<div style="margin-bottom:2px;">Category: <span style="color:var(--text-primary);">' + (d.cat||'—') + '</span></div>'
+                )
+                + '<div style="margin-bottom:2px;">Color: ' + (d.color||'—') + ' &nbsp;·&nbsp; ' + (d.rc||'—') + '</div>'
+                + '<div>Confidence: <span class="badge ' + (d.conf||'').toLowerCase() + '" style="font-size:10px;">' + (d.conf||'—') + '</span></div>'
+                + (isMismatch ? '<div style="margin-top:6px;padding:4px 8px;background:rgba(248,113,113,0.15);border-radius:4px;color:#f87171;font-size:11px;">⚠ Mismatch</div>' : '');
+            tooltip.style.display = 'block';
+        });
+        cell.addEventListener('mousemove', function(e) {
+            const x = e.clientX + 14, y = e.clientY + 14;
+            tooltip.style.left = Math.min(x, window.innerWidth - 300) + 'px';
+            tooltip.style.top  = Math.min(y, window.innerHeight - 160) + 'px';
+        });
+        cell.addEventListener('mouseleave', function() {
+            tooltip.style.display = 'none';
+        });
+    });
 }
 
 function linStoryFilter(mode, btn) {
