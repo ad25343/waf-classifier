@@ -1,0 +1,1001 @@
+Row,Parent Feature Summary,Story Summary,WAF Run/Change,WAF Color,WAF Category,WAF Sub-Category,Confidence
+1,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+2,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+3,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+4,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+5,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+6,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+7,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+8,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+9,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+10,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+11,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+12,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+13,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+14,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+15,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+16,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+17,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+18,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+19,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+20,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+21,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+22,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+23,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+24,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+25,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+26,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+27,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+28,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+29,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Change,GREEN,Other Blocked Priority,Security improvements,MEDIUM
+30,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+31,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+32,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+33,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Change,GREEN,Other Blocked Priority,Security improvements,MEDIUM
+34,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+35,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+36,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+37,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+38,Migrated Delivery,Stabilize workloads following platform migration to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+39,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+40,Acquisitions ART Production Support,Stabilize acquisition-related batch processing as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+41,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+42,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+43,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+44,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Change,GREEN,Other Blocked Priority,Security improvements,MEDIUM
+45,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+46,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+47,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+48,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+49,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+50,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,BLACK,Technical Maintenance,Observability,MEDIUM
+51,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+52,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+53,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+54,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+55,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+56,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+57,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+58,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+59,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+60,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+61,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+62,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+63,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+64,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+65,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+66,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+67,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+68,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+69,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+70,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+71,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+72,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+73,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+74,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+75,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+76,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+77,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+78,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+79,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+80,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+81,Continuous Improvement Feature,Optimize deployment workflows for improved reliability as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Optimization,HIGH
+82,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+83,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+84,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+85,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+86,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+87,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+88,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+89,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+90,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+91,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+92,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+93,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+94,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+95,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+96,Migrated Delivery,Stabilize workloads following platform migration to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+97,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+98,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+99,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+100,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+101,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+102,Continuous Improvement Feature,Improve observability and logging standards to drive continuous improvement,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+103,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+104,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+105,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+106,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+107,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+108,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+109,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+110,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+111,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+112,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+113,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+114,Continuous Improvement Feature,Improve observability and logging standards to drive continuous improvement,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+115,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+116,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+117,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+118,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+119,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+120,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+121,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+122,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+123,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+124,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+125,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+126,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+127,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+128,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+129,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+130,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+131,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+132,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+133,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+134,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+135,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+136,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+137,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+138,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+139,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+140,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+141,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+142,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+143,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+144,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+145,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+146,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+147,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+148,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+149,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+150,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+151,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+152,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+153,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+154,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+155,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+156,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+157,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+158,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+159,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+160,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+161,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+162,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+163,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+164,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+165,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+166,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+167,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+168,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+169,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+170,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+171,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+172,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+173,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+174,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+175,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+176,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+177,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+178,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+179,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+180,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+181,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+182,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+183,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+184,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+185,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+186,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+187,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+188,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+189,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+190,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+191,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+192,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+193,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+194,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+195,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+196,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+197,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+198,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+199,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+200,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+201,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+202,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+203,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+204,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+205,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+206,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+207,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+208,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+209,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+210,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+211,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+212,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+213,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+214,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+215,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+216,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+217,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+218,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+219,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+220,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+221,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+222,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+223,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+224,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+225,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+226,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+227,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+228,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+229,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+230,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+231,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+232,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+233,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+234,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+235,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+236,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+237,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+238,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+239,Continuous Improvement Feature,Improve observability and logging standards to drive continuous improvement,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+240,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+241,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+242,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+243,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+244,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+245,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+246,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+247,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+248,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+249,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+250,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+251,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+252,Continuous Improvement Feature,Improve observability and logging standards to drive continuous improvement,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+253,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+254,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+255,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+256,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+257,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+258,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+259,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+260,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+261,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+262,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+263,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+264,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+265,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+266,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+267,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+268,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+269,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+270,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+271,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+272,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+273,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+274,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+275,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+276,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+277,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+278,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+279,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+280,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+281,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+282,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+283,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+284,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+285,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+286,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+287,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+288,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+289,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+290,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+291,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+292,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+293,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+294,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+295,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+296,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+297,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+298,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+299,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,GREEN,Other Blocked Priority,Acquisition improvements,MEDIUM
+300,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+301,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+302,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+303,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+304,Continuous Improvement Feature,Optimize deployment workflows for improved reliability as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Optimization,HIGH
+305,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+306,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+307,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+308,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+309,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+310,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+311,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+312,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+313,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+314,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+315,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+316,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+317,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+318,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+319,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+320,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+321,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+322,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+323,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+324,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+325,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+326,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+327,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+328,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+329,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+330,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+331,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+332,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Change,GREEN,Other Blocked Priority,Acquisition improvements,MEDIUM
+333,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+334,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+335,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+336,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+337,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+338,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+339,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+340,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+341,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+342,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+343,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+344,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+345,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+346,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Change,GREEN,Other Blocked Priority,Security improvements,MEDIUM
+347,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+348,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+349,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+350,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+351,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+352,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+353,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+354,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+355,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+356,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+357,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+358,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+359,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+360,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+361,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+362,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+363,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+364,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+365,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,BLACK,Technical Maintenance,Observability,MEDIUM
+366,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+367,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+368,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+369,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+370,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+371,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+372,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+373,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+374,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+375,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+376,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+377,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+378,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+379,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+380,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+381,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+382,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+383,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+384,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+385,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+386,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+387,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+388,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+389,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+390,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+391,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+392,Acquisitions ART Production Support,Stabilize acquisition-related batch processing as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+393,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+394,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+395,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+396,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+397,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+398,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+399,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+400,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+401,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+402,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+403,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+404,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+405,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+406,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+407,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+408,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+409,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+410,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+411,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+412,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+413,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+414,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+415,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+416,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+417,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+418,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+419,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+420,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+421,Continuous Improvement Feature,Optimize deployment workflows for improved reliability as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Optimization,HIGH
+422,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+423,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+424,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+425,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+426,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+427,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+428,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+429,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+430,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+431,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+432,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+433,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+434,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+435,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+436,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+437,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+438,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+439,Acquisitions ART Production Support,Stabilize acquisition-related batch processing as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+440,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+441,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+442,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+443,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+444,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+445,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+446,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+447,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+448,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+449,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+450,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+451,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+452,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+453,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+454,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+455,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+456,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+457,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+458,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+459,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+460,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+461,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+462,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+463,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+464,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+465,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+466,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+467,Continuous Improvement Feature,Optimize deployment workflows for improved reliability as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Optimization,HIGH
+468,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+469,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+470,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+471,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+472,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+473,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+474,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+475,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+476,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+477,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+478,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+479,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+480,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+481,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+482,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+483,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+484,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+485,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+486,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+487,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+488,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+489,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+490,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+491,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+492,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+493,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+494,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+495,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+496,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+497,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+498,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+499,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+500,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+501,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+502,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+503,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+504,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+505,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+506,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+507,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Run,BLACK,Technical Maintenance,Observability,MEDIUM
+508,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+509,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+510,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+511,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+512,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+513,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+514,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+515,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+516,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+517,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+518,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+519,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+520,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+521,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+522,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+523,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+524,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+525,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+526,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+527,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+528,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+529,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+530,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+531,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+532,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+533,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+534,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+535,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+536,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+537,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+538,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+539,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+540,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+541,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+542,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,BLACK,Technical Maintenance,Observability,MEDIUM
+543,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+544,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+545,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+546,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+547,Continuous Improvement Feature,Optimize deployment workflows for improved reliability as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Optimization,HIGH
+548,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+549,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+550,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+551,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+552,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+553,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+554,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+555,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+556,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+557,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+558,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+559,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+560,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+561,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+562,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+563,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+564,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+565,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Change,GREEN,Other Blocked Priority,Security improvements,MEDIUM
+566,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+567,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+568,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+569,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+570,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+571,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+572,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+573,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+574,Migrated Delivery,Stabilize workloads following platform migration to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+575,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+576,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+577,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+578,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+579,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+580,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+581,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+582,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+583,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+584,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+585,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+586,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+587,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+588,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+589,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+590,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+591,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+592,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+593,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+594,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+595,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+596,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+597,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Change,GREEN,Other Blocked Priority,Security improvements,MEDIUM
+598,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+599,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+600,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+601,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+602,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+603,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+604,Continuous Improvement Feature,Optimize deployment workflows for improved reliability as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Optimization,HIGH
+605,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+606,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+607,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,GREEN,Other Blocked Priority,Acquisition improvements,MEDIUM
+608,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+609,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+610,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+611,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+612,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+613,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+614,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+615,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+616,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+617,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+618,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+619,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+620,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+621,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+622,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+623,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+624,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+625,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+626,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+627,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+628,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+629,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+630,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+631,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+632,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+633,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+634,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+635,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+636,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+637,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+638,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+639,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+640,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+641,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+642,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+643,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+644,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+645,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+646,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+647,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+648,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+649,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+650,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+651,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+652,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+653,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+654,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+655,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+656,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+657,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+658,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+659,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+660,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+661,Migrated Delivery,Stabilize workloads following platform migration to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+662,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+663,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+664,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+665,Migrated Delivery,Stabilize workloads following platform migration to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+666,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+667,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+668,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+669,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+670,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+671,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+672,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+673,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+674,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+675,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+676,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+677,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+678,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+679,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+680,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+681,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+682,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,GREEN,Other Blocked Priority,Acquisition improvements,MEDIUM
+683,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+684,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+685,Acquisitions ART Production Support,Stabilize acquisition-related batch processing as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+686,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+687,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+688,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+689,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+690,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+691,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+692,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+693,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+694,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+695,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Change,GREEN,Other Blocked Priority,Acquisition improvements,MEDIUM
+696,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+697,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+698,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+699,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+700,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+701,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+702,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+703,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+704,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+705,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+706,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+707,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+708,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+709,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+710,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+711,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+712,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+713,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+714,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+715,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+716,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+717,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+718,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+719,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+720,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+721,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+722,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+723,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+724,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+725,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+726,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+727,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+728,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+729,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+730,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+731,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+732,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+733,Acquisitions ART Production Support,Stabilize acquisition-related batch processing as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+734,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+735,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+736,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+737,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+738,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+739,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+740,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+741,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+742,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+743,Acquisitions ART Production Support,Stabilize acquisition-related batch processing as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+744,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+745,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+746,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+747,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+748,Continuous Improvement Feature,Improve observability and logging standards to drive continuous improvement,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+749,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+750,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+751,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+752,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+753,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+754,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+755,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+756,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+757,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+758,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+759,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+760,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+761,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+762,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+763,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+764,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+765,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+766,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+767,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+768,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+769,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+770,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+771,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+772,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+773,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+774,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+775,Acquisitions ART Production Support,Stabilize acquisition-related batch processing as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+776,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+777,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+778,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+779,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+780,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+781,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+782,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+783,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+784,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+785,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+786,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+787,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+788,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+789,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+790,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+791,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+792,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+793,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+794,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+795,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+796,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+797,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+798,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+799,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+800,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+801,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+802,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+803,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+804,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+805,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+806,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+807,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+808,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+809,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+810,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+811,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+812,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+813,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+814,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+815,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+816,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+817,Acquisitions ART Production Support,Stabilize acquisition-related batch processing as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+818,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+819,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+820,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+821,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to drive continuous improvement,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+822,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Change,GREEN,Other Blocked Priority,Resilience improvements,MEDIUM
+823,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+824,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+825,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+826,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+827,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+828,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+829,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+830,Security & Vulnerability Management,Harden service configurations based on security findings to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+831,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+832,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+833,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+834,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+835,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+836,Security & Vulnerability Management,Harden service configurations based on security findings as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+837,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+838,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+839,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+840,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+841,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+842,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+843,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+844,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+845,Continuous Improvement Feature,Improve observability and logging standards to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+846,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to unblock dependent teams,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+847,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+848,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+849,Security & Vulnerability Management,Update security scanning rules and suppression logic as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+850,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+851,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+852,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+853,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+854,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+855,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+856,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+857,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+858,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+859,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+860,Security & Vulnerability Management,Update security scanning rules and suppression logic to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+861,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+862,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+863,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+864,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+865,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+866,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+867,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+868,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+869,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+870,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+871,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+872,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+873,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+874,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+875,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+876,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+877,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+878,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+879,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+880,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+881,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+882,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,YELLOW,Top Divisional Priority,CI initiative,MEDIUM
+883,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+884,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Security initiative,MEDIUM
+885,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+886,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to enable required business functionality,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+887,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+888,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Acquisition integration,MEDIUM
+889,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+890,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+891,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+892,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+893,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+894,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+895,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+896,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Tech debt reduction,HIGH
+897,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+898,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+899,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+900,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+901,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+902,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+903,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+904,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+905,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+906,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+907,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+908,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+909,Continuous Improvement Feature,Improve observability and logging standards to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+910,Security & Vulnerability Management,Update security scanning rules and suppression logic to unblock dependent teams,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+911,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+912,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+913,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+914,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to drive continuous improvement,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+915,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+916,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+917,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+918,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+919,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Change,GREEN,Other Blocked Priority,Post-migration improvements,MEDIUM
+920,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Security hardening,HIGH
+921,Continuous Improvement Feature,Improve observability and logging standards to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+922,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+923,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+924,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,YELLOW,Top Divisional Priority,SRE initiative,MEDIUM
+925,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Run,BLACK,Technical Maintenance,Optimization,MEDIUM
+926,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to enable required business functionality,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+927,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Operational improvement,MEDIUM
+928,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+929,Migrated Delivery,Resolve post-migration defects impacting service delivery to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+930,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+931,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+932,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to drive continuous improvement,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+933,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+934,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+935,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+936,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+937,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to unblock dependent teams,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+938,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+939,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+940,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to unblock dependent teams,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+941,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to enable required business functionality,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+942,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+943,Migrated Delivery,Address technical debt introduced during migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+944,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+945,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+946,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+947,Migrated Delivery,Address technical debt introduced during migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+948,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+949,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+950,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+951,Migrated Delivery,Resolve post-migration defects impacting service delivery as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+952,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+953,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+954,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+955,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,BLACK,Technical Maintenance,Platform upgrades,MEDIUM
+956,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+957,Acquisitions ART Production Support,Stabilize acquisition-related batch processing to support production operations,Run,GRAY,KTLO (Keep the Lights On),Batch operations,HIGH
+958,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to unblock dependent teams,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+959,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+960,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Process transformation,MEDIUM
+961,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Acquisition operations,MEDIUM
+962,Migrated Delivery,Resolve post-migration defects impacting service delivery to unblock dependent teams,Run,BLACK,Technical Maintenance,Platform upgrades,HIGH
+963,Continuous Improvement Feature,Optimize deployment workflows for improved reliability to drive continuous improvement,Change,GREEN,Other Blocked Priority,Incremental improvements,MEDIUM
+964,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Reliability improvement,HIGH
+965,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Run,BLACK,Business Maintenance,Process support changes,MEDIUM
+966,Security & Vulnerability Management,Update security scanning rules and suppression logic to drive continuous improvement,Change,ORANGE,Enterprise Strategic Priority,Security infrastructure,MEDIUM
+967,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+968,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+969,Security & Vulnerability Management,Harden service configurations based on security findings to unblock dependent teams,Run,GRAY,KTLO (Keep the Lights On),Security operations,MEDIUM
+970,Migrated Delivery,Stabilize workloads following platform migration as part of ongoing maintenance activities,Run,BLACK,Business Maintenance,Process support changes,HIGH
+971,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+972,Migrated Delivery,Address technical debt introduced during migration to unblock dependent teams,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+973,Security & Vulnerability Management,Harden service configurations based on security findings to enable required business functionality,Run,BLACK,Technical Maintenance,Security hardening,MEDIUM
+974,Continuous Improvement Feature,Refactor pipeline components to reduce operational overhead to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+975,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Migration transformation,MEDIUM
+976,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+977,Migrated Delivery,Stabilize workloads following platform migration to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+978,Acquisitions ART Production Support,Resolve operational issues affecting downstream integrations to drive continuous improvement,Change,GREEN,Other Blocked Priority,Acquisition improvements,MEDIUM
+979,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to enable required business functionality,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM
+980,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to enable required business functionality,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+981,SRE Delivery: Chaos Engineering,Refine chaos experiment execution and rollback mechanisms to enable required business functionality,Run,BLACK,Technical Maintenance,Reliability improvement,MEDIUM
+982,Migrated Delivery,Resolve post-migration defects impacting service delivery to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+983,Migrated Delivery,Stabilize workloads following platform migration to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+984,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+985,Continuous Improvement Feature,Improve observability and logging standards as part of ongoing maintenance activities,Run,BLACK,Technical Maintenance,Observability,HIGH
+986,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+987,Security & Vulnerability Management,Update security scanning rules and suppression logic to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+988,Security & Vulnerability Management,Harden service configurations based on security findings to support production operations,Run,GRAY,KTLO (Keep the Lights On),Security operations,HIGH
+989,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+990,Migrated Delivery,Address technical debt introduced during migration to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+991,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to drive continuous improvement,Run,GRAY,KTLO (Keep the Lights On),Reliability operations,MEDIUM
+992,Migrated Delivery,Stabilize workloads following platform migration to unblock dependent teams,Change,YELLOW,Top Divisional Priority,Migration completion,MEDIUM
+993,Security & Vulnerability Management,Remediate identified vulnerabilities in shared services to support production operations,Run,RED,Regulatory (Operational),Compliance operations,MEDIUM
+994,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to support production operations,Run,GRAY,KTLO (Keep the Lights On),Operational support,HIGH
+995,Migrated Delivery,Resolve post-migration defects impacting service delivery to enable required business functionality,Run,GRAY,KTLO (Keep the Lights On),Post-migration stabilization,MEDIUM
+996,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,GREEN,Other Blocked Priority,Acquisition improvements,MEDIUM
+997,SRE Delivery: Chaos Engineering,Improve resilience testing coverage for critical workloads to support production operations,Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix,HIGH
+998,Migrated Delivery,Address technical debt introduced during migration to enable required business functionality,Run,BLACK,Technical Maintenance,Tech debt reduction,MEDIUM
+999,SRE Delivery: Chaos Engineering,Stabilize fault injection scenarios for distributed services to unblock dependent teams,Change,ORANGE,Enterprise Strategic Priority,Reliability engineering,MEDIUM
+1000,Acquisitions ART Production Support,Address production support gaps impacting acquisition flows to drive continuous improvement,Change,YELLOW,Top Divisional Priority,Acquisition initiative,MEDIUM

@@ -9,15 +9,31 @@ import os
 import json
 import csv
 import sqlite3
+import threading
+import uuid
 from datetime import datetime
 import pandas as pd
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory, g, redirect
 from anthropic import Anthropic
+
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+if os.path.exists(_env_path):
+    with open(_env_path) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith('#') and '=' in _line:
+                _k, _v = _line.split('=', 1)
+                os.environ[_k.strip()] = _v.strip()
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max upload
 app.secret_key = os.urandom(24)
+
+# ── Background Job Tracking ───────────────────────────────────────────
+# Stores in-progress and completed bulk-verify jobs for async processing
+verify_jobs = {}  # job_id -> { status, progress, total_batches, completed_batches, results, error, ... }
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "waf_history.db")
 
@@ -59,7 +75,8 @@ def init_db():
             team TEXT DEFAULT 'default',
             user_name TEXT,
             epic TEXT DEFAULT '',
-            parent_feature TEXT DEFAULT ''
+            parent_feature TEXT DEFAULT '',
+            upload_id INTEGER DEFAULT NULL
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -89,6 +106,10 @@ def init_db():
         pass  # Column already exists
     try:
         conn.execute("ALTER TABLE classifications ADD COLUMN parent_feature TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+    try:
+        conn.execute("ALTER TABLE classifications ADD COLUMN upload_id INTEGER DEFAULT NULL")
     except sqlite3.OperationalError:
         pass  # Column already exists
     conn.close()
@@ -725,45 +746,44 @@ def get_waf_definitions():
 
 @app.route("/api/dashboard/summary", methods=["GET"])
 def dashboard_summary():
-    """Get summary stats for the dashboard."""
+    """Get summary stats for the dashboard. Optional ?upload_id= filter."""
     db = get_db()
-    total = db.execute("SELECT COUNT(*) FROM classifications").fetchone()[0]
-    approved = db.execute("SELECT COUNT(*) FROM classifications WHERE approved=1").fetchone()[0]
-    mismatches = db.execute("SELECT COUNT(*) FROM classifications WHERE was_mismatch=1").fetchone()[0]
+    uid = request.args.get("upload_id", "")
+    wh = " WHERE upload_id = ?" if uid else ""
+    wh_and = " AND upload_id = ?" if uid else ""
+    params = [int(uid)] if uid else []
 
-    # Category distribution
+    total = db.execute(f"SELECT COUNT(*) FROM classifications{wh}", params).fetchone()[0]
+    approved = db.execute(f"SELECT COUNT(*) FROM classifications WHERE approved=1{wh_and}", params).fetchone()[0]
+    mismatches = db.execute(f"SELECT COUNT(*) FROM classifications WHERE was_mismatch=1{wh_and}", params).fetchone()[0]
+
     categories = db.execute(
-        "SELECT waf_category, COUNT(*) as cnt FROM classifications GROUP BY waf_category ORDER BY cnt DESC"
+        f"SELECT waf_category, COUNT(*) as cnt FROM classifications{wh} GROUP BY waf_category ORDER BY cnt DESC", params
     ).fetchall()
 
-    # Color distribution
     colors = db.execute(
-        "SELECT waf_color, COUNT(*) as cnt FROM classifications WHERE waf_color != '' GROUP BY waf_color ORDER BY cnt DESC"
+        f"SELECT waf_color, COUNT(*) as cnt FROM classifications WHERE waf_color != ''{wh_and} GROUP BY waf_color ORDER BY cnt DESC", params
     ).fetchall()
 
-    # Confidence distribution
     confidence = db.execute(
-        "SELECT confidence, COUNT(*) as cnt FROM classifications WHERE confidence != '' GROUP BY confidence ORDER BY cnt DESC"
+        f"SELECT confidence, COUNT(*) as cnt FROM classifications WHERE confidence != ''{wh_and} GROUP BY confidence ORDER BY cnt DESC", params
     ).fetchall()
 
-    # Run/Change distribution
     run_change = db.execute(
-        "SELECT run_change, COUNT(*) as cnt FROM classifications WHERE run_change != '' GROUP BY run_change ORDER BY cnt DESC"
+        f"SELECT run_change, COUNT(*) as cnt FROM classifications WHERE run_change != ''{wh_and} GROUP BY run_change ORDER BY cnt DESC", params
     ).fetchall()
 
-    # Daily trend (last 30 days)
     daily = db.execute(
-        """SELECT DATE(timestamp) as day, COUNT(*) as cnt
-           FROM classifications
+        f"""SELECT DATE(timestamp) as day, COUNT(*) as cnt
+           FROM classifications{wh}
            GROUP BY DATE(timestamp)
-           ORDER BY day DESC LIMIT 30"""
+           ORDER BY day DESC LIMIT 30""", params
     ).fetchall()
 
-    # Recent classifications
     recent = db.execute(
-        """SELECT id, timestamp, story_title, waf_category, waf_color,
+        f"""SELECT id, timestamp, story_title, waf_category, waf_color,
                   confidence, was_mismatch, approved
-           FROM classifications ORDER BY id DESC LIMIT 20"""
+           FROM classifications{wh} ORDER BY id DESC LIMIT 20""", params
     ).fetchall()
 
     return jsonify({
@@ -785,18 +805,85 @@ def dashboard_summary():
     })
 
 
+@app.route("/api/dashboard/stories", methods=["GET"])
+def dashboard_stories():
+    """Get filtered story list for drill-down. Supports ?filter=mismatches|category|color|confidence&value=X&upload_id=Y"""
+    db = get_db()
+    uid = request.args.get("upload_id", "")
+    filt = request.args.get("filter", "")
+    value = request.args.get("value", "")
+    page = int(request.args.get("page", "1"))
+    per_page = int(request.args.get("per_page", "100"))
+
+    where_clauses = []
+    params = []
+    if uid:
+        where_clauses.append("upload_id = ?")
+        params.append(int(uid))
+
+    if filt == "mismatches":
+        where_clauses.append("was_mismatch = 1")
+    elif filt == "approved":
+        where_clauses.append("approved = 1")
+    elif filt == "category" and value:
+        where_clauses.append("waf_category = ?")
+        params.append(value)
+    elif filt == "color" and value:
+        where_clauses.append("waf_color = ?")
+        params.append(value)
+    elif filt == "confidence" and value:
+        where_clauses.append("confidence = ?")
+        params.append(value)
+    elif filt == "run_change" and value:
+        where_clauses.append("run_change = ?")
+        params.append(value)
+
+    where = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+    total = db.execute(f"SELECT COUNT(*) FROM classifications{where}", params).fetchone()[0]
+
+    offset = (page - 1) * per_page
+    rows = db.execute(
+        f"""SELECT id, story_title, story_description, waf_category, original_tag,
+                   waf_color, run_change, confidence, was_mismatch, approved, team,
+                   epic, parent_feature, timestamp
+            FROM classifications{where}
+            ORDER BY id DESC LIMIT ? OFFSET ?""",
+        params + [per_page, offset]
+    ).fetchall()
+
+    return jsonify({
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": (total + per_page - 1) // per_page,
+        "stories": [{
+            "id": r["id"], "title": r["story_title"], "description": (r["story_description"] or "")[:200],
+            "category": r["waf_category"], "original_tag": r["original_tag"],
+            "color": r["waf_color"], "run_change": r["run_change"],
+            "confidence": r["confidence"], "mismatch": bool(r["was_mismatch"]),
+            "approved": bool(r["approved"]), "team": r["team"],
+            "epic": r["epic"], "feature": r["parent_feature"],
+            "timestamp": r["timestamp"],
+        } for r in rows]
+    })
+
+
 @app.route("/api/history/sprints", methods=["GET"])
 def history_sprints():
     """Get sprint-over-sprint classification trends.
-    Sprints are 2-week windows. Query param: ?sprints=10 (default 10)."""
+    Sprints are 2-week windows. Query params: ?sprints=10&upload_id="""
     db = get_db()
     num_sprints = int(request.args.get("sprints", 10))
+    uid = request.args.get("upload_id", "")
+    wh = " WHERE upload_id = ?" if uid else ""
+    params = [int(uid)] if uid else []
 
-    # Get all classifications ordered by timestamp
     rows = db.execute(
-        """SELECT timestamp, waf_category, waf_color, run_change, confidence,
+        f"""SELECT timestamp, waf_category, waf_color, run_change, confidence,
                   was_mismatch, approved, team
-           FROM classifications ORDER BY timestamp ASC"""
+           FROM classifications{wh} ORDER BY timestamp ASC""",
+        params
     ).fetchall()
 
     if not rows:
@@ -861,14 +948,18 @@ def history_sprints():
 
 @app.route("/api/history/monthly", methods=["GET"])
 def history_monthly():
-    """Get monthly rollup reports with period-over-period comparisons."""
+    """Get monthly rollup reports with period-over-period comparisons. Optional ?upload_id="""
     db = get_db()
     num_months = int(request.args.get("months", 12))
+    uid = request.args.get("upload_id", "")
+    wh = " WHERE upload_id = ?" if uid else ""
+    params = [int(uid)] if uid else []
 
     rows = db.execute(
-        """SELECT timestamp, waf_category, waf_color, run_change, confidence,
+        f"""SELECT timestamp, waf_category, waf_color, run_change, confidence,
                   was_mismatch, approved, team
-           FROM classifications ORDER BY timestamp ASC"""
+           FROM classifications{wh} ORDER BY timestamp ASC""",
+        params
     ).fetchall()
 
     if not rows:
@@ -944,9 +1035,14 @@ def history_timeline():
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 50))
 
+    uid = request.args.get("upload_id", "")
+
     where = []
     params = []
 
+    if uid:
+        where.append("upload_id = ?")
+        params.append(int(uid))
     if date_from:
         where.append("timestamp >= ?")
         params.append(date_from)
@@ -1060,50 +1156,70 @@ def history_import():
         cat_col = find_col(["waf category", "waf_category", "category"])
         color_col = find_col(["waf color", "waf_color", "color"])
         rc_col = find_col(["run/change", "run_change", "run change"])
+        subcat_col = find_col(["sub-category", "sub_category", "subcategory", "waf sub"])
         conf_col = find_col(["confidence", "conf"])
         team_col = find_col(["team", "squad", "group"])
         epic_col = find_col(["epic", "initiative", "program"])
         feature_col = find_col(["feature", "parent feature", "parent_feature", "capability"])
+        ts_col = find_col(["timestamp", "date", "created", "created_at"])
 
         if not title_col or not cat_col:
             return jsonify({"error": "File must have at least 'Story Title' and 'WAF Category' columns"}), 400
 
-        imported = 0
         db = get_db()
+
+        # Create upload_history record FIRST so we get an upload_id
+        cursor = db.execute(
+            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
+               VALUES (?, ?, ?, 0, ?, 'importing')""",
+            (datetime.now().isoformat(), filename, len(df), ext)
+        )
+        upload_id = cursor.lastrowid
+        db.commit()
+
+        imported = 0
         for _, row in df.iterrows():
             title = str(row.get(title_col, "")).strip()
             if not title or title == "nan":
                 continue
+
+            # Use CSV timestamp if available, otherwise now()
+            ts = datetime.now().isoformat()
+            if ts_col:
+                raw_ts = str(row.get(ts_col, "")).strip()
+                if raw_ts and raw_ts != "nan":
+                    ts = raw_ts
+
             db.execute(
                 """INSERT INTO classifications
                    (timestamp, story_title, story_description, waf_category,
                     waf_subcategory, waf_color, run_change, confidence,
-                    was_mismatch, original_tag, approved, team, epic, parent_feature)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 0, ?, ?, ?)""",
-                (datetime.now().isoformat(),
+                    was_mismatch, original_tag, approved, team, epic, parent_feature, upload_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 1, ?, ?, ?, ?)""",
+                (ts,
                  title,
                  str(row.get(desc_col, "")).strip() if desc_col else "",
                  str(row.get(cat_col, "")).strip() if cat_col else "",
-                 "",
+                 str(row.get(subcat_col, "")).strip() if subcat_col else "",
                  str(row.get(color_col, "")).strip() if color_col else "",
                  str(row.get(rc_col, "")).strip() if rc_col else "",
                  str(row.get(conf_col, "")).strip() if conf_col else "",
                  str(row.get(team_col, "default")).strip() if team_col else "default",
                  str(row.get(epic_col, "")).strip() if epic_col else "",
-                 str(row.get(feature_col, "")).strip() if feature_col else "")
+                 str(row.get(feature_col, "")).strip() if feature_col else "",
+                 upload_id)
             )
             imported += 1
         db.commit()
 
-        # Record in upload history
+        # Update upload_history with final count and status
         db.execute(
-            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
-               VALUES (?, ?, ?, ?, ?, 'completed')""",
-            (datetime.now().isoformat(), filename, len(df), imported, ext)
+            "UPDATE upload_history SET imported_count = ?, status = 'completed' WHERE id = ?",
+            (imported, upload_id)
         )
         db.commit()
 
-        return jsonify({"success": True, "imported": imported, "filename": filename})
+        return jsonify({"success": True, "imported": imported, "filename": filename, "upload_id": upload_id})
     except Exception as e:
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
 
@@ -1400,10 +1516,163 @@ def history_export_xlsx():
     )
 
 
+def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_short):
+    """Classify a single batch of stories. Returns list of result dicts."""
+    import re
+    client = Anthropic(api_key=api_key)
+    batch_prompt = "Classify each story below into the correct WAF category. For EACH story, respond with EXACTLY this format on separate lines:\n\n"
+    batch_prompt += "STORY 1: [WAF Category] | [WAF Sub-Category] | [WAF Color] | [Run or Change] | [Confidence: HIGH/MEDIUM/LOW] | [One-line reasoning]\n\n"
+    batch_prompt += "Here are the stories:\n\n"
+    for j, s in enumerate(batch, 1):
+        batch_prompt += f"STORY {j}: {s['title']}"
+        if s["description"]:
+            batch_prompt += f"\nDescription: {s['description'][:300]}"
+        batch_prompt += "\n\n"
+
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=8000,
+            system=system_prompt,
+            messages=[{"role": "user", "content": batch_prompt}]
+        )
+        ai_text = response.content[0].text
+
+        ai_lines = []
+        for l in ai_text.split("\n"):
+            stripped = l.strip().replace("**", "").replace("*", "")
+            if re.match(r'^STORY\s+\d+', stripped, re.IGNORECASE):
+                ai_lines.append(stripped)
+
+        results = []
+        for j, s in enumerate(batch):
+            ai_cat = ai_color = ai_rc = ai_conf = ai_reason = ai_subcat = ""
+            if j < len(ai_lines):
+                parts = ai_lines[j].split("|")
+                first_part = parts[0] if parts else ""
+                colon_idx = first_part.find(":")
+                if colon_idx >= 0:
+                    first_part = first_part[colon_idx + 1:]
+                if len(parts) >= 1: ai_cat = first_part.strip()
+                if len(parts) >= 2: ai_subcat = parts[1].strip()
+                if len(parts) >= 3: ai_color = parts[2].strip()
+                if len(parts) >= 4: ai_rc = parts[3].strip()
+                if len(parts) >= 5: ai_conf = parts[4].strip().replace("Confidence:", "").strip()
+                if len(parts) >= 6: ai_reason = parts[5].strip()
+
+            is_match = (
+                s["file_category"].lower().strip() == ai_cat.lower().strip()
+                if s["file_category"] and ai_cat else None
+            )
+            results.append({
+                "index": batch_offset + j,
+                "title": s["title"], "description": s["description"][:200],
+                "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
+                "timestamp": s["timestamp"], "file_category": s["file_category"],
+                "file_color": s["file_color"], "file_run_change": s["file_run_change"],
+                "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
+                "ai_category": ai_cat, "ai_subcategory": ai_subcat, "ai_color": ai_color,
+                "ai_run_change": ai_rc, "ai_confidence": ai_conf, "ai_reason": ai_reason,
+                "is_match": is_match,
+            })
+        return results
+    except Exception as e:
+        print(f"[BULK-VERIFY][{job_id_short}] ERROR: {type(e).__name__}: {str(e)[:300]}")
+        results = []
+        for j, s in enumerate(batch):
+            results.append({
+                "index": batch_offset + j,
+                "title": s["title"], "description": s["description"][:200],
+                "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
+                "timestamp": s["timestamp"], "file_category": s["file_category"],
+                "file_color": s["file_color"], "file_run_change": s["file_run_change"],
+                "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
+                "ai_category": "", "ai_subcategory": "", "ai_color": "", "ai_run_change": "",
+                "ai_confidence": "", "ai_reason": f"API error: {str(e)[:100]}", "is_match": None,
+            })
+        return results
+
+
+def _run_verify_job(job_id, stories, filename, ext, row_count):
+    """Background thread: classify stories using concurrent workers for speed."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    job = verify_jobs[job_id]
+
+    try:
+        system_prompt = build_system_prompt()
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+
+        batch_size = 50
+        batches = []
+        for i in range(0, len(stories), batch_size):
+            batches.append((stories[i:i + batch_size], i))
+
+        total_batches = len(batches)
+        job["total_batches"] = total_batches
+
+        # Run up to 5 concurrent API calls for speed
+        all_results = [None] * total_batches
+        completed = [0]  # mutable counter for thread safety
+        lock = threading.Lock()
+
+        def process_batch(batch_idx, batch, offset):
+            result = _classify_single_batch(batch, offset, system_prompt, api_key, job_id[:8])
+            with lock:
+                all_results[batch_idx] = result
+                completed[0] += 1
+                job["completed_batches"] = completed[0]
+                job["stories_processed"] = min(completed[0] * batch_size, len(stories))
+                print(f"[BULK-VERIFY][{job_id[:8]}] Batch {completed[0]}/{total_batches} done")
+            return result
+
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {}
+            for idx, (batch, offset) in enumerate(batches):
+                f = executor.submit(process_batch, idx, batch, offset)
+                futures[f] = idx
+
+            for f in as_completed(futures):
+                f.result()  # raise any exceptions
+
+        # Flatten results in order
+        results = []
+        for batch_result in all_results:
+            if batch_result:
+                results.extend(batch_result)
+
+        matches = sum(1 for r in results if r["is_match"] is True)
+        mismatches = sum(1 for r in results if r["is_match"] is False)
+        untagged = sum(1 for r in results if r["is_match"] is None)
+
+        # Record in upload history using a fresh DB connection (we're in a thread)
+        db = sqlite3.connect(DB_PATH)
+        db.row_factory = sqlite3.Row
+        cursor = db.execute(
+            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
+               VALUES (?, ?, ?, ?, ?, 'verified')""",
+            (datetime.now().isoformat(), filename, row_count, len(results), ext)
+        )
+        verify_upload_id = cursor.lastrowid
+        db.commit()
+        db.close()
+
+        job["status"] = "done"
+        job["upload_id"] = verify_upload_id
+        job["results"] = results
+        job["matches"] = matches
+        job["mismatches"] = mismatches
+        job["untagged"] = untagged
+        print(f"[BULK-VERIFY][{job_id[:8]}] COMPLETE: {len(results)} stories, {matches} matches, {mismatches} mismatches, {untagged} untagged")
+
+    except Exception as e:
+        job["status"] = "error"
+        job["error"] = str(e)
+        print(f"[BULK-VERIFY][{job_id[:8]}] FATAL ERROR: {str(e)}")
+
+
 @app.route("/api/bulk-verify", methods=["POST"])
 def bulk_verify():
-    """Upload a file of stories, AI-classify each one, and return side-by-side comparison.
-    The file's existing WAF tags are compared against AI recommendations."""
+    """Upload a file of stories, start async AI classification, return job_id for polling."""
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
@@ -1434,148 +1703,196 @@ def bulk_verify():
         cat_col = find_col(["waf category", "waf_category", "category"])
         color_col = find_col(["waf color", "waf_color", "color"])
         rc_col = find_col(["run/change", "run_change", "run change"])
+        subcat_col = find_col(["sub-category", "sub_category", "subcategory", "waf sub"])
+        conf_col = find_col(["confidence", "conf"])
         team_col = find_col(["team", "squad", "group"])
         epic_col = find_col(["epic", "initiative", "program"])
         feature_col = find_col(["feature", "parent feature", "parent_feature", "capability"])
+        ts_col = find_col(["timestamp", "date", "created", "created_at"])
 
         if not title_col:
             return jsonify({"error": "File must have a 'Story Title' or 'Summary' column"}), 400
 
-        # Build stories list (limit to 100 for API cost control)
         stories = []
-        for _, row in df.head(100).iterrows():
+        for _, row in df.iterrows():
             title = str(row.get(title_col, "")).strip()
             if not title or title == "nan":
                 continue
+            ts = datetime.now().isoformat()
+            if ts_col:
+                raw_ts = str(row.get(ts_col, "")).strip()
+                if raw_ts and raw_ts != "nan":
+                    ts = raw_ts
             stories.append({
                 "title": title,
                 "description": str(row.get(desc_col, "")).strip() if desc_col else "",
                 "file_category": str(row.get(cat_col, "")).strip() if cat_col else "",
                 "file_color": str(row.get(color_col, "")).strip() if color_col else "",
                 "file_run_change": str(row.get(rc_col, "")).strip() if rc_col else "",
+                "file_subcategory": str(row.get(subcat_col, "")).strip() if subcat_col else "",
+                "file_confidence": str(row.get(conf_col, "")).strip() if conf_col else "",
                 "team": str(row.get(team_col, "default")).strip() if team_col else "default",
                 "epic": str(row.get(epic_col, "")).strip() if epic_col else "",
                 "parent_feature": str(row.get(feature_col, "")).strip() if feature_col else "",
+                "timestamp": ts,
             })
 
         if not stories:
             return jsonify({"error": "No valid stories found in file"}), 400
 
-        # Batch classify using Claude
-        import re
-        client = get_client()
-        system_prompt = build_system_prompt()
-
-        # Build a batch prompt for efficiency (classify in batches of 10)
-        results = []
-        batch_size = 10
-        for i in range(0, len(stories), batch_size):
-            batch = stories[i:i + batch_size]
-            batch_prompt = "Classify each story below into the correct WAF category. For EACH story, respond with EXACTLY this format on separate lines:\n\n"
-            batch_prompt += "STORY 1: [WAF Category] | [WAF Sub-Category] | [WAF Color] | [Run or Change] | [Confidence: HIGH/MEDIUM/LOW] | [One-line reasoning]\n\n"
-            batch_prompt += "Here are the stories:\n\n"
-
-            for j, s in enumerate(batch, 1):
-                batch_prompt += f"STORY {j}: {s['title']}"
-                if s["description"]:
-                    batch_prompt += f"\nDescription: {s['description'][:300]}"
-                batch_prompt += "\n\n"
-
-            try:
-                response = client.messages.create(
-                    model="claude-sonnet-4-5-20250929",
-                    max_tokens=3000,
-                    system=system_prompt,
-                    messages=[{"role": "user", "content": batch_prompt}]
-                )
-                ai_text = response.content[0].text
-
-                # Parse AI responses
-                ai_lines = [l.strip() for l in ai_text.split("\n") if l.strip().startswith("STORY")]
-                for j, s in enumerate(batch):
-                    ai_cat = ai_color = ai_rc = ai_conf = ai_reason = ai_subcat = ""
-                    if j < len(ai_lines):
-                        parts = ai_lines[j].split("|")
-                        # Strip "STORY N:" prefix from first part
-                        first_part = parts[0] if parts else ""
-                        colon_idx = first_part.find(":")
-                        if colon_idx >= 0:
-                            first_part = first_part[colon_idx + 1:]
-                        if len(parts) >= 1: ai_cat = first_part.strip()
-                        if len(parts) >= 2: ai_subcat = parts[1].strip()
-                        if len(parts) >= 3: ai_color = parts[2].strip()
-                        if len(parts) >= 4: ai_rc = parts[3].strip()
-                        if len(parts) >= 5: ai_conf = parts[4].strip().replace("Confidence:", "").strip()
-                        if len(parts) >= 6: ai_reason = parts[5].strip()
-
-                    is_match = (
-                        s["file_category"].lower().strip() == ai_cat.lower().strip()
-                        if s["file_category"] and ai_cat else None
+        # For small files (<=200 stories), process synchronously for speed
+        if len(stories) <= 200:
+            import re
+            client = get_client()
+            system_prompt = build_system_prompt()
+            results = []
+            batch_size = 25
+            for i in range(0, len(stories), batch_size):
+                batch = stories[i:i + batch_size]
+                batch_prompt = "Classify each story below into the correct WAF category. For EACH story, respond with EXACTLY this format on separate lines:\n\n"
+                batch_prompt += "STORY 1: [WAF Category] | [WAF Sub-Category] | [WAF Color] | [Run or Change] | [Confidence: HIGH/MEDIUM/LOW] | [One-line reasoning]\n\n"
+                batch_prompt += "Here are the stories:\n\n"
+                for j, s in enumerate(batch, 1):
+                    batch_prompt += f"STORY {j}: {s['title']}"
+                    if s["description"]:
+                        batch_prompt += f"\nDescription: {s['description'][:300]}"
+                    batch_prompt += "\n\n"
+                try:
+                    print(f"[BULK-VERIFY] Sending batch {i//batch_size + 1} ({len(batch)} stories) to Claude...")
+                    response = client.messages.create(
+                        model="claude-sonnet-4-5-20250929", max_tokens=6000,
+                        system=system_prompt,
+                        messages=[{"role": "user", "content": batch_prompt}]
                     )
+                    ai_text = response.content[0].text
+                    ai_lines = []
+                    for l in ai_text.split("\n"):
+                        stripped = l.strip().replace("**", "").replace("*", "")
+                        if re.match(r'^STORY\s+\d+', stripped, re.IGNORECASE):
+                            ai_lines.append(stripped)
+                    for j, s in enumerate(batch):
+                        ai_cat = ai_color = ai_rc = ai_conf = ai_reason = ai_subcat = ""
+                        if j < len(ai_lines):
+                            parts = ai_lines[j].split("|")
+                            first_part = parts[0] if parts else ""
+                            colon_idx = first_part.find(":")
+                            if colon_idx >= 0:
+                                first_part = first_part[colon_idx + 1:]
+                            if len(parts) >= 1: ai_cat = first_part.strip()
+                            if len(parts) >= 2: ai_subcat = parts[1].strip()
+                            if len(parts) >= 3: ai_color = parts[2].strip()
+                            if len(parts) >= 4: ai_rc = parts[3].strip()
+                            if len(parts) >= 5: ai_conf = parts[4].strip().replace("Confidence:", "").strip()
+                            if len(parts) >= 6: ai_reason = parts[5].strip()
+                        is_match = (
+                            s["file_category"].lower().strip() == ai_cat.lower().strip()
+                            if s["file_category"] and ai_cat else None
+                        )
+                        results.append({
+                            "index": i + j, "title": s["title"], "description": s["description"][:200],
+                            "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
+                            "timestamp": s["timestamp"], "file_category": s["file_category"],
+                            "file_color": s["file_color"], "file_run_change": s["file_run_change"],
+                            "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
+                            "ai_category": ai_cat, "ai_subcategory": ai_subcat, "ai_color": ai_color,
+                            "ai_run_change": ai_rc, "ai_confidence": ai_conf, "ai_reason": ai_reason,
+                            "is_match": is_match,
+                        })
+                except Exception as e:
+                    print(f"[BULK-VERIFY] ERROR in batch {i//batch_size + 1}: {type(e).__name__}: {str(e)[:300]}")
+                    for s in batch:
+                        results.append({
+                            "index": len(results), "title": s["title"], "description": s["description"][:200],
+                            "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
+                            "timestamp": s["timestamp"], "file_category": s["file_category"],
+                            "file_color": s["file_color"], "file_run_change": s["file_run_change"],
+                            "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
+                            "ai_category": "", "ai_subcategory": "", "ai_color": "", "ai_run_change": "",
+                            "ai_confidence": "", "ai_reason": f"API error: {str(e)[:100]}", "is_match": None,
+                        })
+            matches = sum(1 for r in results if r["is_match"] is True)
+            mismatches = sum(1 for r in results if r["is_match"] is False)
+            untagged = sum(1 for r in results if r["is_match"] is None)
+            db = get_db()
+            cursor = db.execute(
+                """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
+                   VALUES (?, ?, ?, ?, ?, 'verified')""",
+                (datetime.now().isoformat(), filename, len(df), len(results), ext)
+            )
+            verify_upload_id = cursor.lastrowid
+            db.commit()
+            return jsonify({
+                "success": True, "filename": filename, "upload_id": verify_upload_id,
+                "total": len(results), "matches": matches, "mismatches": mismatches,
+                "untagged": untagged, "results": results,
+            })
 
-                    results.append({
-                        "index": i + j,
-                        "title": s["title"],
-                        "description": s["description"][:200],
-                        "team": s["team"],
-                        "file_category": s["file_category"],
-                        "file_color": s["file_color"],
-                        "file_run_change": s["file_run_change"],
-                        "ai_category": ai_cat,
-                        "ai_subcategory": ai_subcat,
-                        "ai_color": ai_color,
-                        "ai_run_change": ai_rc,
-                        "ai_confidence": ai_conf,
-                        "ai_reason": ai_reason,
-                        "is_match": is_match,
-                    })
-            except Exception as e:
-                # If API fails for this batch, mark as unclassified
-                for s in batch:
-                    results.append({
-                        "index": len(results),
-                        "title": s["title"],
-                        "description": s["description"][:200],
-                        "team": s["team"],
-                        "file_category": s["file_category"],
-                        "file_color": s["file_color"],
-                        "file_run_change": s["file_run_change"],
-                        "ai_category": "",
-                        "ai_subcategory": "",
-                        "ai_color": "",
-                        "ai_run_change": "",
-                        "ai_confidence": "",
-                        "ai_reason": f"API error: {str(e)[:100]}",
-                        "is_match": None,
-                    })
+        # For large files (>200 stories), process asynchronously with progress polling
+        job_id = str(uuid.uuid4())
+        verify_jobs[job_id] = {
+            "status": "processing",
+            "total_stories": len(stories),
+            "stories_processed": 0,
+            "total_batches": 0,
+            "completed_batches": 0,
+            "current_batch": 0,
+            "filename": filename,
+            "results": None,
+            "error": None,
+        }
 
-        matches = sum(1 for r in results if r["is_match"] is True)
-        mismatches = sum(1 for r in results if r["is_match"] is False)
-        untagged = sum(1 for r in results if r["is_match"] is None)
-
-        # Record in upload history
-        db = get_db()
-        db.execute(
-            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
-               VALUES (?, ?, ?, ?, ?, 'verified')""",
-            (datetime.now().isoformat(), filename, len(df), len(results), ext)
+        thread = threading.Thread(
+            target=_run_verify_job,
+            args=(job_id, stories, filename, ext, len(df)),
+            daemon=True
         )
-        db.commit()
+        thread.start()
 
         return jsonify({
             "success": True,
-            "filename": filename,
-            "total": len(results),
-            "matches": matches,
-            "mismatches": mismatches,
-            "untagged": untagged,
-            "results": results,
+            "async": True,
+            "job_id": job_id,
+            "total_stories": len(stories),
+            "message": f"Processing {len(stories)} stories in background. Poll /api/bulk-verify/status/{job_id} for progress.",
         })
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 500
     except Exception as e:
         return jsonify({"error": f"Verification failed: {str(e)}"}), 500
+
+
+@app.route("/api/bulk-verify/status/<job_id>", methods=["GET"])
+def bulk_verify_status(job_id):
+    """Poll progress of an async bulk-verify job."""
+    job = verify_jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    resp = {
+        "status": job["status"],
+        "total_stories": job["total_stories"],
+        "stories_processed": job["stories_processed"],
+        "total_batches": job["total_batches"],
+        "completed_batches": job["completed_batches"],
+        "filename": job["filename"],
+    }
+
+    if job["status"] == "done":
+        resp["success"] = True
+        resp["upload_id"] = job.get("upload_id")
+        resp["total"] = len(job["results"])
+        resp["matches"] = job["matches"]
+        resp["mismatches"] = job["mismatches"]
+        resp["untagged"] = job["untagged"]
+        resp["results"] = job["results"]
+        # Clean up after results are fetched
+        del verify_jobs[job_id]
+    elif job["status"] == "error":
+        resp["error"] = job["error"]
+        del verify_jobs[job_id]
+
+    return jsonify(resp)
 
 
 @app.route("/api/bulk-verify/save", methods=["POST"])
@@ -1586,33 +1903,38 @@ def bulk_verify_save():
         return jsonify({"error": "No rows provided"}), 400
 
     saved = 0
+    upload_id = data.get("upload_id")
     db = get_db()
     for row in data["rows"]:
         # Determine which category to use (AI recommendation or file's original)
         use_ai = row.get("use_ai", True)
         category = row.get("ai_category", "") if use_ai else row.get("file_category", "")
+        subcategory = row.get("ai_subcategory", "") if use_ai else row.get("file_subcategory", "")
         color = row.get("ai_color", "") if use_ai else row.get("file_color", "")
         run_change = row.get("ai_run_change", "") if use_ai else row.get("file_run_change", "")
+        confidence = row.get("ai_confidence", "") if use_ai else row.get("file_confidence", "")
+        ts = row.get("timestamp", datetime.now().isoformat())
 
         db.execute(
             """INSERT INTO classifications
                (timestamp, story_title, story_description, waf_category,
                 waf_subcategory, waf_color, run_change, confidence,
-                was_mismatch, original_tag, approved, team, epic, parent_feature)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)""",
-            (datetime.now().isoformat(),
+                was_mismatch, original_tag, approved, team, epic, parent_feature, upload_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)""",
+            (ts,
              row.get("title", ""),
              row.get("description", ""),
              category,
-             row.get("ai_subcategory", ""),
+             subcategory,
              color,
              run_change,
-             row.get("ai_confidence", ""),
+             confidence,
              1 if row.get("is_match") is False else 0,
              row.get("file_category", ""),
              row.get("team", "default"),
              row.get("epic", ""),
-             row.get("parent_feature", ""))
+             row.get("parent_feature", ""),
+             upload_id)
         )
         saved += 1
 
@@ -1629,15 +1951,23 @@ def lineage_page():
 
 @app.route("/api/epics", methods=["GET"])
 def list_epics():
-    """List all unique epics with story counts."""
+    """List all unique epics with story counts. Optional ?upload_id= filter."""
     db = get_db()
+    upload_id = request.args.get("upload_id", "")
+    where = "epic != '' AND epic IS NOT NULL"
+    params = []
+    if upload_id:
+        where += " AND upload_id = ?"
+        params.append(int(upload_id))
+
     rows = db.execute(
-        """SELECT epic, COUNT(*) as cnt,
+        f"""SELECT epic, COUNT(*) as cnt,
                   SUM(CASE WHEN was_mismatch=1 THEN 1 ELSE 0 END) as mismatches,
                   SUM(CASE WHEN approved=1 THEN 1 ELSE 0 END) as approved
            FROM classifications
-           WHERE epic != '' AND epic IS NOT NULL
-           GROUP BY epic ORDER BY cnt DESC"""
+           WHERE {where}
+           GROUP BY epic ORDER BY cnt DESC""",
+        params
     ).fetchall()
 
     return jsonify({
@@ -1649,20 +1979,24 @@ def list_epics():
 
 @app.route("/api/epics/summary", methods=["GET"])
 def epic_summary():
-    """Get dashboard-style summary for all epics or a specific epic."""
+    """Get dashboard-style summary for all epics or a specific epic. Optional ?upload_id= filter."""
     db = get_db()
     epic_filter = request.args.get("epic", "")
+    upload_id = request.args.get("upload_id", "")
 
     where = "epic != '' AND epic IS NOT NULL"
     params = []
     if epic_filter:
         where += " AND epic = ?"
         params.append(epic_filter)
+    if upload_id:
+        where += " AND upload_id = ?"
+        params.append(int(upload_id))
 
     rows = db.execute(
         f"""SELECT id, timestamp, story_title, story_description, waf_category,
                    waf_subcategory, waf_color, run_change, confidence,
-                   was_mismatch, approved, team, epic, parent_feature
+                   was_mismatch, original_tag, approved, team, epic, parent_feature
             FROM classifications WHERE {where} ORDER BY epic, timestamp DESC""",
         params
     ).fetchall()
@@ -1700,6 +2034,7 @@ def epic_summary():
                 "title": s["story_title"],
                 "description": s["story_description"],
                 "category": s["waf_category"],
+                "original_tag": s["original_tag"],
                 "color": s["waf_color"],
                 "run_change": s["run_change"],
                 "confidence": s["confidence"],
@@ -1722,6 +2057,34 @@ def epic_summary():
                 "stories": feat_stories,
             })
 
+        # ── Health metrics ──
+        # Dominant color: the most frequent WAF color in this epic
+        dominant_color = max(color_counts, key=color_counts.get) if color_counts else ""
+        dominant_color_pct = round(color_counts.get(dominant_color, 0) / total * 100, 1) if total and dominant_color else 0
+        # Color consistency: % of stories matching the dominant color (higher = more focused)
+        color_consistency = dominant_color_pct
+        # Category focus: % of stories in the top category
+        dominant_cat = max(cat_counts, key=cat_counts.get) if cat_counts else ""
+        dominant_cat_pct = round(cat_counts.get(dominant_cat, 0) / total * 100, 1) if total and dominant_cat else 0
+        # Unique colors & categories
+        unique_colors = len(color_counts)
+        unique_categories = len(cat_counts)
+        # Health score: 0-100 (higher = cleaner)
+        # Penalize for: many colors, low dominant %, mismatches
+        health = round(
+            (dominant_color_pct * 0.4) +
+            (dominant_cat_pct * 0.3) +
+            ((100 - min(unique_colors * 15, 100)) * 0.2) +
+            ((100 - round(mismatches / total * 100, 1) if total else 100) * 0.1)
+        ) if total else 0
+        health = max(0, min(100, health))
+
+        # Flag: is this epic "mixed" (3+ colors or dominant < 60%)?
+        is_mixed = unique_colors >= 3 or dominant_color_pct < 60
+
+        # Teams involved
+        team_set = set(s["team"] for s in stories if s["team"] and s["team"] != "default")
+
         result.append({
             "epic": epic_name,
             "total_stories": total,
@@ -1733,9 +2096,38 @@ def epic_summary():
             "colors": color_counts,
             "run_change": rc_counts,
             "features": features,
+            "health": health,
+            "dominant_color": dominant_color,
+            "dominant_color_pct": dominant_color_pct,
+            "dominant_category": dominant_cat,
+            "dominant_category_pct": dominant_cat_pct,
+            "color_consistency": color_consistency,
+            "unique_colors": unique_colors,
+            "unique_categories": unique_categories,
+            "is_mixed": is_mixed,
+            "teams": list(team_set),
         })
 
     return jsonify({"epics": result})
+
+
+@app.route("/api/epics/uploads", methods=["GET"])
+def epic_uploads():
+    """List uploads that contain epic data, for the lineage filter dropdown."""
+    db = get_db()
+    rows = db.execute(
+        """SELECT DISTINCT c.upload_id, h.filename, h.uploaded_at, h.imported_count
+           FROM classifications c
+           JOIN upload_history h ON h.id = c.upload_id
+           WHERE c.epic != '' AND c.epic IS NOT NULL AND c.upload_id IS NOT NULL
+           GROUP BY c.upload_id
+           ORDER BY h.uploaded_at DESC"""
+    ).fetchall()
+    return jsonify({
+        "uploads": [{"upload_id": r["upload_id"], "filename": r["filename"],
+                      "uploaded_at": r["uploaded_at"], "imported_count": r["imported_count"]}
+                     for r in rows]
+    })
 
 
 @app.route("/api/epics/assign", methods=["POST"])

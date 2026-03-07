@@ -357,6 +357,15 @@
 </nav>
 
 <div class="content">
+    <!-- Upload filter bar -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);">
+        <label style="font-size:13px;color:var(--text-secondary);white-space:nowrap;">Data Source:</label>
+        <select id="upload-filter" onchange="onUploadFilterChange()" style="flex:1;max-width:400px;padding:8px 12px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+            <option value="">All Uploads</option>
+        </select>
+        <span id="upload-filter-count" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+
     <div class="layout">
         <!-- Left: Epic list -->
         <div class="epic-list-panel">
@@ -432,13 +441,40 @@ const CHART_PALETTE = [
 let charts = {};
 let allEpicData = [];
 let epicListData = [];
+let currentUploadId = '';
+
+// ── Load upload list for filter ──
+async function loadUploadFilter() {
+    try {
+        const res = await fetch('/api/epics/uploads');
+        const data = await res.json();
+        const sel = document.getElementById('upload-filter');
+        // Keep the "All Uploads" option, clear the rest
+        sel.innerHTML = '<option value="">All Uploads</option>';
+        (data.uploads || []).forEach(u => {
+            const date = new Date(u.uploaded_at).toLocaleDateString();
+            const opt = document.createElement('option');
+            opt.value = u.upload_id;
+            opt.textContent = `${u.filename} (${u.imported_count.toLocaleString()} rows — ${date})`;
+            sel.appendChild(opt);
+        });
+    } catch (err) {
+        console.error('Failed to load upload filter:', err);
+    }
+}
+
+function onUploadFilterChange() {
+    currentUploadId = document.getElementById('upload-filter').value;
+    loadData();
+}
 
 // ── Load all data ──
 async function loadData() {
     try {
+        const qs = currentUploadId ? `?upload_id=${currentUploadId}` : '';
         const [listRes, summaryRes] = await Promise.all([
-            fetch('/api/epics'),
-            fetch('/api/epics/summary')
+            fetch('/api/epics' + qs),
+            fetch('/api/epics/summary' + qs)
         ]);
         const listData = await listRes.json();
         const summaryData = await summaryRes.json();
@@ -446,7 +482,10 @@ async function loadData() {
         epicListData = listData.epics || [];
         allEpicData = summaryData.epics || [];
 
+        const totalStories = epicListData.reduce((s, e) => s + e.story_count, 0);
         document.getElementById('epic-total-count').textContent = `${epicListData.length} epics`;
+        document.getElementById('upload-filter-count').textContent =
+            currentUploadId ? `${totalStories.toLocaleString()} stories in this upload` : '';
 
         renderEpicList();
         renderOverview();
@@ -690,6 +729,7 @@ function destroyChart(id) {
 }
 
 // ── Initialize ──
+loadUploadFilter();
 loadData();
 </script>
 </body>
