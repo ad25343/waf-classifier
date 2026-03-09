@@ -1268,8 +1268,11 @@ def get_upload_history():
     """Get list of past file uploads for analytics."""
     db = get_db()
     rows = db.execute(
-        "SELECT id, uploaded_at, filename, row_count, imported_count, file_type, status "
-        "FROM upload_history ORDER BY uploaded_at DESC LIMIT 20"
+        """SELECT u.id, u.uploaded_at, u.filename, u.row_count, u.imported_count,
+                  u.file_type, u.status,
+                  (SELECT COUNT(*) FROM classifications WHERE upload_id = u.id) AS saved_count,
+                  CASE WHEN u.results_json IS NOT NULL THEN 1 ELSE 0 END AS has_results
+           FROM upload_history u ORDER BY u.uploaded_at DESC LIMIT 20"""
     ).fetchall()
     uploads = [
         {
@@ -1279,7 +1282,9 @@ def get_upload_history():
             "row_count": r["row_count"],
             "imported_count": r["imported_count"],
             "file_type": r["file_type"],
-            "status": r["status"]
+            "status": r["status"],
+            "saved_count": r["saved_count"],
+            "has_results": bool(r["has_results"])
         }
         for r in rows
     ]

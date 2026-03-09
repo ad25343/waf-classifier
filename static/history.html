@@ -1169,6 +1169,8 @@ async function handleVerify(input) {
 function showReviewStep(data) {
     document.getElementById('import-step-upload').style.display = 'none';
     document.getElementById('import-step-review').style.display = 'block';
+    // Show sticky save bar so Save is always visible regardless of scroll
+    document.getElementById('sticky-save-bar').style.display = 'flex';
 
     // KPIs
     document.getElementById('verify-kpis').innerHTML = `
@@ -1245,6 +1247,8 @@ function updateSelectedCount() {
     const count = document.querySelectorAll('.row-cb:checked').length;
     document.getElementById('selected-count').textContent = `${count} selected`;
     document.getElementById('save-verified-btn').textContent = `Save ${count} to History`;
+    document.getElementById('sticky-selected-count').textContent = `${count} selected`;
+    document.getElementById('sticky-save-btn').textContent = `Save ${count} to History`;
 }
 
 async function saveVerified() {
@@ -1282,6 +1286,8 @@ async function saveVerified() {
 
     document.getElementById('save-verified-btn').textContent = 'Saving...';
     document.getElementById('save-verified-btn').disabled = true;
+    document.getElementById('sticky-save-btn').textContent = 'Saving...';
+    document.getElementById('sticky-save-btn').disabled = true;
 
     try {
         const res = await fetch('/api/bulk-verify/save', {
@@ -1294,6 +1300,8 @@ async function saveVerified() {
         if (data.success) {
             document.getElementById('save-verified-btn').textContent = `Saved ${data.saved} stories!`;
             document.getElementById('save-verified-btn').style.background = 'var(--success)';
+            document.getElementById('sticky-save-btn').textContent = `✓ Saved ${data.saved} stories!`;
+            document.getElementById('sticky-save-btn').style.background = 'var(--success)';
             // Refresh all tabs
             loadAnalyticsUploads();
             loadUploadHistory();
@@ -1308,21 +1316,29 @@ async function saveVerified() {
             alert('Save failed: ' + data.error);
             document.getElementById('save-verified-btn').textContent = 'Save Selected to History';
             document.getElementById('save-verified-btn').disabled = false;
+            document.getElementById('sticky-save-btn').textContent = 'Save Selected to History';
+            document.getElementById('sticky-save-btn').disabled = false;
         }
     } catch (err) {
         alert('Save failed: ' + err.message);
         document.getElementById('save-verified-btn').textContent = 'Save Selected to History';
         document.getElementById('save-verified-btn').disabled = false;
+        document.getElementById('sticky-save-btn').textContent = 'Save Selected to History';
+        document.getElementById('sticky-save-btn').disabled = false;
     }
 }
 
 function backToUpload() {
     document.getElementById('import-step-upload').style.display = 'block';
     document.getElementById('import-step-review').style.display = 'none';
+    document.getElementById('sticky-save-bar').style.display = 'none';
     document.getElementById('import-status').innerHTML = '';
     document.getElementById('save-verified-btn').textContent = 'Save Selected to History';
     document.getElementById('save-verified-btn').disabled = false;
     document.getElementById('save-verified-btn').style.background = '';
+    document.getElementById('sticky-save-btn').textContent = 'Save Selected to History';
+    document.getElementById('sticky-save-btn').disabled = false;
+    document.getElementById('sticky-save-btn').style.background = '';
     verifyResults = [];
 }
 
@@ -1604,16 +1620,19 @@ async function loadRecentTable() {
         }
         tbody.innerHTML = stories.map(s => {
             const time = new Date(s.timestamp).toLocaleString();
-            const title = esc(s.story_title && s.story_title.length > 60 ? s.story_title.substring(0,60)+'...' : (s.story_title||''));
-            const dotColor = WAF_COLORS_MAP[s.waf_color] || '#e8944a';
+            const rawTitle = s.title || s.story_title || '';
+            const title = esc(rawTitle.length > 60 ? rawTitle.substring(0,60)+'...' : rawTitle);
+            const rawColor = s.color || s.waf_color || '';
+            const rawCategory = s.category || s.waf_category || '';
+            const dotColor = WAF_COLORS_MAP[rawColor] || '#e8944a';
             const confClass = (s.confidence||'').toLowerCase();
-            const isMismatch = s.was_mismatch;
+            const isMismatch = s.mismatch !== undefined ? s.mismatch : s.was_mismatch;
             let status = isMismatch ? '<span class="badge mismatch">Mismatch</span>' : '<span class="badge high">Correct</span>';
             return `<tr style="cursor:pointer;" onclick="summaryDrillDown('${isMismatch ? 'mismatches' : 'all'}')">
                 <td>${esc(time)}</td>
                 <td style="color:var(--text-primary)">${title}</td>
-                <td>${esc(s.waf_category||'—')}</td>
-                <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:${dotColor}"></span>${esc(s.waf_color||'—')}</td>
+                <td>${esc(rawCategory||'—')}</td>
+                <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:${dotColor}"></span>${esc(rawColor||'—')}</td>
                 <td><span class="badge ${confClass}">${esc(s.confidence||'—')}</span></td>
                 <td>${status}</td>
             </tr>`;
@@ -1668,6 +1687,8 @@ function onAnalyticsFilterChange() {
     const info = document.getElementById('analytics-filter-info');
     info.textContent = uid ? 'Filtered to one upload' : '';
     recentPage = 1;
+    // Always navigate to Summary when a data source is selected
+    document.querySelector('.tab[data-tab="summary"]').click();
     loadSummary();
     // Reset lineage to overview before reloading
     linCurrentEpic = null;
@@ -1715,32 +1736,53 @@ function loadUploadHistory() {
                 list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">No previous uploads yet.</div>';
                 return;
             }
-            list.innerHTML = data.uploads.map(u => `
-                <div class="upload-history-item" onclick="reloadUpload(${Number(u.id)})">
+            list.innerHTML = data.uploads.map(u => {
+                const sc = parseInt(u.saved_count, 10) || 0;
+                const hr = u.has_results === true || u.has_results === 1 || u.has_results === '1';
+                console.log('[UploadHistory] id=' + u.id + ' saved_count=' + u.saved_count + ' sc=' + sc + ' has_results=' + u.has_results);
+                const savedBadge = sc > 0
+                    ? `<span style="background:#22c55e;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">✓ Saved (${sc})</span>`
+                    : (hr
+                        ? `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">⚠ Not Saved</span>`
+                        : `<span style="background:#6c7086;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">No Results</span>`);
+                const actionLabel = sc === 0 && hr ? 'Review & Save →' : 'Load →';
+                return `
+                <div class="upload-history-item" onclick="reloadUpload(${Number(u.id)}, ${sc > 0})">
                     <div class="upload-history-info">
-                        <span class="upload-history-name">${esc(u.filename)}</span>
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span class="upload-history-name">${esc(u.filename)}</span>
+                            ${savedBadge}
+                        </div>
                         <span class="upload-history-meta">${Number(u.row_count)} rows &middot; ${esc(new Date(u.uploaded_at).toLocaleDateString())} ${esc(new Date(u.uploaded_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))}</span>
                     </div>
-                    <span class="upload-history-action">Load →</span>
+                    <span class="upload-history-action">${actionLabel}</span>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         })
-        .catch(() => {});
+        .catch(err => console.error('[UploadHistory] fetch error:', err));
 }
 
-function reloadUpload(uploadId) {
+function reloadUpload(uploadId, alreadySaved) {
+    // Already-saved jobs: skip to Summary immediately, no need to hit reload endpoint
+    if (alreadySaved) {
+        document.querySelector('.tab[data-tab="summary"]').click();
+        loadSummary();
+        return;
+    }
+
     fetch(`/api/history/uploads/${uploadId}/reload`, { method: 'POST' })
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
             if (data.has_results && data.results && data.results.length > 0) {
-                // Restore the verify table so user can pick rows and save
+                // Unsaved results exist — restore the verify table
                 verifyResults = data.results;
-                currentUploadId = data.upload_id;
+                verifyUploadId = data.upload_id;
                 document.querySelector('.tab[data-tab="import"]').click();
                 showReviewStep(data);
-                const statusEl = document.getElementById('upload-status');
-                if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent);">Restored ${data.total} results from previous upload — pick rows and save.</span>`;
+                const statusEl = document.getElementById('import-status');
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent);">↩ Restored ${data.total} results from a previous upload — select rows and click Save.</span>`;
             } else {
                 document.querySelector('.tab[data-tab="summary"]').click();
                 loadSummary();
@@ -1752,5 +1794,25 @@ function reloadUpload(uploadId) {
 // Load upload history on page load
 loadUploadHistory();
 </script>
+
+<!-- Sticky Save Bar: shown when review step is active so Save is always visible -->
+<div id="sticky-save-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;
+     background:var(--bg-secondary);border-top:2px solid var(--accent);
+     padding:12px 24px;z-index:999;align-items:center;justify-content:space-between;
+     gap:16px;box-shadow:0 -6px 24px rgba(0,0,0,0.4);">
+    <div>
+        <span style="font-weight:600;color:var(--text-primary);font-size:15px;"
+              id="sticky-selected-count">0 selected</span>
+        <span style="color:var(--text-muted);margin-left:10px;font-size:13px;">
+            Select rows above then save
+        </span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-outline" style="font-size:13px;padding:7px 14px;"
+                onclick="backToUpload()">Start Over</button>
+        <button class="btn btn-primary" style="font-size:14px;padding:8px 20px;"
+                onclick="saveVerified()" id="sticky-save-btn">Save Selected to History</button>
+    </div>
+</div>
 </body>
 </html>
