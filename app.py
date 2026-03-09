@@ -11,6 +11,7 @@ import csv
 import sqlite3
 import threading
 import uuid
+import logging
 from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
@@ -31,9 +32,28 @@ app = Flask(__name__, static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max upload
 app.secret_key = os.urandom(24)
 
+# ── Logging ────────────────────────────────────────────────────────────
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
+
 # ── Background Job Tracking ───────────────────────────────────────────
 # Stores in-progress and completed bulk-verify jobs for async processing
 verify_jobs = {}  # job_id -> { status, progress, total_batches, completed_batches, results, error, ... }
+
+# ── Rate Limiting ──────────────────────────────────────────────────────
+import time as _time
+_rate_limit_store: dict = {}  # ip -> [timestamps]
+MAX_BULK_JOBS_PER_MINUTE = 5
+
+def _check_rate_limit(ip: str) -> bool:
+    """Returns True if request is allowed, False if rate limit exceeded."""
+    now = _time.time()
+    hits = [t for t in _rate_limit_store.get(ip, []) if now - t < 60]
+    if len(hits) >= MAX_BULK_JOBS_PER_MINUTE:
+        return False
+    hits.append(now)
+    _rate_limit_store[ip] = hits
+    return True
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "waf_history.db")
 
@@ -443,7 +463,8 @@ def upload_waf():
             "preview": text[:500] + ("..." if len(text) > 500 else "")
         })
     except Exception as e:
-        return jsonify({"error": f"Failed to parse file: {str(e)}"}), 400
+        logger.error("Failed to parse file: %s", e, exc_info=True)
+        return jsonify({"error": "Failed to parse file. Check the format and try again."}), 400
 
 
 @app.route("/api/upload-ground-truth", methods=["POST"])
@@ -481,7 +502,8 @@ def upload_ground_truth():
             "sample": examples[:3] if examples else []
         })
     except Exception as e:
-        return jsonify({"error": f"Failed to parse ground truth: {str(e)}"}), 400
+        logger.error("Failed to parse ground truth: %s", e, exc_info=True)
+        return jsonify({"error": "Failed to parse ground truth file."}), 400
 
 
 @app.route("/api/classify", methods=["POST"])
@@ -541,7 +563,8 @@ def classify():
     except ValueError as e:
         return jsonify({"error": str(e)}), 500
     except Exception as e:
-        return jsonify({"error": f"Classification failed: {str(e)}"}), 500
+        logger.error("Classification failed: %s", e, exc_info=True)
+        return jsonify({"error": "Classification failed. Please try again."}), 500
 
 
 @app.route("/api/batch-classify", methods=["POST"])
@@ -583,7 +606,8 @@ def batch_classify():
             "story_count": len(stories)
         })
     except Exception as e:
-        return jsonify({"error": f"Batch classification failed: {str(e)}"}), 500
+        logger.error("Batch classification failed: %s", e, exc_info=True)
+        return jsonify({"error": "Batch classification failed. Please try again."}), 500
 
 
 @app.route("/api/status", methods=["GET"])
@@ -664,7 +688,8 @@ def approve_classification():
                                  "WAF Color", "WAF Category", "WAF Sub-Category"])
             writer.writerow(row)
     except Exception as e:
-        return jsonify({"error": f"Failed to write to ground truth file: {str(e)}"}), 500
+        logger.error("Failed to write ground truth: %s", e, exc_info=True)
+        return jsonify({"error": "Failed to save ground truth data."}), 500
 
     # 2. Add to in-memory store
     example = {
@@ -812,8 +837,8 @@ def dashboard_stories():
     uid = request.args.get("upload_id", "")
     filt = request.args.get("filter", "")
     value = request.args.get("value", "")
-    page = int(request.args.get("page", "1"))
-    per_page = int(request.args.get("per_page", "100"))
+    page = max(1, int(request.args.get("page", "1")))
+    per_page = min(500, max(1, int(request.args.get("per_page", "100"))))
 
     where_clauses = []
     params = []
@@ -1032,8 +1057,8 @@ def history_timeline():
     color = request.args.get("color", "")
     confidence = request.args.get("confidence", "")
     mismatch_only = request.args.get("mismatch_only", "")
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 50))
+    page = max(1, int(request.args.get("page", 1)))
+    per_page = min(500, max(1, int(request.args.get("per_page", 50))))
 
     uid = request.args.get("upload_id", "")
 
@@ -1221,7 +1246,8 @@ def history_import():
 
         return jsonify({"success": True, "imported": imported, "filename": filename, "upload_id": upload_id})
     except Exception as e:
-        return jsonify({"error": f"Import failed: {str(e)}"}), 500
+        logger.error("Import failed: %s", e, exc_info=True)
+        return jsonify({"error": "Import failed. Check the file format and try again."}), 500
 
 
 @app.route("/api/history/uploads", methods=["GET"])
@@ -1673,6 +1699,11 @@ def _run_verify_job(job_id, stories, filename, ext, row_count):
 @app.route("/api/bulk-verify", methods=["POST"])
 def bulk_verify():
     """Upload a file of stories, start async AI classification, return job_id for polling."""
+    client_ip = request.remote_addr or "unknown"
+    if not _check_rate_limit(client_ip):
+        logger.warning("Rate limit exceeded for bulk-verify from %s", client_ip)
+        return jsonify({"error": "Too many requests. Please wait a minute before uploading again."}), 429
+
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
@@ -1859,7 +1890,8 @@ def bulk_verify():
     except ValueError as e:
         return jsonify({"error": str(e)}), 500
     except Exception as e:
-        return jsonify({"error": f"Verification failed: {str(e)}"}), 500
+        logger.error("Verification failed: %s", e, exc_info=True)
+        return jsonify({"error": "Verification failed. Please try again."}), 500
 
 
 @app.route("/api/bulk-verify/status/<job_id>", methods=["GET"])
@@ -2257,4 +2289,4 @@ if __name__ == "__main__":
     print(f"  Database initialized: {DB_PATH}")
     auto_load_sample_data()
     print(f"{'='*60}\n")
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False)

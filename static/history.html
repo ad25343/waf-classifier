@@ -614,6 +614,18 @@ const CHART_PALETTE = [
 ];
 
 let charts = {};
+
+// ── Security: HTML escape helper ──
+function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Register datalabels plugin globally but disable by default
 if (window.ChartDataLabels) Chart.register(ChartDataLabels);
 Chart.defaults.set('plugins.datalabels', { display: false });
@@ -818,18 +830,18 @@ async function loadSummary() {
         } else {
             tbody.innerHTML = data.recent.map(r => {
                 const time = new Date(r.timestamp).toLocaleString();
-                const title = r.title.length > 60 ? r.title.substring(0, 60) + "..." : r.title;
+                const title = esc(r.title.length > 60 ? r.title.substring(0, 60) + "..." : r.title);
                 const dotColor = WAF_COLORS_MAP[r.color] || "#e8944a";
                 const confClass = (r.confidence || "").toLowerCase();
                 let status = "";
                 if (r.mismatch) status = '<span class="badge mismatch">Mismatch</span>';
                 else if (r.approved) status = '<span class="badge high">Correct</span>';
                 return `<tr style="cursor:pointer;" onclick="summaryDrillDown('${r.mismatch ? 'mismatches' : 'all'}')">
-                    <td>${time}</td>
+                    <td>${esc(time)}</td>
                     <td style="color:var(--text-primary)">${title}</td>
-                    <td>${r.category}</td>
-                    <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:${dotColor}"></span>${r.color}</td>
-                    <td><span class="badge ${confClass}">${r.confidence || "—"}</span></td>
+                    <td>${esc(r.category)}</td>
+                    <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:${dotColor}"></span>${esc(r.color)}</td>
+                    <td><span class="badge ${confClass}">${esc(r.confidence) || "—"}</span></td>
                     <td>${status}</td>
                 </tr>`;
             }).join("");
@@ -964,22 +976,23 @@ function renderDrillDownTable() {
     tbody.innerHTML = stories.map(s => {
         const dot = WAF_COLORS_MAP[s.color] || '#e8944a';
         const isMismatch = s.mismatch;
-        const title = s.title.length > 45 ? s.title.substring(0,45)+'...' : s.title;
-        const epic = (s.epic || '—').length > 20 ? s.epic.substring(0,20)+'...' : (s.epic || '—');
-        const ogTag = s.original_tag || '—';
+        const title = esc(s.title.length > 45 ? s.title.substring(0,45)+'...' : s.title);
+        const epicRaw = s.epic || '—';
+        const epic = esc(epicRaw.length > 20 ? epicRaw.substring(0,20)+'...' : epicRaw);
+        const ogTag = esc(s.original_tag || '—');
         const statusBadge = isMismatch
             ? '<span class="badge mismatch">Mismatch</span>'
             : '<span class="badge high">Correct</span>';
         const confClass = (s.confidence||'').toLowerCase();
         return '<tr class="' + (isMismatch ? 'lin-mismatch-row' : '') + '">' +
             '<td style="padding:0;width:6px;background:' + dot + ';"></td>' +
-            '<td style="color:var(--text-primary)" title="' + s.title.replace(/"/g,'&quot;') + '">' + title + '</td>' +
-            '<td style="color:var(--text-muted);font-size:12px;" title="' + (s.epic||'') + '">' + epic + '</td>' +
+            '<td style="color:var(--text-primary)" title="' + esc(s.title) + '">' + title + '</td>' +
+            '<td style="color:var(--text-muted);font-size:12px;" title="' + esc(s.epic||'') + '">' + epic + '</td>' +
             '<td' + (isMismatch ? ' style="color:var(--error);text-decoration:line-through;opacity:0.85;"' : '') + '>' + ogTag + '</td>' +
-            '<td' + (isMismatch ? ' style="color:var(--success);font-weight:600;"' : '') + '>' + (s.category || '—') + '</td>' +
-            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + (s.color || '—') + '</td>' +
-            '<td style="text-align:center;">' + (s.run_change || '—') + '</td>' +
-            '<td style="text-align:center;"><span class="badge ' + confClass + '">' + (s.confidence || '—') + '</span></td>' +
+            '<td' + (isMismatch ? ' style="color:var(--success);font-weight:600;"' : '') + '>' + esc(s.category || '—') + '</td>' +
+            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—') + '</td>' +
+            '<td style="text-align:center;">' + esc(s.run_change || '—') + '</td>' +
+            '<td style="text-align:center;"><span class="badge ' + confClass + '">' + esc(s.confidence || '—') + '</span></td>' +
             '<td style="text-align:center;">' + statusBadge + '</td>' +
         '</tr>';
     }).join('');
@@ -1194,9 +1207,9 @@ function showReviewStep(data) {
 function renderVerifyTable() {
     const tbody = document.getElementById('verify-table-body');
     tbody.innerHTML = verifyResults.map((r, i) => {
-        const title = r.title.length > 45 ? r.title.substring(0, 45) + '...' : r.title;
-        const fileTag = r.file_category || '<span style="color:var(--text-muted)">—</span>';
-        const aiTag = r.ai_category || '<span style="color:var(--text-muted)">—</span>';
+        const title = esc(r.title.length > 45 ? r.title.substring(0, 45) + '...' : r.title);
+        const fileTag = r.file_category ? esc(r.file_category) : '<span style="color:var(--text-muted)">—</span>';
+        const aiTag = r.ai_category ? esc(r.ai_category) : '<span style="color:var(--text-muted)">—</span>';
 
         let statusBadge;
         if (r.is_match === true) {
@@ -1208,17 +1221,17 @@ function renderVerifyTable() {
         }
 
         const confClass = (r.ai_confidence || '').toLowerCase().replace('confidence: ', '');
-        const reason = r.ai_reason ? (r.ai_reason.length > 60 ? r.ai_reason.substring(0, 60) + '...' : r.ai_reason) : '—';
+        const reason = esc(r.ai_reason ? (r.ai_reason.length > 60 ? r.ai_reason.substring(0, 60) + '...' : r.ai_reason) : '—');
 
         return `<tr data-idx="${i}" class="${r.is_match === false ? 'mismatch-row' : ''}">
             <td><input type="checkbox" class="row-cb" data-idx="${i}" onchange="updateSelectedCount()" checked></td>
-            <td style="color:var(--text-primary)" title="${r.title}">${title}</td>
+            <td style="color:var(--text-primary)" title="${esc(r.title)}">${title}</td>
             <td>${fileTag}</td>
             <td style="color:var(--text-primary);font-weight:500;">${aiTag}</td>
-            <td>${r.ai_color || '—'}</td>
-            <td><span class="badge ${confClass}">${r.ai_confidence || '—'}</span></td>
+            <td>${esc(r.ai_color || '—')}</td>
+            <td><span class="badge ${confClass}">${esc(r.ai_confidence || '—')}</span></td>
             <td>${statusBadge}</td>
-            <td style="font-size:12px;color:var(--text-muted);" title="${r.ai_reason || ''}">${reason}</td>
+            <td style="font-size:12px;color:var(--text-muted);" title="${esc(r.ai_reason || '')}">${reason}</td>
         </tr>`;
     }).join('');
 
@@ -1393,10 +1406,12 @@ function linRenderOverview() {
         const pctCorrect = e.total_stories > 0 ? Math.round(correct / e.total_stories * 100) : 100;
         const pctMismatch = 100 - pctCorrect;
         const colorDots = Object.entries(e.colors || {}).map(([c,n]) =>
-            '<span class="color-dot" style="background:' + (WAF_COLORS_MAP[c]||'#e8944a') + '" title="' + c + ': ' + n + '"></span>'
+            '<span class="color-dot" style="background:' + (WAF_COLORS_MAP[c]||'#e8944a') + '" title="' + esc(c) + ': ' + esc(String(n)) + '"></span>'
         ).join('');
-        return '<tr style="cursor:pointer;" onclick="linSelectEpic(\'' + e.epic.replace(/'/g, "\\'") + '\')">' +
-            '<td style="text-align:left;font-weight:500;">' + e.epic + '</td>' +
+        const epicEscAttr = esc(e.epic);
+        const epicEscJs = e.epic.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return '<tr style="cursor:pointer;" onclick="linSelectEpic(\'' + epicEscJs + '\')">' +
+            '<td style="text-align:left;font-weight:500;">' + epicEscAttr + '</td>' +
             '<td style="text-align:center;">' + e.total_stories + '</td>' +
             '<td style="text-align:center;color:var(--success);">' + correct + '</td>' +
             '<td style="text-align:center;color:' + (e.mismatches > 0 ? 'var(--error);font-weight:600' : 'var(--text-muted)') + ';">' + e.mismatches + '</td>' +
@@ -1491,18 +1506,18 @@ function linRenderStoryTable() {
         const statusBadge = isMismatch
             ? '<span class="badge mismatch">Mismatch</span>'
             : '<span class="badge high">Correct</span>';
-        const title = s.title.length > 50 ? s.title.substring(0,50)+'...' : s.title;
-        const feat = s.feature.length > 25 ? s.feature.substring(0,25)+'...' : s.feature;
-        const ogTag = s.original_tag || '—';
+        const title = esc(s.title.length > 50 ? s.title.substring(0,50)+'...' : s.title);
+        const feat = esc(s.feature.length > 25 ? s.feature.substring(0,25)+'...' : s.feature);
+        const ogTag = esc(s.original_tag || '—');
         return '<tr class="' + (isMismatch ? 'lin-mismatch-row' : '') + '">' +
             '<td style="padding:0;width:6px;background:' + dot + ';"></td>' +
-            '<td style="color:var(--text-primary)" title="' + s.title.replace(/"/g,'&quot;') + '">' + title + '</td>' +
-            '<td style="color:var(--text-muted);" title="' + s.feature + '">' + feat + '</td>' +
+            '<td style="color:var(--text-primary)" title="' + esc(s.title) + '">' + title + '</td>' +
+            '<td style="color:var(--text-muted);" title="' + esc(s.feature) + '">' + feat + '</td>' +
             '<td' + (isMismatch ? ' style="color:var(--error);text-decoration:line-through;opacity:0.85;"' : '') + '>' + ogTag + '</td>' +
-            '<td' + (isMismatch ? ' style="color:var(--success);font-weight:600;"' : '') + '>' + (s.category || '—') + '</td>' +
-            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + (s.color || '—') + '</td>' +
-            '<td style="text-align:center;">' + (s.run_change || '—') + '</td>' +
-            '<td style="text-align:center;"><span class="badge ' + confClass + '">' + (s.confidence || '—') + '</span></td>' +
+            '<td' + (isMismatch ? ' style="color:var(--success);font-weight:600;"' : '') + '>' + esc(s.category || '—') + '</td>' +
+            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—') + '</td>' +
+            '<td style="text-align:center;">' + esc(s.run_change || '—') + '</td>' +
+            '<td style="text-align:center;"><span class="badge ' + confClass + '">' + esc(s.confidence || '—') + '</span></td>' +
             '<td style="text-align:center;">' + statusBadge + '</td>' +
         '</tr>';
     }).join('');
@@ -1515,7 +1530,7 @@ function linRenderTreeView() {
 
     // Epic node at top
     const dominantDot = WAF_COLORS_MAP[e.dominant_color] || '#e8944a';
-    let html = '<div class="tree-epic-node"><span class="color-dot" style="background:' + dominantDot + ';width:16px;height:16px;"></span> ' + e.epic + ' <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(' + e.total_stories + ' stories)</span></div>';
+    let html = '<div class="tree-epic-node"><span class="color-dot" style="background:' + dominantDot + ';width:16px;height:16px;"></span> ' + esc(e.epic) + ' <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(' + e.total_stories + ' stories)</span></div>';
 
     // Features, each with stories
     e.features.forEach((feat, fi) => {
@@ -1523,7 +1538,7 @@ function linRenderTreeView() {
                          linStoryFilterMode === 'mismatch' ? feat.stories.filter(s => s.mismatch) : feat.stories;
         if (filtered.length === 0) return;
         const mismatchCount = feat.stories.filter(s => s.mismatch).length;
-        const featLabel = mismatchCount > 0 ? feat.name + ' <span style="color:var(--error);font-size:11px;font-weight:400;">(' + mismatchCount + ' mismatch)</span>' : feat.name;
+        const featLabel = mismatchCount > 0 ? esc(feat.name) + ' <span style="color:var(--error);font-size:11px;font-weight:400;">(' + mismatchCount + ' mismatch)</span>' : esc(feat.name);
 
         html += '<div class="tree-feature">';
         html += '<div class="tree-feature-header" onclick="linToggleTree(this)">';
@@ -1535,14 +1550,14 @@ function linRenderTreeView() {
 
         filtered.forEach(s => {
             const dot = WAF_COLORS_MAP[s.color] || '#e8944a';
-            const title = s.title.length > 55 ? s.title.substring(0,55)+'...' : s.title;
+            const title = esc(s.title.length > 55 ? s.title.substring(0,55)+'...' : s.title);
             const status = s.mismatch ? '<span class="badge mismatch" style="font-size:10px;">Mismatch</span>' : '<span class="badge high" style="font-size:10px;">OK</span>';
             html += '<div class="tree-story' + (s.mismatch ? ' mismatch' : '') + '">';
             html += '<span class="color-dot" style="background:' + dot + '"></span>';
-            html += '<span class="tree-story-title" title="' + s.title.replace(/"/g,'&quot;') + '">' + title + '</span>';
+            html += '<span class="tree-story-title" title="' + esc(s.title) + '">' + title + '</span>';
             html += s.mismatch
-                ? '<span style="font-size:12px;"><span style="color:var(--error);text-decoration:line-through;opacity:0.8;">' + (s.original_tag || '') + '</span> <span style="color:var(--text-muted);">→</span> <span style="color:var(--success);font-weight:500;">' + (s.category || '') + '</span></span>'
-                : '<span style="font-size:12px;color:var(--text-secondary);">' + (s.category || '') + '</span>';
+                ? '<span style="font-size:12px;"><span style="color:var(--error);text-decoration:line-through;opacity:0.8;">' + esc(s.original_tag || '') + '</span> <span style="color:var(--text-muted);">→</span> <span style="color:var(--success);font-weight:500;">' + esc(s.category || '') + '</span></span>'
+                : '<span style="font-size:12px;color:var(--text-secondary);">' + esc(s.category || '') + '</span>';
             html += status;
             html += '</div>';
         });
@@ -1635,10 +1650,10 @@ function loadUploadHistory() {
                 return;
             }
             list.innerHTML = data.uploads.map(u => `
-                <div class="upload-history-item" onclick="reloadUpload(${u.id})">
+                <div class="upload-history-item" onclick="reloadUpload(${Number(u.id)})">
                     <div class="upload-history-info">
-                        <span class="upload-history-name">${u.filename}</span>
-                        <span class="upload-history-meta">${u.row_count} rows &middot; ${new Date(u.uploaded_at).toLocaleDateString()} ${new Date(u.uploaded_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+                        <span class="upload-history-name">${esc(u.filename)}</span>
+                        <span class="upload-history-meta">${Number(u.row_count)} rows &middot; ${esc(new Date(u.uploaded_at).toLocaleDateString())} ${esc(new Date(u.uploaded_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))}</span>
                     </div>
                     <span class="upload-history-action">Load →</span>
                 </div>
