@@ -132,6 +132,10 @@ def init_db():
         conn.execute("ALTER TABLE classifications ADD COLUMN upload_id INTEGER DEFAULT NULL")
     except sqlite3.OperationalError:
         pass  # Column already exists
+    try:
+        conn.execute("ALTER TABLE upload_history ADD COLUMN results_json TEXT DEFAULT NULL")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
     conn.close()
 
 
@@ -865,6 +869,15 @@ def dashboard_stories():
 
     where = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
+    # Safe server-side sort (whitelist only)
+    SORT_COLS = {
+        "timestamp": "timestamp", "title": "story_title",
+        "category": "waf_category", "color": "waf_color",
+        "confidence": "confidence", "status": "was_mismatch"
+    }
+    sort_col = SORT_COLS.get(request.args.get("sort", "timestamp"), "timestamp")
+    sort_dir = "ASC" if request.args.get("dir", "desc").lower() == "asc" else "DESC"
+
     total = db.execute(f"SELECT COUNT(*) FROM classifications{where}", params).fetchone()[0]
 
     offset = (page - 1) * per_page
@@ -873,7 +886,7 @@ def dashboard_stories():
                    waf_color, run_change, confidence, was_mismatch, approved, team,
                    epic, parent_feature, timestamp
             FROM classifications{where}
-            ORDER BY id DESC LIMIT ? OFFSET ?""",
+            ORDER BY {sort_col} {sort_dir} LIMIT ? OFFSET ?""",
         params + [per_page, offset]
     ).fetchall()
 
@@ -1275,18 +1288,31 @@ def get_upload_history():
 
 @app.route("/api/history/uploads/<int:upload_id>/reload", methods=["POST"])
 def reload_upload(upload_id):
-    """Reload a previously uploaded file by re-importing it from the uploads folder."""
+    """Reload a previously uploaded file's AI results for re-review and saving."""
     db = get_db()
-    row = db.execute("SELECT filename FROM upload_history WHERE id = ?", (upload_id,)).fetchone()
+    row = db.execute(
+        "SELECT filename, row_count, results_json FROM upload_history WHERE id = ?",
+        (upload_id,)
+    ).fetchone()
     if not row:
         return jsonify({"error": "Upload not found"}), 404
 
-    filepath = os.path.join(UPLOAD_FOLDER, row["filename"])
-    if not os.path.exists(filepath):
-        return jsonify({"error": "Original file no longer available on disk"}), 404
+    if row["results_json"]:
+        results = json.loads(row["results_json"])
+        matches   = sum(1 for r in results if r.get("is_match") is True)
+        mismatches = sum(1 for r in results if r.get("is_match") is False)
+        untagged  = sum(1 for r in results if r.get("is_match") is None)
+        return jsonify({
+            "success": True, "has_results": True,
+            "filename": row["filename"], "upload_id": upload_id,
+            "total": len(results), "matches": matches,
+            "mismatches": mismatches, "untagged": untagged,
+            "results": results,
+        })
 
-    return jsonify({"success": True, "filename": row["filename"],
-                     "message": "File still available. Use the Summary tab to view insights."})
+    return jsonify({"success": True, "has_results": False,
+                    "filename": row["filename"],
+                    "message": "No saved AI results for this upload."})
 
 
 @app.route("/api/history/export", methods=["GET"])
@@ -1674,9 +1700,9 @@ def _run_verify_job(job_id, stories, filename, ext, row_count):
         db = sqlite3.connect(DB_PATH)
         db.row_factory = sqlite3.Row
         cursor = db.execute(
-            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
-               VALUES (?, ?, ?, ?, ?, 'verified')""",
-            (datetime.now().isoformat(), filename, row_count, len(results), ext)
+            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status, results_json)
+               VALUES (?, ?, ?, ?, ?, 'verified', ?)""",
+            (datetime.now().isoformat(), filename, row_count, len(results), ext, json.dumps(results))
         )
         verify_upload_id = cursor.lastrowid
         db.commit()
@@ -1846,9 +1872,9 @@ def bulk_verify():
             untagged = sum(1 for r in results if r["is_match"] is None)
             db = get_db()
             cursor = db.execute(
-                """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status)
-                   VALUES (?, ?, ?, ?, ?, 'verified')""",
-                (datetime.now().isoformat(), filename, len(df), len(results), ext)
+                """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status, results_json)
+                   VALUES (?, ?, ?, ?, ?, 'verified', ?)""",
+                (datetime.now().isoformat(), filename, len(df), len(results), ext, json.dumps(results))
             )
             verify_upload_id = cursor.lastrowid
             db.commit()

@@ -410,11 +410,21 @@
 
             <!-- Recent Table -->
             <div class="card">
-                <div class="card-title">Recent Classifications</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                    <div class="card-title" style="margin:0;">Recent Classifications</div>
+                    <div id="recent-pagination" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);"></div>
+                </div>
                 <div style="overflow-x:auto;">
                     <table>
                         <thead>
-                            <tr><th>Time</th><th>Story</th><th>Category</th><th>Color</th><th>Confidence</th><th>Status</th></tr>
+                            <tr>
+                                <th class="sortable" data-col="timestamp" style="cursor:pointer;user-select:none;" onclick="sortRecent('timestamp')">Time <span id="recent-sort-timestamp">↓</span></th>
+                                <th class="sortable" data-col="title" style="cursor:pointer;user-select:none;" onclick="sortRecent('title')">Story <span id="recent-sort-title"></span></th>
+                                <th class="sortable" data-col="category" style="cursor:pointer;user-select:none;" onclick="sortRecent('category')">Category <span id="recent-sort-category"></span></th>
+                                <th class="sortable" data-col="color" style="cursor:pointer;user-select:none;" onclick="sortRecent('color')">Color <span id="recent-sort-color"></span></th>
+                                <th class="sortable" data-col="confidence" style="cursor:pointer;user-select:none;" onclick="sortRecent('confidence')">Confidence <span id="recent-sort-confidence"></span></th>
+                                <th class="sortable" data-col="status" style="cursor:pointer;user-select:none;" onclick="sortRecent('status')">Status <span id="recent-sort-status"></span></th>
+                            </tr>
                         </thead>
                         <tbody id="sum-recent-table"></tbody>
                     </table>
@@ -823,29 +833,8 @@ async function loadSummary() {
             }
         });
 
-        // Recent Table
-        const tbody = document.getElementById("sum-recent-table");
-        if (data.recent.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No classifications yet</td></tr>';
-        } else {
-            tbody.innerHTML = data.recent.map(r => {
-                const time = new Date(r.timestamp).toLocaleString();
-                const title = esc(r.title.length > 60 ? r.title.substring(0, 60) + "..." : r.title);
-                const dotColor = WAF_COLORS_MAP[r.color] || "#e8944a";
-                const confClass = (r.confidence || "").toLowerCase();
-                let status = "";
-                if (r.mismatch) status = '<span class="badge mismatch">Mismatch</span>';
-                else if (r.approved) status = '<span class="badge high">Correct</span>';
-                return `<tr style="cursor:pointer;" onclick="summaryDrillDown('${r.mismatch ? 'mismatches' : 'all'}')">
-                    <td>${esc(time)}</td>
-                    <td style="color:var(--text-primary)">${title}</td>
-                    <td>${esc(r.category)}</td>
-                    <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:${dotColor}"></span>${esc(r.color)}</td>
-                    <td><span class="badge ${confClass}">${esc(r.confidence) || "—"}</span></td>
-                    <td>${status}</td>
-                </tr>`;
-            }).join("");
-        }
+        // Recent Table — now driven by loadRecentTable()
+        loadRecentTable();
     } catch (err) {
         console.error("Summary load failed:", err);
     }
@@ -1574,6 +1563,82 @@ function linToggleTree(header) {
 }
 
 
+// ── Recent Classifications Table (sortable + paginated) ──
+let recentPage = 1;
+let recentPerPage = 25;
+let recentSortCol = 'timestamp';
+let recentSortDir = 'desc';
+
+async function loadRecentTable() {
+    const qs = getAnalyticsQS();
+    const uploadParam = qs ? '&' + qs : '';
+    const url = `/api/dashboard/stories?per_page=${recentPerPage}&page=${recentPage}&sort=${recentSortCol}&dir=${recentSortDir}${uploadParam}`;
+    const tbody = document.getElementById('sum-recent-table');
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const stories = data.stories || [];
+        const total = data.total || 0;
+        const totalPages = data.total_pages || 1;
+
+        // Pagination bar
+        const pagDiv = document.getElementById('recent-pagination');
+        if (total > recentPerPage) {
+            pagDiv.innerHTML =
+                `<button onclick="recentPageNav(-1)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--text-secondary);cursor:pointer;" ${recentPage<=1?'disabled':''}>←</button>` +
+                `<span>Page ${recentPage} of ${totalPages} &nbsp;·&nbsp; ${total.toLocaleString()} stories</span>` +
+                `<button onclick="recentPageNav(1)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--text-secondary);cursor:pointer;" ${recentPage>=totalPages?'disabled':''}>→</button>`;
+        } else {
+            pagDiv.innerHTML = `<span style="font-size:12px;">${total.toLocaleString()} stories</span>`;
+        }
+
+        // Sort arrow indicators
+        ['timestamp','title','category','color','confidence','status'].forEach(col => {
+            const el = document.getElementById('recent-sort-' + col);
+            if (el) el.textContent = col === recentSortCol ? (recentSortDir === 'desc' ? '↓' : '↑') : '';
+        });
+
+        if (stories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No classifications yet</td></tr>';
+            return;
+        }
+        tbody.innerHTML = stories.map(s => {
+            const time = new Date(s.timestamp).toLocaleString();
+            const title = esc(s.story_title && s.story_title.length > 60 ? s.story_title.substring(0,60)+'...' : (s.story_title||''));
+            const dotColor = WAF_COLORS_MAP[s.waf_color] || '#e8944a';
+            const confClass = (s.confidence||'').toLowerCase();
+            const isMismatch = s.was_mismatch;
+            let status = isMismatch ? '<span class="badge mismatch">Mismatch</span>' : '<span class="badge high">Correct</span>';
+            return `<tr style="cursor:pointer;" onclick="summaryDrillDown('${isMismatch ? 'mismatches' : 'all'}')">
+                <td>${esc(time)}</td>
+                <td style="color:var(--text-primary)">${title}</td>
+                <td>${esc(s.waf_category||'—')}</td>
+                <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:${dotColor}"></span>${esc(s.waf_color||'—')}</td>
+                <td><span class="badge ${confClass}">${esc(s.confidence||'—')}</span></td>
+                <td>${status}</td>
+            </tr>`;
+        }).join('');
+    } catch(e) {
+        console.error('Recent table load failed:', e);
+    }
+}
+
+function sortRecent(col) {
+    if (recentSortCol === col) {
+        recentSortDir = recentSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+        recentSortCol = col;
+        recentSortDir = col === 'timestamp' ? 'desc' : 'asc';
+    }
+    recentPage = 1;
+    loadRecentTable();
+}
+
+function recentPageNav(delta) {
+    recentPage = Math.max(1, recentPage + delta);
+    loadRecentTable();
+}
+
 // ── Initialize ──
 // ── Analytics Data Source Filter ──
 function loadAnalyticsUploads() {
@@ -1602,6 +1667,7 @@ function onAnalyticsFilterChange() {
     const uid = document.getElementById('analytics-upload-filter').value;
     const info = document.getElementById('analytics-filter-info');
     info.textContent = uid ? 'Filtered to one upload' : '';
+    recentPage = 1;
     loadSummary();
     // Reset lineage to overview before reloading
     linCurrentEpic = null;
@@ -1666,7 +1732,16 @@ function reloadUpload(uploadId) {
     fetch(`/api/history/uploads/${uploadId}/reload`, { method: 'POST' })
         .then(r => r.json())
         .then(data => {
-            if (data.success) {
+            if (!data.success) return;
+            if (data.has_results && data.results && data.results.length > 0) {
+                // Restore the verify table so user can pick rows and save
+                verifyResults = data.results;
+                currentUploadId = data.upload_id;
+                document.querySelector('.tab[data-tab="import"]').click();
+                showReviewStep(data);
+                const statusEl = document.getElementById('upload-status');
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent);">Restored ${data.total} results from previous upload — pick rows and save.</span>`;
+            } else {
                 document.querySelector('.tab[data-tab="summary"]').click();
                 loadSummary();
             }
