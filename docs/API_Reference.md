@@ -2,7 +2,23 @@
 
 Base URL: `http://localhost:8080`
 
-All endpoints return JSON unless otherwise noted.
+All endpoints return JSON unless otherwise noted. Error responses always return a generic message — full details are logged server-side only.
+
+---
+
+## Error Responses
+
+All endpoints follow this error format:
+
+```json
+{ "error": "Human-readable message" }
+```
+
+| HTTP Code | Meaning |
+|-----------|---------|
+| 400 | Bad request (missing file, invalid format) |
+| 429 | Rate limit exceeded |
+| 500 | Internal server error |
 
 ---
 
@@ -17,7 +33,7 @@ Returns current system state.
 {
   "api_configured": true,
   "waf_loaded": true,
-  "waf_categories": ["KTLO", "Business Maintenance", ...],
+  "waf_categories": ["KTLO", "Business Maintenance", "..."],
   "ground_truth_loaded": true,
   "ground_truth_count": 18,
   "history_count": 42
@@ -125,7 +141,7 @@ Upload WAF definitions file.
 ```json
 {
   "success": true,
-  "categories": ["KTLO", "Business Maintenance", ...],
+  "categories": ["KTLO", "Business Maintenance", "..."],
   "count": 8
 }
 ```
@@ -141,7 +157,7 @@ Upload ground truth examples.
 {
   "success": true,
   "count": 18,
-  "categories": {"KTLO": 3, "Business Maintenance": 2, ...}
+  "categories": {"KTLO": 3, "Business Maintenance": 2}
 }
 ```
 
@@ -153,6 +169,11 @@ Upload ground truth examples.
 
 Returns all dashboard data: KPIs, chart data, and recent classifications.
 
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `upload_id` | int | Optional. Filter to a specific upload batch. Omit for all data. |
+
 **Response:**
 ```json
 {
@@ -161,12 +182,50 @@ Returns all dashboard data: KPIs, chart data, and recent classifications.
   "approval_rate": 35.7,
   "mismatch_count": 8,
   "ground_truth_count": 33,
-  "category_distribution": {"KTLO": 12, "Business Maintenance": 8, ...},
+  "category_distribution": {"KTLO": 12, "Business Maintenance": 8},
   "confidence_distribution": {"High": 25, "Medium": 12, "Low": 5},
   "run_change": {"Run": 22, "Change": 20},
-  "color_distribution": {"GRAY": 12, "BLACK": 8, ...},
-  "daily_activity": [{"date": "2026-03-01", "count": 5}, ...],
-  "recent": [{"id": 42, "story_title": "...", "category": "KTLO", ...}]
+  "color_distribution": {"GRAY": 12, "BLACK": 8},
+  "daily_activity": [{"date": "2026-03-01", "count": 5}],
+  "recent": [{"id": 42, "story_title": "...", "category": "KTLO"}]
+}
+```
+
+### GET /api/dashboard/stories
+
+Paginated, filterable drill-down of individual story records. Used by clickable KPI cards in the Summary tab.
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `filter` | string | One of: `mismatches`, `approved`, `category`, `color`, `confidence`, `run_change` |
+| `value` | string | Value to filter on (e.g. `KTLO`, `High`, `Run`) |
+| `upload_id` | int | Optional. Restrict to a specific upload batch. |
+| `page` | int | Page number (default: 1) |
+| `per_page` | int | Results per page (default: 100, max: 500) |
+
+**Response:**
+```json
+{
+  "stories": [
+    {
+      "id": 42,
+      "story_title": "Fix connection pool",
+      "waf_category": "KTLO",
+      "waf_color": "GRAY",
+      "run_change": "Run",
+      "confidence": "High",
+      "was_mismatch": true,
+      "approved": false,
+      "original_tag": "New Feature",
+      "epic": "Platform Reliability",
+      "timestamp": "2026-03-01T10:00:00"
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "per_page": 100,
+  "total_pages": 1
 }
 ```
 
@@ -189,7 +248,7 @@ Returns classification data organized into 2-week sprint windows.
       "total": 15,
       "mismatches": 3,
       "approved": 8,
-      "categories": {"KTLO": 5, ...},
+      "categories": {"KTLO": 5},
       "run_change": {"Run": 8, "Change": 7}
     }
   ]
@@ -210,7 +269,7 @@ Returns monthly rollup with period-over-period comparison.
       "total": 30,
       "mismatches": 5,
       "approved": 18,
-      "categories": {"KTLO": 10, ...},
+      "categories": {"KTLO": 10},
       "prev_total": 12,
       "prev_mismatches": 4
     }
@@ -226,7 +285,7 @@ Paginated, filterable timeline of all classifications.
 | Param | Type | Description |
 |-------|------|-------------|
 | `page` | int | Page number (default: 1) |
-| `per_page` | int | Results per page (default: 50) |
+| `per_page` | int | Results per page (default: 50, max: 500) |
 | `from_date` | string | Start date (YYYY-MM-DD) |
 | `to_date` | string | End date (YYYY-MM-DD) |
 | `category` | string | Filter by WAF category |
@@ -272,19 +331,54 @@ Export formatted Excel workbook with 3 sheets: Summary, Monthly Rollups, Raw Dat
 
 **Response:** XLSX file download with conditional formatting (green = approved, red = mismatch)
 
+### GET /api/history/uploads
+
+List all previous upload batches.
+
+**Response:**
+```json
+{
+  "uploads": [
+    {
+      "id": 1,
+      "filename": "sprint-backlog.csv",
+      "row_count": 120,
+      "imported_count": 120,
+      "uploaded_at": "2026-03-01T10:00:00"
+    }
+  ]
+}
+```
+
+### POST /api/history/uploads/{upload_id}/reload
+
+Reload a previous upload batch into the verify/review view.
+
+**Response:**
+```json
+{
+  "success": true,
+  "results": [...],
+  "filename": "sprint-backlog.csv",
+  "total": 120
+}
+```
+
 ---
 
 ## Bulk Verify
 
 ### POST /api/bulk-verify
 
-Upload a file and AI-classify every story for side-by-side comparison.
+Upload a file and AI-classify every story. Small files (≤200 stories) return results synchronously. Large files (>200 stories) return a job ID for async polling.
 
 **Request:** `multipart/form-data` with `file` field (CSV or XLSX)
 
-Stories are classified in batches of 10 for efficiency.
+**Rate limit:** 5 requests per IP address per minute. Exceeding this returns HTTP 429.
 
-**Response:**
+Stories are classified in batches of 50 using 5 concurrent threads.
+
+**Response (synchronous, ≤200 stories):**
 ```json
 {
   "results": [
@@ -303,6 +397,49 @@ Stories are classified in batches of 10 for efficiency.
     }
   ],
   "total": 25
+}
+```
+
+**Response (async, >200 stories):**
+```json
+{
+  "async": true,
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "total_stories": 5000,
+  "message": "Processing started"
+}
+```
+
+### GET /api/bulk-verify/status/{job_id}
+
+Poll the status of an async bulk-verify job.
+
+**Response (in progress):**
+```json
+{
+  "status": "running",
+  "stories_processed": 1250,
+  "total_stories": 5000,
+  "batches_done": 25,
+  "total_batches": 100,
+  "pct": 25
+}
+```
+
+**Response (complete):**
+```json
+{
+  "status": "done",
+  "results": [...],
+  "total": 5000
+}
+```
+
+**Response (failed):**
+```json
+{
+  "status": "error",
+  "error": "Verification failed. Please try again."
 }
 ```
 
@@ -333,7 +470,8 @@ Save selected verified classifications to the database.
 ```json
 {
   "success": true,
-  "saved": 15
+  "saved": 15,
+  "upload_id": 3
 }
 ```
 
@@ -355,26 +493,47 @@ List all epics with story counts.
 }
 ```
 
-### GET /api/epics/summary?epic=Platform+Reliability
+### GET /api/epics/summary
 
-Get detailed data for a specific epic including tree structure.
+Get detailed data for all epics including health scores, mismatch counts, and story tree.
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `upload_id` | int | Optional. Filter to a specific upload batch. |
 
 **Response:**
 ```json
-{
-  "epic": "Platform Reliability",
-  "total": 12,
-  "approved": 8,
-  "mismatches": 2,
-  "categories": {"KTLO": 6, "Technical Maintenance": 4, ...},
-  "run_change": {"Run": 10, "Change": 2},
-  "features": {
-    "Database Health": [
-      {"id": 1, "story_title": "...", "category": "KTLO", "color": "GRAY", ...}
-    ],
-    "API Gateway": [...]
+[
+  {
+    "epic": "Platform Reliability",
+    "total_stories": 12,
+    "approved": 8,
+    "mismatches": 2,
+    "health_score": 82,
+    "dominant_color": "GRAY",
+    "colors": {"GRAY": 8, "BLACK": 4},
+    "categories": {"KTLO": 6, "Technical Maintenance": 4},
+    "run_change": {"Run": 10, "Change": 2},
+    "features": [
+      {
+        "name": "Database Health",
+        "stories": [
+          {
+            "id": 1,
+            "title": "Fix connection pool",
+            "category": "KTLO",
+            "color": "GRAY",
+            "confidence": "High",
+            "mismatch": true,
+            "original_tag": "New Feature",
+            "run_change": "Run"
+          }
+        ]
+      }
+    ]
   }
-}
+]
 ```
 
 ### POST /api/epics/assign

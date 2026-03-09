@@ -5,23 +5,34 @@ graph TB
     subgraph Browser["Browser (3 Pillars)"]
         HOME[home.html<br/>Landing Page]
         CLASS[index.html<br/>1. Classify]
-        HIST[history.html<br/>2. Analytics<br/>Upload → Verify → Insights]
-        LIN[lineage.html<br/>3. Epic Lineage]
+        HIST[history.html<br/>2. Analytics<br/>Upload → Verify → Summary]
+        LIN[history.html<br/>3. Epic Lineage<br/>Table View · Graph View]
         WAFREF[waf-reference.html<br/>WAF Reference]
-        CHARTJS[Chart.js 4.4.1]
+        CHARTJS[Chart.js 4.4.1<br/>+ datalabels plugin]
     end
 
     subgraph Flask["Flask Server (app.py)"]
-        ROUTES[Page Routes<br/>/ /classify /history /lineage /waf-reference]
+        ROUTES[Page Routes<br/>/ /classify /history /waf-reference]
+
+        subgraph Security["Security Layer"]
+            RATELIMIT[Rate Limiter<br/>5 bulk jobs/IP/min]
+            ERRLOG[Error Sanitizer<br/>Generic msgs to client<br/>Details to server log]
+            PAGECAP[Pagination Cap<br/>max 500 per_page]
+        end
 
         subgraph APIs["API Endpoints"]
             CLASSIFY["/api/classify<br/>/api/batch-classify"]
             UPLOAD["/api/upload-waf<br/>/api/upload-ground-truth"]
-            DASHAPI["/api/dashboard/summary"]
-            HISTAPI["/api/history/sprints<br/>/api/history/monthly<br/>/api/history/timeline<br/>/api/history/export<br/>/api/history/export-xlsx"]
-            BULKAPI["/api/bulk-verify<br/>/api/bulk-verify/save<br/>/api/history/import"]
+            DASHAPI["/api/dashboard/summary<br/>/api/dashboard/stories"]
+            HISTAPI["/api/history/sprints<br/>/api/history/monthly<br/>/api/history/timeline<br/>/api/history/export<br/>/api/history/export-xlsx<br/>/api/history/uploads"]
+            BULKAPI["/api/bulk-verify (sync ≤200)<br/>/api/bulk-verify (async >200)<br/>/api/bulk-verify/status/:id<br/>/api/bulk-verify/save<br/>/api/history/import"]
             EPICAPI["/api/epics<br/>/api/epics/summary<br/>/api/epics/assign<br/>/api/epics/autocomplete"]
             WAFAPI["/api/waf-definitions"]
+        end
+
+        subgraph AsyncWorker["Async Worker (threading)"]
+            POOL[ThreadPoolExecutor<br/>5 workers · batch 50]
+            JOBS[Job Store<br/>verify_jobs dict]
         end
     end
 
@@ -37,20 +48,30 @@ graph TB
 
     subgraph Files["File System"]
         SAMPLE[sample-data/<br/>waf-definitions.csv<br/>sample-ground-truth.csv]
+        UPLOADS[uploads/<br/>Temp file storage]
         EXPORTS[Excel/CSV<br/>Exports]
     end
 
     HOME --> ROUTES
     CLASS --> CLASSIFY
+    CLASS --> UPLOAD
     HIST --> DASHAPI
     HIST --> HISTAPI
     HIST --> BULKAPI
     LIN --> EPICAPI
     WAFREF --> WAFAPI
-    CLASS --> UPLOAD
+
+    BULKAPI --> RATELIMIT
+    HISTAPI --> PAGECAP
+    DASHAPI --> PAGECAP
+    CLASSIFY --> ERRLOG
+    BULKAPI --> ERRLOG
 
     CLASSIFY --> CLAUDE
-    BULKAPI --> CLAUDE
+    BULKAPI --> POOL
+    POOL --> CLAUDE
+    POOL --> JOBS
+    BULKAPI --> JOBS
 
     CLASSIFY --> SQLITE
     DASHAPI --> SQLITE
@@ -64,14 +85,15 @@ graph TB
     CLASSIFY --> WAFMEM
     CLASSIFY --> GTMEM
     WAFAPI --> WAFMEM
+    BULKAPI --> UPLOADS
 
     SAMPLE -.->|auto-load on startup| WAFMEM
     SAMPLE -.->|auto-load on startup| GTMEM
 
-    SQLITE -->|classifications<br/>sessions| SQLITE
-    
     style Browser fill:#EFF6FF,stroke:#3B82F6
     style Flask fill:#FFF7ED,stroke:#F97316
+    style Security fill:#FEF2F2,stroke:#EF4444
+    style AsyncWorker fill:#ECFDF5,stroke:#10B981
     style Storage fill:#F0FDF4,stroke:#22C55E
     style External fill:#FEF2F2,stroke:#EF4444
     style Files fill:#F5F3FF,stroke:#8B5CF6

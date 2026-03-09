@@ -11,8 +11,8 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 | Feature | Description |
 |---------|-------------|
 | **Classify** | Live chat or batch classification for new stories during grooming |
-| **Analytics** | Upload JIRA data → AI reviews every row → flag mismatches → approve & save → summary insights + epic lineage |
-| **Epic Lineage** | Health scores, color consistency checks, cross-epic analysis, flagged epics, story tree drill-down |
+| **Analytics** | Upload JIRA data → AI reviews every row → flag mismatches → approve & save → summary insights |
+| **Epic Lineage** | Health scores, mismatch flags, story tree drill-down with Table and Graph views |
 | **WAF Reference** | Browse all 8 WAF categories — definitions, decision rules, color codes, and examples |
 | **Ground Truth Loop** | Approve correct classifications to continuously improve AI accuracy |
 
@@ -63,12 +63,12 @@ The app auto-loads WAF definitions and ground truth from `sample-data/` on start
 ## Analytics Workflow
 
 1. **Upload Data** — Select a CSV or Excel file with JIRA stories
-2. **AI Review** — Claude classifies every row against the WAF framework in batches of 25, flags mismatches
-3. **Review & Approve** — Sortable table shows file tags vs AI recommendations with match/mismatch status. All rows pre-selected; save to history
-4. **Summary** — Portfolio-level charts: category distribution, color breakdown, Run vs Change, confidence levels, mismatch rate
-5. **Epic Lineage** — Health dashboard with scores (0–100), flagged epics needing review, cross-epic color/category charts, health table, and per-epic drill-down with story tree
+2. **AI Review** — Claude classifies every row against the WAF framework in batches of 50 (5 concurrent threads). Files over 200 stories are processed in the background with a live progress bar — the browser never times out.
+3. **Review & Approve** — Sortable table shows file tags vs AI recommendations with match/mismatch status. All rows pre-selected; save to history.
+4. **Summary** — Portfolio-level charts with percentages: category distribution, color breakdown, Run vs Change, confidence levels, mismatch rate. Click any KPI card to drill down into matching stories.
+5. **Epic Lineage** — Health dashboard with scores (0–100), flagged epics needing review, per-epic drill-down in Table or Graph view. KPI cards are clickable to filter by correct/mismatch.
 
-Each upload gets a unique ID. Use the Data Source filter to view analytics for a specific upload or all uploads combined.
+Each upload gets a unique ID. Use the Data Source filter to view analytics for a specific upload or all uploads combined. Previous uploads are listed in the history panel for easy reload.
 
 ## Epic Health Scoring
 
@@ -81,11 +81,23 @@ Each epic gets a health score from 0 to 100 based on:
 
 Epics are flagged as "mixed" if they have 3+ WAF colors or the dominant color is below 60%.
 
+## Security
+
+This application includes the following security controls:
+
+- **Debug mode disabled** in production
+- **XSS prevention** — all user-controlled data is HTML-escaped before rendering
+- **Safe error responses** — generic messages to client, details logged server-side
+- **Pagination cap** — maximum 500 results per page
+- **Rate limiting** — bulk upload endpoint allows 5 requests per IP per minute (HTTP 429 on excess)
+- **Secure filenames** — uploaded files processed with `werkzeug.utils.secure_filename`
+- **No authentication required** — designed for trusted internal networks only. Do not expose to the public internet.
+
 ## Tech Stack
 
 - **Backend:** Python Flask
 - **AI:** Anthropic Claude API (`claude-sonnet-4-5-20250929`)
-- **Frontend:** HTML/CSS/JS + Chart.js 4.4.1
+- **Frontend:** HTML/CSS/JS + Chart.js 4.4.1 + chartjs-plugin-datalabels
 - **Database:** SQLite (`waf_history.db`)
 - **Data:** pandas, openpyxl for CSV/Excel processing
 
@@ -114,7 +126,8 @@ waf-classifier/
     ├── User_Guide.docx             # User Guide
     ├── API_Reference.md            # API endpoint reference
     ├── Release_Notes.md            # Version changelog
-    └── Quick_Start.md              # Getting started guide
+    ├── Quick_Start.md              # Getting started guide
+    └── architecture.mermaid        # System architecture diagram
 ```
 
 ## Sample Data
