@@ -31,14 +31,18 @@ Returns current system state.
 **Response:**
 ```json
 {
-  "api_configured": true,
+  "api_key_configured": true,
+  "ai_backend": "anthropic",
+  "ai_model": "claude-sonnet-4-5-20250929",
   "waf_loaded": true,
   "waf_categories": ["KTLO", "Business Maintenance", "..."],
   "ground_truth_loaded": true,
   "ground_truth_count": 18,
-  "history_count": 42
+  "chat_history_length": 4
 }
 ```
+
+`ai_backend` is `"anthropic"` when an API key is configured, `"bedrock"` when falling back to AWS Bedrock.
 
 ### GET /api/waf-definitions
 
@@ -333,7 +337,7 @@ Export formatted Excel workbook with 3 sheets: Summary, Monthly Rollups, Raw Dat
 
 ### GET /api/history/uploads
 
-List all previous upload batches.
+List all previous upload batches with saved status.
 
 **Response:**
 ```json
@@ -344,11 +348,16 @@ List all previous upload batches.
       "filename": "sprint-backlog.csv",
       "row_count": 120,
       "imported_count": 120,
-      "uploaded_at": "2026-03-01T10:00:00"
+      "uploaded_at": "2026-03-01T10:00:00",
+      "saved_count": 100,
+      "has_results": true
     }
   ]
 }
 ```
+
+`saved_count` — number of stories actually saved to the classifications table for this upload (reliable saved/unsaved indicator).
+`has_results` — `true` if AI results are stored in `results_json` and can be recovered via the reload endpoint without re-running the AI.
 
 ### POST /api/history/uploads/{upload_id}/reload
 

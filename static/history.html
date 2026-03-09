@@ -707,6 +707,7 @@ async function loadSummary() {
         if (data.total_classifications === 0) {
             document.getElementById("summary-empty").style.display = "block";
             document.getElementById("summary-kpis").style.display = "none";
+            loadRecentTable();   // still refresh the table even when no KPI data
             return;
         }
         document.getElementById("summary-empty").style.display = "none";
@@ -1668,13 +1669,18 @@ function loadAnalyticsUploads() {
             if (!sel) return;
             sel.innerHTML = '<option value="">All Uploads (cumulative)</option>';
             const filterBar = document.getElementById('analytics-source-filter');
-            if (data.uploads && data.uploads.length > 0) {
+            // Only show uploads that have saved classifications
+            const saved = (data.uploads || []).filter(u => (parseInt(u.saved_count, 10) || 0) > 0);
+            if (saved.length > 0) {
                 filterBar.style.display = 'flex';
-                data.uploads.forEach(u => {
-                    const date = new Date(u.uploaded_at).toLocaleDateString();
+                saved.forEach(u => {
+                    const sc = parseInt(u.saved_count, 10);
+                    const dt = new Date(u.uploaded_at);
+                    const date = dt.toLocaleDateString();
+                    const time = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                     const opt = document.createElement('option');
                     opt.value = u.id;
-                    opt.textContent = `${u.filename} (${u.imported_count.toLocaleString()} rows — ${date})`;
+                    opt.textContent = `${u.filename} (${sc.toLocaleString()} saved — ${date} ${time})`;
                     sel.appendChild(opt);
                 });
             }
@@ -1745,7 +1751,13 @@ function loadUploadHistory() {
                     : (hr
                         ? `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">⚠ Not Saved</span>`
                         : `<span style="background:#6c7086;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">No Results</span>`);
-                const actionLabel = sc === 0 && hr ? 'Review & Save →' : 'Load →';
+                // Not Saved: show a persistent visible save button; others show hover arrow
+                const actionEl = (sc === 0 && hr)
+                    ? `<button onclick="event.stopPropagation();reloadUpload(${Number(u.id)}, false)"
+                               style="background:var(--accent);color:#fff;border:none;border-radius:6px;
+                                      padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;
+                                      white-space:nowrap;">Save Now</button>`
+                    : `<span class="upload-history-action">View →</span>`;
                 return `
                 <div class="upload-history-item" onclick="reloadUpload(${Number(u.id)}, ${sc > 0})">
                     <div class="upload-history-info">
@@ -1755,7 +1767,7 @@ function loadUploadHistory() {
                         </div>
                         <span class="upload-history-meta">${Number(u.row_count)} rows &middot; ${esc(new Date(u.uploaded_at).toLocaleDateString())} ${esc(new Date(u.uploaded_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))}</span>
                     </div>
-                    <span class="upload-history-action">${actionLabel}</span>
+                    ${actionEl}
                 </div>
                 `;
             }).join('');

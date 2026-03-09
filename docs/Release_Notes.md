@@ -2,6 +2,32 @@
 
 ---
 
+## v2.3 — March 2026
+
+UX polish and upload history improvements.
+
+### New Features
+
+- **Upload history badges** — Every upload in the history panel now shows a colour-coded status badge: ✓ Saved (N) in green, ⚠ Not Saved in amber, or No Results in grey. Badge is determined by counting actual saved classifications, not the unreliable `imported_count` field.
+- **Save Now button** — Uploads marked ⚠ Not Saved show a persistent "Save Now" button (always visible, no hover required) that opens the AI results review table immediately.
+- **Sticky save bar** — A bar pinned to the bottom of the viewport appears whenever the review table is open, showing the selected count and Save button regardless of scroll position.
+- **AWS Bedrock fallback** — When `ANTHROPIC_API_KEY` is absent from `.env`, the classifier automatically falls back to AWS Bedrock using `AnthropicBedrock`. AWS credentials are read from environment variables or `~/.aws/credentials`. Override the model ID with `BEDROCK_MODEL_ID`.
+- **Results stored for recovery** — Bulk-verify results are now persisted in `upload_history.results_json` immediately after AI processing, before the user clicks Save. Uploads processed but not saved appear as ⚠ Not Saved and can be recovered by clicking "Save Now".
+
+### Fixes & Improvements
+
+- **Recent Classifications table** — Story, Category, and Color columns were blank due to a field name mismatch between the API (`title`, `category`, `color`) and the renderer (`story_title`, `waf_category`, `waf_color`). Fixed.
+- **Summary empty state now refreshes Recent table** — Previously, when filtering to an upload with 0 classifications, the Recent table would show stale data from the previous selection. It now correctly clears and shows "0 stories".
+- **Data Source dropdown — saved uploads only** — The filter dropdown now excludes uploads with no saved classifications. Each entry shows the exact saved count and time (e.g. "100 saved — 3/9/2026 2:53 PM") so duplicate filenames are distinguishable.
+- **Data Source dropdown navigates to Summary** — Selecting any option automatically switches to the Summary tab.
+- **Saved uploads navigate to Summary** — Clicking a ✓ Saved entry in the Upload History panel goes directly to Summary rather than the Upload tab.
+- **Save-after-restore bug** — Restoring a previous upload set the wrong JavaScript variable (`currentUploadId` instead of `verifyUploadId`), causing saves to silently use the wrong upload ID. Fixed.
+- **Status element ID fix** — Restore status message referenced a non-existent element (`upload-status`); corrected to `import-status`.
+- **AI_MODEL global** — All hardcoded `model="claude-sonnet-4-5-20250929"` strings replaced with a single `AI_MODEL` global set at startup, making model changes a one-line edit.
+- **Startup banner** — Now shows which AI backend is active: Anthropic API or AWS Bedrock with region and model ID.
+
+---
+
 ## v2.2 — March 2026
 
 Security hardening release. No breaking changes.
