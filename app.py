@@ -17,6 +17,11 @@ import pandas as pd
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory, g, redirect
 from anthropic import Anthropic
+try:
+    from anthropic import AnthropicBedrock as _AnthropicBedrock
+    _BEDROCK_AVAILABLE = True
+except ImportError:
+    _BEDROCK_AVAILABLE = False
 
 _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 if os.path.exists(_env_path):
@@ -27,6 +32,21 @@ if os.path.exists(_env_path):
                 _k, _v = _line.split('=', 1)
                 os.environ[_k.strip()] = _v.strip()
 from werkzeug.utils import secure_filename
+
+# ── AI Backend Detection ───────────────────────────────────────────
+# Priority: ANTHROPIC_API_KEY in .env → AWS Bedrock (uses AWS env creds)
+def _setup_ai_backend():
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if api_key:
+        return "anthropic", "claude-sonnet-4-5-20250929"
+    # No API key — try Bedrock
+    bedrock_model = os.environ.get(
+        "BEDROCK_MODEL_ID",
+        "anthropic.claude-sonnet-4-5-20250929-v1:0"
+    )
+    return "bedrock", bedrock_model
+
+AI_BACKEND, AI_MODEL = _setup_ai_backend()
 
 app = Flask(__name__, static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max upload
@@ -185,11 +205,17 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def get_client():
-    """Get Anthropic client - requires ANTHROPIC_API_KEY env var."""
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
-    return Anthropic(api_key=api_key)
+    """Return AI client. Uses Anthropic API key if set, otherwise AWS Bedrock."""
+    if AI_BACKEND == "anthropic":
+        return Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    if not _BEDROCK_AVAILABLE:
+        raise RuntimeError(
+            "No ANTHROPIC_API_KEY found and AnthropicBedrock is not installed. "
+            "Set ANTHROPIC_API_KEY in .env, or install the anthropic[bedrock] extra."
+        )
+    aws_region = os.environ.get("AWS_DEFAULT_REGION",
+                                os.environ.get("AWS_REGION", "us-east-1"))
+    return _AnthropicBedrock(aws_region=aws_region)
 
 
 def _extract_categories_from_df(df):
@@ -526,7 +552,7 @@ def classify():
     try:
         client = get_client()
         response = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model=AI_MODEL,
             max_tokens=2000,
             system=build_system_prompt(),
             messages=recent_history
@@ -599,7 +625,7 @@ def batch_classify():
     try:
         client = get_client()
         response = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model=AI_MODEL,
             max_tokens=4000,
             system=build_system_prompt(),
             messages=[{"role": "user", "content": batch_prompt}]
@@ -620,6 +646,8 @@ def status():
     api_key_set = bool(os.environ.get("ANTHROPIC_API_KEY"))
     return jsonify({
         "api_key_configured": api_key_set,
+        "ai_backend": AI_BACKEND,
+        "ai_model": AI_MODEL,
         "waf_loaded": waf_store["definitions"] is not None or bool(waf_store["raw_text"]),
         "waf_filename": waf_store["filename"],
         "waf_categories": [str(c) for c in waf_store["categories"]],
@@ -1576,7 +1604,15 @@ def history_export_xlsx():
 def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_short):
     """Classify a single batch of stories. Returns list of result dicts."""
     import re
-    client = Anthropic(api_key=api_key)
+    # Async worker passes the raw API key; use Bedrock when it's absent
+    if api_key:
+        client = Anthropic(api_key=api_key)
+    elif _BEDROCK_AVAILABLE:
+        aws_region = os.environ.get("AWS_DEFAULT_REGION",
+                                    os.environ.get("AWS_REGION", "us-east-1"))
+        client = _AnthropicBedrock(aws_region=aws_region)
+    else:
+        raise RuntimeError("No ANTHROPIC_API_KEY and AnthropicBedrock not available")
     batch_prompt = "Classify each story below into the correct WAF category. For EACH story, respond with EXACTLY this format on separate lines:\n\n"
     batch_prompt += "STORY 1: [WAF Category] | [WAF Sub-Category] | [WAF Color] | [Run or Change] | [Confidence: HIGH/MEDIUM/LOW] | [One-line reasoning]\n\n"
     batch_prompt += "Here are the stories:\n\n"
@@ -1588,7 +1624,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model=AI_MODEL,
             max_tokens=8000,
             system=system_prompt,
             messages=[{"role": "user", "content": batch_prompt}]
@@ -1822,7 +1858,7 @@ def bulk_verify():
                 try:
                     print(f"[BULK-VERIFY] Sending batch {i//batch_size + 1} ({len(batch)} stories) to Claude...")
                     response = client.messages.create(
-                        model="claude-sonnet-4-5-20250929", max_tokens=6000,
+                        model=AI_MODEL, max_tokens=6000,
                         system=system_prompt,
                         messages=[{"role": "user", "content": batch_prompt}]
                     )
@@ -2315,7 +2351,11 @@ if __name__ == "__main__":
     print(f"  WAF Category Classifier")
     print(f"  Running at: http://localhost:{port}")
     print(f"  Analytics:  http://localhost:{port}/history")
-    print(f"  API Key configured: {bool(os.environ.get('ANTHROPIC_API_KEY'))}")
+    if AI_BACKEND == "anthropic":
+        print(f"  AI backend: Anthropic API (key configured)")
+    else:
+        aws_region = os.environ.get("AWS_DEFAULT_REGION", os.environ.get("AWS_REGION", "us-east-1"))
+        print(f"  AI backend: AWS Bedrock ({aws_region}) — model: {AI_MODEL}")
     init_db()
     print(f"  Database initialized: {DB_PATH}")
     auto_load_sample_data()
