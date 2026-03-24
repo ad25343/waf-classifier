@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAF Classifier - Dashboard</title>
+    <title>WAF Classifier | Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root {
-            --bg-primary: #0f1117;
-            --bg-secondary: #1a1d27;
-            --bg-tertiary: #242736;
-            --border: #353849;
-            --text-primary: #e4e5ea;
-            --text-secondary: #9395a5;
-            --text-muted: #6b6e80;
+            --bg-primary: #111318;
+            --bg-secondary: #1a1c25;
+            --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1;
+            --text-secondary: #9ca0b0;
+            --text-muted: #6c7086;
             --accent: #e8944a;
             --success: #4ade80;
             --warning: #fbbf24;
@@ -41,6 +41,8 @@
         }
 
         .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
         .logo {
             width: 36px; height: 36px;
@@ -151,7 +153,10 @@
 <div class="header">
     <div class="header-left">
         <div class="logo">W</div>
-        <h1>WAF Classifier <span>| Dashboard</span></h1>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Work Alignment Framework — Classify, Analyze, Align</p>
+        </div>
     </div>
     <div style="display:flex;gap:8px;">
         <a href="/" class="nav-link">Home</a>

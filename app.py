@@ -5,7 +5,9 @@ using Claude AI for intelligent recommendation and mismatch detection.
 Supports ground truth examples for calibration.
 """
 
+# Fix macOS fork crash with Python threading on Apple Silicon
 import os
+os.environ.setdefault("OBJC_DISABLE_INITIALIZE_FORK_SAFETY", "YES")
 import json
 import csv
 import sqlite3
@@ -63,13 +65,14 @@ verify_jobs = {}  # job_id -> { status, progress, total_batches, completed_batch
 # ── Rate Limiting ──────────────────────────────────────────────────────
 import time as _time
 _rate_limit_store: dict = {}  # ip -> [timestamps]
-MAX_BULK_JOBS_PER_MINUTE = 5
+MAX_BULK_JOBS_PER_MINUTE = 5  # Default; overridden by settings
 
 def _check_rate_limit(ip: str) -> bool:
     """Returns True if request is allowed, False if rate limit exceeded."""
     now = _time.time()
+    limit = int(get_setting("rate_limit_per_minute", str(MAX_BULK_JOBS_PER_MINUTE)))
     hits = [t for t in _rate_limit_store.get(ip, []) if now - t < 60]
-    if len(hits) >= MAX_BULK_JOBS_PER_MINUTE:
+    if len(hits) >= limit:
         return False
     hits.append(now)
     _rate_limit_store[ip] = hits
@@ -156,7 +159,56 @@ def init_db():
         conn.execute("ALTER TABLE upload_history ADD COLUMN results_json TEXT DEFAULT NULL")
     except sqlite3.OperationalError:
         pass  # Column already exists
+
+    # Settings table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at TEXT
+        )
+    """)
+    # Default settings
+    defaults = {
+        "sync_batch_size": "25",
+        "async_batch_size": "50",
+        "max_concurrent_workers": "5",
+        "rate_limit_per_minute": "5",
+    }
+    for k, v in defaults.items():
+        conn.execute(
+            "INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)",
+            (k, v, datetime.now().isoformat())
+        )
+    conn.commit()
     conn.close()
+
+
+# ── Settings Cache ────────────────────────────────────────────────────
+_settings_cache: dict = {}
+_settings_cache_loaded = False
+
+
+def get_setting(key: str, default: str = "") -> str:
+    """Read a setting from DB with in-memory cache."""
+    global _settings_cache, _settings_cache_loaded
+    if not _settings_cache_loaded:
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            rows = conn.execute("SELECT key, value FROM settings").fetchall()
+            _settings_cache = {r[0]: r[1] for r in rows}
+            conn.close()
+            _settings_cache_loaded = True
+        except Exception:
+            return default
+    return _settings_cache.get(key, default)
+
+
+def _refresh_settings_cache():
+    """Force-reload settings from DB."""
+    global _settings_cache, _settings_cache_loaded
+    _settings_cache_loaded = False
+    get_setting("_dummy")
 
 
 def save_classification(title, description, category, subcategory, color,
@@ -186,6 +238,85 @@ waf_store = {
     "filename": "",
     "categories": []
 }
+
+# ── Fuzzy WAF Category Matching ────────────────────────────────────────
+DEFAULT_WAF_CATEGORIES = [
+    "KTLO (Keep the Lights On)",
+    "Business Maintenance",
+    "Technical Maintenance",
+    "Regulatory (Operational)",
+    "Regulatory Mandated Change",
+    "Enterprise Strategic Priority",
+    "Top Divisional Priority",
+    "Other Blocked Priority",
+]
+
+WAF_ALIASES = {
+    "ktlo": "KTLO (Keep the Lights On)",
+    "keep the lights on": "KTLO (Keep the Lights On)",
+    "keep lights on": "KTLO (Keep the Lights On)",
+    "biz maintenance": "Business Maintenance",
+    "bus maintenance": "Business Maintenance",
+    "business maint": "Business Maintenance",
+    "tech maintenance": "Technical Maintenance",
+    "technical maint": "Technical Maintenance",
+    "tech debt": "Technical Maintenance",
+    "reg operational": "Regulatory (Operational)",
+    "regulatory operational": "Regulatory (Operational)",
+    "reg ops": "Regulatory (Operational)",
+    "reg mandated": "Regulatory Mandated Change",
+    "regulatory mandated": "Regulatory Mandated Change",
+    "reg change": "Regulatory Mandated Change",
+    "enterprise strategic": "Enterprise Strategic Priority",
+    "esp": "Enterprise Strategic Priority",
+    "strategic priority": "Enterprise Strategic Priority",
+    "top divisional": "Top Divisional Priority",
+    "tdp": "Top Divisional Priority",
+    "divisional priority": "Top Divisional Priority",
+    "other blocked": "Other Blocked Priority",
+    "obp": "Other Blocked Priority",
+    "blocked priority": "Other Blocked Priority",
+}
+
+
+def normalize_waf_category(raw_category, known_categories=None):
+    """Normalize a WAF category using exact match, substring, and alias lookup.
+
+    Returns (normalized_category, was_normalized, original_value).
+    If ambiguous (multiple substring matches), keeps original and lets AI resolve.
+    """
+    if not raw_category or str(raw_category).strip().lower() == "nan":
+        return ("", False, raw_category or "")
+
+    raw = str(raw_category).strip()
+    raw_lower = raw.lower()
+
+    cats = known_categories or waf_store.get("categories") or DEFAULT_WAF_CATEGORIES
+    cats = [str(c) for c in cats if c and str(c).strip().lower() != "nan"]
+
+    # 1. Exact match (case-insensitive)
+    for cat in cats:
+        if raw_lower == cat.lower().strip():
+            return (cat, False, raw)
+
+    # 2. Substring containment
+    substring_matches = []
+    for cat in cats:
+        cat_lower = cat.lower().strip()
+        if raw_lower in cat_lower or cat_lower in raw_lower:
+            substring_matches.append(cat)
+
+    if len(substring_matches) == 1:
+        return (substring_matches[0], True, raw)
+    # Ambiguous — don't normalize
+
+    # 3. Alias lookup
+    if raw_lower in WAF_ALIASES:
+        return (WAF_ALIASES[raw_lower], True, raw)
+
+    # No match — return as-is
+    return (raw, False, raw)
+
 
 # In-memory store for ground truth examples
 ground_truth_store = {
@@ -549,6 +680,8 @@ def classify():
     chat_history.append({"role": "user", "content": user_message})
     recent_history = chat_history[-20:]
 
+    print("Recent chat history:", recent_history)  # Debugging output
+    
     try:
         client = get_client()
         response = client.messages.create(
@@ -657,6 +790,244 @@ def status():
         "ground_truth_stats": ground_truth_store["stats"],
         "chat_history_length": len(chat_history)
     })
+
+
+@app.route("/settings")
+def settings_page():
+    """Serve the admin settings page."""
+    return send_from_directory("static", "settings.html")
+
+
+@app.route("/api/settings", methods=["GET"])
+def get_settings():
+    """Return all settings."""
+    db = get_db()
+    rows = db.execute("SELECT key, value FROM settings").fetchall()
+    settings = {r["key"]: r["value"] for r in rows}
+    return jsonify({"settings": settings})
+
+
+@app.route("/api/settings", methods=["PUT"])
+def update_settings():
+    """Update settings with validation."""
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    VALIDATIONS = {
+        "sync_batch_size": (1, 200),
+        "async_batch_size": (1, 200),
+        "max_concurrent_workers": (1, 20),
+        "rate_limit_per_minute": (1, 60),
+    }
+
+    db = get_db()
+    now = datetime.now().isoformat()
+    errors = []
+    for key, value in data.items():
+        if key not in VALIDATIONS:
+            continue
+        try:
+            val = int(value)
+            lo, hi = VALIDATIONS[key]
+            if val < lo or val > hi:
+                errors.append(f"{key} must be between {lo} and {hi}")
+                continue
+            db.execute(
+                "INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?) "
+                "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+                (key, str(val), now)
+            )
+        except (ValueError, TypeError):
+            errors.append(f"{key} must be an integer")
+
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
+
+    db.commit()
+    _refresh_settings_cache()
+
+    rows = db.execute("SELECT key, value FROM settings").fetchall()
+    settings = {r["key"]: r["value"] for r in rows}
+    return jsonify({"success": True, "settings": settings})
+
+
+@app.route("/api/ground-truth", methods=["GET"])
+def get_ground_truth():
+    """Return current ground truth examples."""
+    return jsonify({
+        "loaded": ground_truth_store["loaded"],
+        "filename": ground_truth_store["filename"],
+        "example_count": ground_truth_store["example_count"],
+        "stats": ground_truth_store["stats"],
+        "examples": ground_truth_store["examples"],
+    })
+
+
+@app.route("/api/ground-truth/<int:idx>", methods=["PUT"])
+def update_ground_truth_row(idx):
+    """Update a single ground truth example by index."""
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    examples = ground_truth_store["examples"]
+    if idx < 0 or idx >= len(examples):
+        return jsonify({"error": "Index out of range"}), 404
+    # Update fields
+    for key in ["title", "description", "category", "subcategory", "color", "run_change"]:
+        if key in data:
+            examples[idx][key] = data[key]
+    # Recalculate stats
+    stats = {}
+    for ex in examples:
+        cat = ex.get("category", "Unknown")
+        stats[cat] = stats.get(cat, 0) + 1
+    ground_truth_store["stats"] = stats
+    return jsonify({"success": True, "example": examples[idx]})
+
+
+@app.route("/api/ground-truth/add", methods=["POST"])
+def add_ground_truth_row():
+    """Add a new ground truth example."""
+    data = request.get_json(force=True)
+    if not data or not data.get("title"):
+        return jsonify({"error": "Title is required"}), 400
+    example = {
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "category": data.get("category", ""),
+        "subcategory": data.get("subcategory", ""),
+        "color": data.get("color", ""),
+        "run_change": data.get("run_change", ""),
+    }
+    ground_truth_store["examples"].append(example)
+    ground_truth_store["example_count"] = len(ground_truth_store["examples"])
+    ground_truth_store["loaded"] = True
+    # Recalculate stats
+    stats = {}
+    for ex in ground_truth_store["examples"]:
+        cat = ex.get("category", "Unknown")
+        stats[cat] = stats.get(cat, 0) + 1
+    ground_truth_store["stats"] = stats
+    return jsonify({"success": True, "example": example, "example_count": ground_truth_store["example_count"]})
+
+
+@app.route("/api/ground-truth/<int:idx>", methods=["DELETE"])
+def delete_ground_truth_row(idx):
+    """Delete a ground truth example by index."""
+    examples = ground_truth_store["examples"]
+    if idx < 0 or idx >= len(examples):
+        return jsonify({"error": "Index out of range"}), 404
+    removed = examples.pop(idx)
+    ground_truth_store["example_count"] = len(examples)
+    if not examples:
+        ground_truth_store["loaded"] = False
+    stats = {}
+    for ex in examples:
+        cat = ex.get("category", "Unknown")
+        stats[cat] = stats.get(cat, 0) + 1
+    ground_truth_store["stats"] = stats
+    return jsonify({"success": True, "removed": removed, "example_count": len(examples)})
+
+
+BASELINE_DIR = os.path.join(os.path.dirname(__file__), "baselines")
+os.makedirs(BASELINE_DIR, exist_ok=True)
+
+
+@app.route("/api/baseline/save", methods=["POST"])
+def save_baseline():
+    """Save current WAF definitions and ground truth as a baseline snapshot."""
+    import shutil
+    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    saved = {}
+
+    # Save WAF definitions
+    if waf_store["definitions"] is not None:
+        waf_path = os.path.join(BASELINE_DIR, f"waf-definitions_baseline_{now}.csv")
+        waf_store["definitions"].to_csv(waf_path, index=False)
+        saved["waf_definitions"] = waf_path
+    elif waf_store["filename"]:
+        src = os.path.join(UPLOAD_FOLDER, waf_store["filename"])
+        if os.path.exists(src):
+            dst = os.path.join(BASELINE_DIR, f"waf-definitions_baseline_{now}.csv")
+            shutil.copy2(src, dst)
+            saved["waf_definitions"] = dst
+
+    # Save ground truth
+    if ground_truth_store["examples"]:
+        gt_path = os.path.join(BASELINE_DIR, f"ground-truth_baseline_{now}.csv")
+        gt_df = pd.DataFrame(ground_truth_store["examples"])
+        # Rename columns to match expected format
+        col_map = {"title": "Story Title", "description": "Description", "run_change": "Run/Change",
+                    "color": "WAF Color", "category": "WAF Category", "subcategory": "WAF Sub-Category"}
+        gt_df = gt_df.rename(columns=col_map)
+        gt_df.to_csv(gt_path, index=False)
+        saved["ground_truth"] = gt_path
+
+    if not saved:
+        return jsonify({"error": "Nothing to save — no WAF definitions or ground truth loaded."}), 400
+
+    return jsonify({"success": True, "saved": saved, "timestamp": now})
+
+
+@app.route("/api/baseline/list", methods=["GET"])
+def list_baselines():
+    """List available baseline snapshots. Default baseline is always first."""
+    baselines = []
+    if os.path.exists(BASELINE_DIR):
+        files = sorted(os.listdir(BASELINE_DIR), reverse=True)
+        timestamps = {}
+        for f in files:
+            if "_baseline_" in f:
+                ts = f.split("_baseline_")[1].replace(".csv", "")
+                if ts not in timestamps:
+                    timestamps[ts] = {"timestamp": ts, "files": [], "is_default": ts == "default"}
+                timestamps[ts]["files"].append(f)
+        # Put default first, then rest by timestamp descending
+        default_bl = timestamps.pop("default", None)
+        baselines = list(timestamps.values())
+        if default_bl:
+            baselines.insert(0, default_bl)
+    return jsonify({"baselines": baselines})
+
+
+@app.route("/api/baseline/restore", methods=["POST"])
+def restore_baseline():
+    """Restore WAF definitions and/or ground truth from a baseline snapshot."""
+    data = request.get_json(force=True)
+    ts = data.get("timestamp", "")
+    if not ts:
+        return jsonify({"error": "No timestamp provided"}), 400
+
+    restored = {}
+
+    # Restore WAF definitions
+    waf_file = os.path.join(BASELINE_DIR, f"waf-definitions_baseline_{ts}.csv")
+    if os.path.exists(waf_file):
+        text, categories, df = parse_waf_file(waf_file, f"waf-definitions_baseline_{ts}.csv")
+        waf_store["definitions"] = df
+        waf_store["raw_text"] = text
+        waf_store["filename"] = f"baseline_{ts}"
+        waf_store["categories"] = categories
+        restored["waf_definitions"] = len(categories)
+
+    # Restore ground truth
+    gt_file = os.path.join(BASELINE_DIR, f"ground-truth_baseline_{ts}.csv")
+    if os.path.exists(gt_file):
+        examples, stats, col_map = parse_ground_truth(gt_file, f"ground-truth_baseline_{ts}.csv")
+        ground_truth_store["loaded"] = True
+        ground_truth_store["filename"] = f"baseline_{ts}"
+        ground_truth_store["examples"] = examples
+        ground_truth_store["example_count"] = len(examples)
+        ground_truth_store["stats"] = stats
+        ground_truth_store["raw_text"] = f"{len(examples)} examples across {len(stats)} categories"
+        restored["ground_truth"] = len(examples)
+
+    if not restored:
+        return jsonify({"error": f"No baseline files found for timestamp {ts}"}), 404
+
+    return jsonify({"success": True, "restored": restored})
 
 
 @app.route("/api/clear-chat", methods=["POST"])
@@ -1319,6 +1690,21 @@ def get_upload_history():
     return jsonify({"uploads": uploads})
 
 
+@app.route("/api/history/uploads/<int:upload_id>", methods=["DELETE"])
+def delete_upload(upload_id):
+    """Delete an upload and all its associated classifications."""
+    db = get_db()
+    row = db.execute("SELECT id, filename FROM upload_history WHERE id = ?", (upload_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Upload not found"}), 404
+
+    deleted_count = db.execute("DELETE FROM classifications WHERE upload_id = ?", (upload_id,)).rowcount
+    db.execute("DELETE FROM upload_history WHERE id = ?", (upload_id,))
+    db.commit()
+    logger.info("Deleted upload %d (%s) and %d classifications", upload_id, row["filename"], deleted_count)
+    return jsonify({"success": True, "deleted_classifications": deleted_count})
+
+
 @app.route("/api/history/uploads/<int:upload_id>/reload", methods=["POST"])
 def reload_upload(upload_id):
     """Reload a previously uploaded file's AI results for re-review and saving."""
@@ -1615,11 +2001,14 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
         raise RuntimeError("No ANTHROPIC_API_KEY and AnthropicBedrock not available")
     batch_prompt = "Classify each story below into the correct WAF category. For EACH story, respond with EXACTLY this format on separate lines:\n\n"
     batch_prompt += "STORY 1: [WAF Category] | [WAF Sub-Category] | [WAF Color] | [Run or Change] | [Confidence: HIGH/MEDIUM/LOW] | [One-line reasoning]\n\n"
+    batch_prompt += "If a story has no description, set Confidence to LOW and note that classification is based on title only.\n\n"
     batch_prompt += "Here are the stories:\n\n"
     for j, s in enumerate(batch, 1):
         batch_prompt += f"STORY {j}: {s['title']}"
-        if s["description"]:
+        if s["description"] and s["description"].strip() and s["description"].strip().lower() != "nan":
             batch_prompt += f"\nDescription: {s['description'][:300]}"
+        else:
+            batch_prompt += "\nDescription: (none provided)"
         batch_prompt += "\n\n"
 
     try:
@@ -1653,15 +2042,30 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 if len(parts) >= 5: ai_conf = parts[4].strip().replace("Confidence:", "").strip()
                 if len(parts) >= 6: ai_reason = parts[5].strip()
 
-            is_match = (
-                s["file_category"].lower().strip() == ai_cat.lower().strip()
-                if s["file_category"] and ai_cat else None
-            )
+            # Normalize file category for comparison
+            norm_cat, was_normalized, orig_cat = normalize_waf_category(s["file_category"])
+            if s["file_category"] and ai_cat:
+                is_match = norm_cat.lower().strip() == ai_cat.lower().strip()
+            else:
+                is_match = None
+
+            # Flag rows with missing description
+            missing_desc = not s["description"] or s["description"].strip() == "" or s["description"].strip().lower() == "nan"
+            if missing_desc:
+                ai_conf = "LOW"
+                if ai_reason:
+                    ai_reason = ai_reason + " [No description — title only]"
+                else:
+                    ai_reason = "No description provided — classified on title only"
+
             results.append({
                 "index": batch_offset + j,
                 "title": s["title"], "description": s["description"][:200],
+                "missing_description": missing_desc,
                 "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
                 "timestamp": s["timestamp"], "file_category": s["file_category"],
+                "file_category_normalized": norm_cat if was_normalized else "",
+                "was_normalized": was_normalized,
                 "file_color": s["file_color"], "file_run_change": s["file_run_change"],
                 "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
                 "ai_category": ai_cat, "ai_subcategory": ai_subcat, "ai_color": ai_color,
@@ -1695,7 +2099,7 @@ def _run_verify_job(job_id, stories, filename, ext, row_count):
         system_prompt = build_system_prompt()
         api_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
-        batch_size = 50
+        batch_size = int(get_setting("async_batch_size", "50"))
         batches = []
         for i in range(0, len(stories), batch_size):
             batches.append((stories[i:i + batch_size], i))
@@ -1718,7 +2122,7 @@ def _run_verify_job(job_id, stories, filename, ext, row_count):
                 print(f"[BULK-VERIFY][{job_id[:8]}] Batch {completed[0]}/{total_batches} done")
             return result
 
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=int(get_setting("max_concurrent_workers", "5"))) as executor:
             futures = {}
             for idx, (batch, offset) in enumerate(batches):
                 f = executor.submit(process_batch, idx, batch, offset)
@@ -1763,13 +2167,23 @@ def _run_verify_job(job_id, stories, filename, ext, row_count):
         print(f"[BULK-VERIFY][{job_id[:8]}] FATAL ERROR: {str(e)}")
 
 
-@app.route("/api/bulk-verify", methods=["POST"])
-def bulk_verify():
-    """Upload a file of stories, start async AI classification, return job_id for polling."""
-    client_ip = request.remote_addr or "unknown"
-    if not _check_rate_limit(client_ip):
-        logger.warning("Rate limit exceeded for bulk-verify from %s", client_ip)
-        return jsonify({"error": "Too many requests. Please wait a minute before uploading again."}), 429
+# ── File Preview Temp Store (for field mapping) ──────────────────────
+_preview_store: dict = {}  # preview_id -> { "df": DataFrame, "filename": str, "ext": str, "created": float }
+_PREVIEW_TTL = 600  # 10 minutes
+
+
+def _cleanup_previews():
+    """Remove expired previews."""
+    now = _time.time()
+    expired = [k for k, v in _preview_store.items() if now - v["created"] > _PREVIEW_TTL]
+    for k in expired:
+        del _preview_store[k]
+
+
+@app.route("/api/bulk-verify/preview", methods=["POST"])
+def bulk_verify_preview():
+    """Upload a file and return column info for field mapping, without starting AI classification."""
+    _cleanup_previews()
 
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
@@ -1787,6 +2201,125 @@ def bulk_verify():
             df = pd.read_excel(filepath)
         else:
             return jsonify({"error": "File must be CSV or Excel"}), 400
+
+        original_columns = list(df.columns)
+        df.columns = [c.strip().lower() for c in df.columns]
+
+        def find_col(keywords):
+            for col in df.columns:
+                if any(kw in col for kw in keywords):
+                    return col
+            return None
+
+        # Auto-detect suggested mappings
+        suggested = {}
+        target_fields = [
+            {"key": "title", "label": "Title", "required": True, "keywords": ["title", "summary", "story", "name"]},
+            {"key": "description", "label": "Description", "required": True, "keywords": ["desc", "detail", "body", "acceptance"]},
+            {"key": "waf_category", "label": "WAF Category", "required": False, "keywords": ["waf category", "waf_category", "category"]},
+            {"key": "waf_color", "label": "WAF Color", "required": False, "keywords": ["waf color", "waf_color", "color"]},
+            {"key": "run_change", "label": "Run/Change", "required": False, "keywords": ["run/change", "run_change", "run change"]},
+            {"key": "subcategory", "label": "Sub-Category", "required": False, "keywords": ["sub-category", "sub_category", "subcategory", "waf sub"]},
+            {"key": "confidence", "label": "Confidence", "required": False, "keywords": ["confidence", "conf"]},
+            {"key": "team", "label": "Team", "required": False, "keywords": ["team", "squad", "group"]},
+            {"key": "epic", "label": "Epic", "required": False, "keywords": ["epic", "initiative", "program"]},
+            {"key": "parent_feature", "label": "Parent Feature", "required": False, "keywords": ["feature", "parent feature", "parent_feature", "capability"]},
+            {"key": "timestamp", "label": "Timestamp", "required": False, "keywords": ["timestamp", "date", "created", "created_at"]},
+        ]
+        for field in target_fields:
+            matched = find_col(field["keywords"])
+            suggested[field["key"]] = matched or ""
+
+        # Get sample rows
+        sample_rows = []
+        for _, row in df.head(3).iterrows():
+            sample_rows.append({col: str(row.get(col, "")) for col in df.columns})
+
+        preview_id = str(uuid.uuid4())
+        _preview_store[preview_id] = {
+            "df": df,
+            "filename": filename,
+            "ext": ext,
+            "filepath": filepath,
+            "created": _time.time(),
+        }
+
+        return jsonify({
+            "success": True,
+            "filename": filename,
+            "file_columns": list(df.columns),
+            "original_columns": original_columns,
+            "suggested_mappings": suggested,
+            "target_fields": [{"key": f["key"], "label": f["label"], "required": f["required"]} for f in target_fields],
+            "sample_rows": sample_rows,
+            "total_rows": len(df),
+            "preview_id": preview_id,
+        })
+    except Exception as e:
+        logger.error("Preview failed: %s", e, exc_info=True)
+        return jsonify({"error": f"Failed to parse file: {str(e)[:200]}"}), 500
+
+
+@app.route("/api/bulk-verify", methods=["POST"])
+def bulk_verify():
+    """Upload a file of stories, start async AI classification, return job_id for polling."""
+    client_ip = request.remote_addr or "unknown"
+    if not _check_rate_limit(client_ip):
+        logger.warning("Rate limit exceeded for bulk-verify from %s", client_ip)
+        return jsonify({"error": "Too many requests. Please wait a minute before uploading again."}), 429
+
+    # Check if this is a mapped upload (from preview flow)
+    preview_id = request.form.get("preview_id", "")
+    mappings_json = request.form.get("column_mappings", "")
+
+    if preview_id and preview_id in _preview_store:
+        # Use cached DataFrame and user-provided mappings
+        preview = _preview_store[preview_id]
+        df = preview["df"]
+        filename = preview["filename"]
+        ext = preview["ext"]
+        try:
+            mappings = json.loads(mappings_json) if mappings_json else {}
+        except (json.JSONDecodeError, TypeError):
+            mappings = {}
+
+        title_col = mappings.get("title", "") or None
+        desc_col = mappings.get("description", "") or None
+        cat_col = mappings.get("waf_category", "") or None
+        color_col = mappings.get("waf_color", "") or None
+        rc_col = mappings.get("run_change", "") or None
+        subcat_col = mappings.get("subcategory", "") or None
+        conf_col = mappings.get("confidence", "") or None
+        team_col = mappings.get("team", "") or None
+        epic_col = mappings.get("epic", "") or None
+        feature_col = mappings.get("parent_feature", "") or None
+        ts_col = mappings.get("timestamp", "") or None
+
+        if not title_col:
+            return jsonify({"error": "Title column mapping is required"}), 400
+
+        # Clean up the preview
+        del _preview_store[preview_id]
+    else:
+        # Original flow — upload file and auto-detect columns
+        if "file" not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+
+        file = request.files["file"]
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+
+        try:
+            ext = filename.rsplit(".", 1)[-1].lower()
+            if ext in ("csv", "tsv"):
+                df = pd.read_csv(filepath, sep="\t" if ext == "tsv" else ",")
+            elif ext in ("xlsx", "xls"):
+                df = pd.read_excel(filepath)
+            else:
+                return jsonify({"error": "File must be CSV or Excel"}), 400
+        except Exception as e:
+            return jsonify({"error": f"Failed to read file: {str(e)[:200]}"}), 400
 
         df.columns = [c.strip().lower() for c in df.columns]
 
@@ -1811,6 +2344,8 @@ def bulk_verify():
         if not title_col:
             return jsonify({"error": "File must have a 'Story Title' or 'Summary' column"}), 400
 
+    # -- Common path: build stories from DataFrame + column mappings --
+    try:
         stories = []
         for _, row in df.iterrows():
             title = str(row.get(title_col, "")).strip()
@@ -1838,94 +2373,7 @@ def bulk_verify():
         if not stories:
             return jsonify({"error": "No valid stories found in file"}), 400
 
-        # For small files (<=200 stories), process synchronously for speed
-        if len(stories) <= 200:
-            import re
-            client = get_client()
-            system_prompt = build_system_prompt()
-            results = []
-            batch_size = 25
-            for i in range(0, len(stories), batch_size):
-                batch = stories[i:i + batch_size]
-                batch_prompt = "Classify each story below into the correct WAF category. For EACH story, respond with EXACTLY this format on separate lines:\n\n"
-                batch_prompt += "STORY 1: [WAF Category] | [WAF Sub-Category] | [WAF Color] | [Run or Change] | [Confidence: HIGH/MEDIUM/LOW] | [One-line reasoning]\n\n"
-                batch_prompt += "Here are the stories:\n\n"
-                for j, s in enumerate(batch, 1):
-                    batch_prompt += f"STORY {j}: {s['title']}"
-                    if s["description"]:
-                        batch_prompt += f"\nDescription: {s['description'][:300]}"
-                    batch_prompt += "\n\n"
-                try:
-                    print(f"[BULK-VERIFY] Sending batch {i//batch_size + 1} ({len(batch)} stories) to Claude...")
-                    response = client.messages.create(
-                        model=AI_MODEL, max_tokens=6000,
-                        system=system_prompt,
-                        messages=[{"role": "user", "content": batch_prompt}]
-                    )
-                    ai_text = response.content[0].text
-                    ai_lines = []
-                    for l in ai_text.split("\n"):
-                        stripped = l.strip().replace("**", "").replace("*", "")
-                        if re.match(r'^STORY\s+\d+', stripped, re.IGNORECASE):
-                            ai_lines.append(stripped)
-                    for j, s in enumerate(batch):
-                        ai_cat = ai_color = ai_rc = ai_conf = ai_reason = ai_subcat = ""
-                        if j < len(ai_lines):
-                            parts = ai_lines[j].split("|")
-                            first_part = parts[0] if parts else ""
-                            colon_idx = first_part.find(":")
-                            if colon_idx >= 0:
-                                first_part = first_part[colon_idx + 1:]
-                            if len(parts) >= 1: ai_cat = first_part.strip()
-                            if len(parts) >= 2: ai_subcat = parts[1].strip()
-                            if len(parts) >= 3: ai_color = parts[2].strip()
-                            if len(parts) >= 4: ai_rc = parts[3].strip()
-                            if len(parts) >= 5: ai_conf = parts[4].strip().replace("Confidence:", "").strip()
-                            if len(parts) >= 6: ai_reason = parts[5].strip()
-                        is_match = (
-                            s["file_category"].lower().strip() == ai_cat.lower().strip()
-                            if s["file_category"] and ai_cat else None
-                        )
-                        results.append({
-                            "index": i + j, "title": s["title"], "description": s["description"][:200],
-                            "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
-                            "timestamp": s["timestamp"], "file_category": s["file_category"],
-                            "file_color": s["file_color"], "file_run_change": s["file_run_change"],
-                            "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
-                            "ai_category": ai_cat, "ai_subcategory": ai_subcat, "ai_color": ai_color,
-                            "ai_run_change": ai_rc, "ai_confidence": ai_conf, "ai_reason": ai_reason,
-                            "is_match": is_match,
-                        })
-                except Exception as e:
-                    print(f"[BULK-VERIFY] ERROR in batch {i//batch_size + 1}: {type(e).__name__}: {str(e)[:300]}")
-                    for s in batch:
-                        results.append({
-                            "index": len(results), "title": s["title"], "description": s["description"][:200],
-                            "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
-                            "timestamp": s["timestamp"], "file_category": s["file_category"],
-                            "file_color": s["file_color"], "file_run_change": s["file_run_change"],
-                            "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
-                            "ai_category": "", "ai_subcategory": "", "ai_color": "", "ai_run_change": "",
-                            "ai_confidence": "", "ai_reason": f"API error: {str(e)[:100]}", "is_match": None,
-                        })
-            matches = sum(1 for r in results if r["is_match"] is True)
-            mismatches = sum(1 for r in results if r["is_match"] is False)
-            untagged = sum(1 for r in results if r["is_match"] is None)
-            db = get_db()
-            cursor = db.execute(
-                """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status, results_json)
-                   VALUES (?, ?, ?, ?, ?, 'verified', ?)""",
-                (datetime.now().isoformat(), filename, len(df), len(results), ext, json.dumps(results))
-            )
-            verify_upload_id = cursor.lastrowid
-            db.commit()
-            return jsonify({
-                "success": True, "filename": filename, "upload_id": verify_upload_id,
-                "total": len(results), "matches": matches, "mismatches": mismatches,
-                "untagged": untagged, "results": results,
-            })
-
-        # For large files (>200 stories), process asynchronously with progress polling
+        # All files process asynchronously with progress polling
         job_id = str(uuid.uuid4())
         verify_jobs[job_id] = {
             "status": "processing",
@@ -1992,6 +2440,16 @@ def bulk_verify_status(job_id):
         del verify_jobs[job_id]
 
     return jsonify(resp)
+
+
+@app.route("/api/classifications/<int:classification_id>", methods=["GET"])
+def get_classification(classification_id):
+    """Return full details for a single classification."""
+    db = get_db()
+    row = db.execute("SELECT * FROM classifications WHERE id = ?", (classification_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Classification not found"}), 404
+    return jsonify({k: row[k] for k in row.keys()})
 
 
 @app.route("/api/bulk-verify/save", methods=["POST"])
@@ -2343,6 +2801,19 @@ def auto_load_sample_data():
             print(f"  Auto-loaded ground truth: {len(examples)} examples across {len(stats)} categories")
         except Exception as e:
             print(f"  Warning: Failed to auto-load ground truth: {e}")
+
+    # Save a "default" baseline if it doesn't exist yet
+    default_waf = os.path.join(BASELINE_DIR, "waf-definitions_baseline_default.csv")
+    default_gt = os.path.join(BASELINE_DIR, "ground-truth_baseline_default.csv")
+    if not os.path.exists(default_waf) or not os.path.exists(default_gt):
+        import shutil
+        waf_src = os.path.join(sample_dir, "waf-definitions.csv")
+        gt_src = os.path.join(sample_dir, "sample-ground-truth.csv")
+        if os.path.exists(waf_src) and not os.path.exists(default_waf):
+            shutil.copy2(waf_src, default_waf)
+        if os.path.exists(gt_src) and not os.path.exists(default_gt):
+            shutil.copy2(gt_src, default_gt)
+        print(f"  Default baseline saved to {BASELINE_DIR}")
 
 
 if __name__ == "__main__":

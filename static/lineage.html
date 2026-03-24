@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAF Classifier - Epic Lineage</title>
+    <title>WAF Classifier | Epic Lineage</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root {
@@ -40,6 +40,8 @@
         }
 
         .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
         .logo {
             width: 36px; height: 36px;
@@ -342,7 +344,10 @@
     </button>
     <div class="header-left">
         <div class="logo">W</div>
-        <h1>WAF Classifier <span>| Epic Lineage</span></h1>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Work Alignment Framework — Classify, Analyze, Align</p>
+        </div>
     </div>
 </div>
 
@@ -354,9 +359,15 @@
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+    <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
 
 <div class="content">
+    <div style="margin-bottom:20px;">
+        <h1 style="font-size:22px;font-weight:700;">Epic Lineage</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">Map stories to parent epics. See health scores, mismatch flags, and WAF breakdowns per epic.</p>
+    </div>
+
     <!-- Upload filter bar -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);">
         <label style="font-size:13px;color:var(--text-secondary);white-space:nowrap;">Data Source:</label>

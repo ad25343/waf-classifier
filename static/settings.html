@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Classifier | Settings</title>
+    <style>
+        :root {
+            --bg-primary: #111318;
+            --bg-secondary: #1a1c25;
+            --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1;
+            --text-secondary: #9ca0b0;
+            --text-muted: #6c7086;
+            --accent: #e8944a;
+            --accent-hover: #d4832f;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+
+        .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+        .logo { width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent), #d4722a); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: white; }
+        .hamburger { display: flex; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 8px; z-index: 1001; }
+        .hamburger span { display: block; width: 22px; height: 2px; background: var(--text-secondary); border-radius: 2px; transition: all 0.3s; }
+        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+        .nav-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        .nav-overlay.open { display: block; }
+        .nav-menu { position: fixed; top: 0; left: -300px; width: 300px; height: 100vh; background: var(--bg-secondary); border-right: 1px solid var(--border); padding: 80px 24px 24px; display: flex; flex-direction: column; gap: 4px; transition: left 0.3s ease; z-index: 1000; }
+        .nav-menu.open { left: 0; }
+        .nav-menu a { color: var(--text-secondary); text-decoration: none; font-size: 15px; padding: 14px 16px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+        .nav-menu a:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+        .nav-menu a .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+        .nav-menu .nav-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px 4px; }
+
+        .main { flex: 1; padding: 32px; max-width: 1000px; margin: 0 auto; width: 100%; }
+        .page-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .page-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 700px) { .card-grid { grid-template-columns: 1fr; } }
+
+        .scard { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; transition: border-color 0.2s; }
+        .scard:hover { border-color: var(--accent); }
+        .scard-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+        .scard h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .scard .desc { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+        .scard-status { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dot.green { background: var(--success); }
+        .dot.yellow { background: var(--warning); }
+        .scard-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
+        .btn { padding: 7px 14px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-outline { background: none; color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-outline:hover { color: var(--text-primary); border-color: var(--text-muted); }
+        .btn-sm { padding: 5px 10px; font-size: 11px; }
+        .btn-danger { background: none; color: var(--error); border: 1px solid var(--error); }
+        .btn-danger:hover { background: rgba(248,113,113,0.12); }
+
+        .expand-panel { display: none; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-top: 20px; grid-column: 1 / -1; }
+        .expand-panel.open { display: block; }
+        .expand-panel .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .expand-panel .panel-header h3 { font-size: 16px; font-weight: 700; }
+        .expand-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+        .expand-close:hover { color: var(--text-primary); }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        td { padding: 8px 10px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+        tr:hover td { background: var(--bg-tertiary); }
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .badge.run { background: rgba(108,138,255,0.15); color: #6c8aff; }
+        .badge.change { background: rgba(192,132,252,0.15); color: #c084fc; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-group .hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+        .form-group input[type="number"], .form-group input[type="text"], .form-group select { width: 100%; padding: 8px 12px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+        .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 3000; display: none; }
+        .toast.success { display: block; background: #1a332a; color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
+        .toast.error { display: block; background: #331a1a; color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); max-width: 560px; width: 92%; max-height: 85vh; overflow-y: auto; }
+        .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 16px; font-weight: 700; }
+        .modal-body { padding: 20px; }
+        .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menu"><span></span><span></span><span></span></button>
+    <div class="header-left">
+        <div class="logo">W</div>
+        <div class="header-text"><h1>WAF Classifier</h1><p>Work Alignment Framework — Classify, Analyze, Align</p></div>
+    </div>
+</div>
+<div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
+<nav class="nav-menu" id="nav-menu">
+    <div class="nav-label">Navigate</div>
+    <a href="/"><span class="nav-icon">🏠</span> Home</a>
+    <a href="/classify"><span class="nav-icon">💬</span> Classifier</a>
+    <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
+    <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
+    <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+    <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
+</nav>
+
+<div class="main">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Manage WAF definitions, ground truth, baselines, and configuration.</p>
+
+    <div class="card-grid">
+        <!-- WAF Definitions -->
+        <div class="scard">
+            <div class="scard-icon" style="background:rgba(232,148,74,0.15);">📋</div>
+            <h3>WAF Definitions</h3>
+            <p class="desc">The 8 WAF categories used to classify stories.</p>
+            <div class="scard-status"><span class="dot" id="waf-dot"></span><span id="waf-status">Loading...</span></div>
+            <div class="scard-actions">
+                <button class="btn btn-primary" onclick="togglePanel('waf')">View / Edit</button>
+                <label class="btn btn-outline" style="margin:0;">Upload <input type="file" id="waf-file" accept=".csv,.xlsx,.xls,.tsv" onchange="uploadWaf(this)" style="display:none;"></label>
+            </div>
+        </div>
+
+        <!-- Ground Truth -->
+        <div class="scard">
+            <div class="scard-icon" style="background:rgba(192,132,252,0.15);">🎯</div>
+            <h3>Ground Truth</h3>
+            <p class="desc">Correctly classified stories used to calibrate AI accuracy.</p>
+            <div class="scard-status"><span class="dot" id="gt-dot"></span><span id="gt-status">Loading...</span></div>
+            <div class="scard-actions">
+                <button class="btn btn-primary" onclick="togglePanel('gt')">View / Edit</button>
+                <label class="btn btn-outline" style="margin:0;">Upload <input type="file" id="gt-file" accept=".csv,.xlsx,.xls,.tsv" onchange="uploadGT(this)" style="display:none;"></label>
+                <button class="btn btn-outline" onclick="showAddGTRow()">+ Add</button>
+            </div>
+        </div>
+
+        <!-- Baselines -->
+        <div class="scard">
+            <div class="scard-icon" style="background:rgba(74,222,128,0.15);">💾</div>
+            <h3>Baselines</h3>
+            <p class="desc">Save snapshots and restore anytime. A default baseline is always available.</p>
+            <div class="scard-status"><span class="dot green"></span><span id="bl-status">Loading...</span></div>
+            <div class="scard-actions">
+                <button class="btn btn-primary" onclick="saveBaseline()">Save Snapshot</button>
+                <button class="btn btn-outline" onclick="togglePanel('bl')">View All</button>
+                <button class="btn btn-outline" onclick="restoreBaseline('default')">Restore Default</button>
+            </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="scard">
+            <div class="scard-icon" style="background:rgba(251,191,36,0.15);">⚡</div>
+            <h3>Configuration</h3>
+            <p class="desc">Batch size for AI classification API requests.</p>
+            <div class="scard-status"><span class="dot green"></span><span id="proc-status">Loading...</span></div>
+            <div class="scard-actions">
+                <button class="btn btn-primary" onclick="togglePanel('proc')">Configure</button>
+            </div>
+        </div>
+
+        <!-- Expand: WAF -->
+        <div class="expand-panel" id="panel-waf">
+            <div class="panel-header"><h3>WAF Definitions</h3><button class="expand-close" onclick="closePanel('waf')">&times;</button></div>
+            <div style="overflow-x:auto;">
+                <table><thead><tr><th>Category</th><th>Color</th><th>Run/Change</th><th>Description</th></tr></thead>
+                <tbody id="waf-table-body"><tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Loading...</td></tr></tbody></table>
+            </div>
+        </div>
+
+        <!-- Expand: GT -->
+        <div class="expand-panel" id="panel-gt">
+            <div class="panel-header"><h3>Ground Truth Examples</h3><button class="expand-close" onclick="closePanel('gt')">&times;</button></div>
+            <div style="overflow-x:auto;">
+                <table><thead><tr><th>Title</th><th>Category</th><th>Color</th><th>Run/Change</th><th style="text-align:center;">Actions</th></tr></thead>
+                <tbody id="gt-table-body"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading...</td></tr></tbody></table>
+            </div>
+        </div>
+
+        <!-- Expand: Baselines -->
+        <div class="expand-panel" id="panel-bl">
+            <div class="panel-header"><h3>All Baselines</h3><button class="expand-close" onclick="closePanel('bl')">&times;</button></div>
+            <div id="baseline-list"></div>
+        </div>
+
+        <!-- Expand: Config -->
+        <div class="expand-panel" id="panel-proc">
+            <div class="panel-header"><h3>Configuration</h3><button class="expand-close" onclick="closePanel('proc')">&times;</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="form-group"><label for="sync_batch_size">Sync Batch Size</label><input type="number" id="sync_batch_size" min="1" max="200" value="25"><div class="hint">Small files (≤200 stories). Default: 25</div></div>
+                <div class="form-group"><label for="async_batch_size">Async Batch Size</label><input type="number" id="async_batch_size" min="1" max="200" value="50"><div class="hint">Large files (>200 stories). Default: 50</div></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:12px;">
+                <button class="btn btn-primary" onclick="saveProcessingSettings()">Save</button>
+                <button class="btn btn-outline" onclick="resetDefaults()">Reset Defaults</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Edit GT Modal -->
+<div class="modal-overlay" id="gt-modal" onclick="if(event.target===this)closeGTModal()">
+    <div class="modal">
+        <div class="modal-header"><h3 id="gt-modal-title">Edit Ground Truth</h3><button onclick="closeGTModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">&times;</button></div>
+        <div class="modal-body">
+            <input type="hidden" id="gt-edit-idx">
+            <div class="form-group"><label>Title</label><input type="text" id="gt-edit-title"></div>
+            <div class="form-group"><label>Description</label><input type="text" id="gt-edit-desc"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group"><label>WAF Category</label><select id="gt-edit-category"><option value="">Select...</option><option>KTLO (Keep the Lights On)</option><option>Business Maintenance</option><option>Technical Maintenance</option><option>Regulatory (Operational)</option><option>Regulatory Mandated Change</option><option>Enterprise Strategic Priority</option><option>Top Divisional Priority</option><option>Other Blocked Priority</option></select></div>
+                <div class="form-group"><label>WAF Color</label><select id="gt-edit-color"><option value="">Select...</option><option>GRAY</option><option>BLACK</option><option>RED</option><option>ORANGE</option><option>YELLOW</option><option>GREEN</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group"><label>Run/Change</label><select id="gt-edit-rc"><option value="">Select...</option><option>Run</option><option>Change</option></select></div>
+                <div class="form-group"><label>Sub-Category</label><input type="text" id="gt-edit-subcat"></div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-outline" onclick="closeGTModal()">Cancel</button><button class="btn btn-primary" onclick="saveGTRow()">Save</button></div>
+    </div>
+</div>
+
+<script>
+function toggleNav(){document.querySelector('.hamburger').classList.toggle('active');document.getElementById('nav-menu').classList.toggle('open');document.getElementById('nav-overlay').classList.toggle('open');}
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function showToast(msg,type){const t=document.getElementById('toast');t.className='toast '+type;t.textContent=msg;setTimeout(()=>{t.className='toast';},4000);}
+
+let _openPanel=null;
+function togglePanel(id){if(_openPanel===id){closePanel(id);return;}document.querySelectorAll('.expand-panel').forEach(p=>p.classList.remove('open'));document.getElementById('panel-'+id).classList.add('open');_openPanel=id;document.getElementById('panel-'+id).scrollIntoView({behavior:'smooth',block:'nearest'});}
+function closePanel(id){document.getElementById('panel-'+id).classList.remove('open');_openPanel=null;}
+
+async function loadWafDefs(){try{const[sR,dR]=await Promise.all([fetch('/api/status'),fetch('/api/waf-definitions')]);const st=await sR.json();const df=await dR.json();const dot=document.getElementById('waf-dot');const tx=document.getElementById('waf-status');if(st.waf_loaded){dot.className='dot green';tx.textContent=st.waf_categories.length+' categories loaded';}else{dot.className='dot yellow';tx.textContent='Not loaded';}const tb=document.getElementById('waf-table-body');if(df.definitions&&df.definitions.length>0){tb.innerHTML=df.definitions.map(d=>'<tr><td style="color:var(--text-primary);font-weight:500;">'+esc(d.category)+'</td><td>'+esc(d.color)+'</td><td><span class="badge '+(d.run_change||'').toLowerCase()+'">'+esc(d.run_change)+'</span></td><td style="font-size:12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(d.description)+'">'+esc(d.description)+'</td></tr>').join('');}else{tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">No WAF definitions loaded.</td></tr>';}}catch(e){console.error(e);}}
+async function uploadWaf(input){const f=input.files[0];if(!f)return;const fd=new FormData();fd.append('file',f);try{const r=await fetch('/api/upload-waf',{method:'POST',body:fd});const d=await r.json();if(d.success){loadWafDefs();showToast('WAF definitions uploaded.','success');}else{showToast(d.error||'Upload failed','error');}}catch(e){showToast('Upload failed: '+e.message,'error');}input.value='';}
+
+let _gtExamples=[];
+async function loadGT(){try{const r=await fetch('/api/ground-truth');const d=await r.json();const dot=document.getElementById('gt-dot');const tx=document.getElementById('gt-status');if(d.loaded){dot.className='dot green';tx.textContent=d.example_count+' examples loaded';}else{dot.className='dot yellow';tx.textContent='Not loaded';}_gtExamples=d.examples||[];const tb=document.getElementById('gt-table-body');if(_gtExamples.length>0){tb.innerHTML=_gtExamples.map((ex,i)=>'<tr><td style="color:var(--text-primary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(ex.title)+'">'+esc(ex.title)+'</td><td style="font-size:12px;">'+esc(ex.category)+'</td><td>'+esc(ex.color)+'</td><td><span class="badge '+(ex.run_change||'').toLowerCase()+'">'+esc(ex.run_change)+'</span></td><td style="text-align:center;white-space:nowrap;"><button class="btn btn-outline btn-sm" onclick="editGTRow('+i+')">Edit</button> <button class="btn btn-danger btn-sm" onclick="deleteGTRow('+i+')">Del</button></td></tr>').join('');}else{tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">No ground truth loaded.</td></tr>';}}catch(e){console.error(e);}}
+async function uploadGT(input){const f=input.files[0];if(!f)return;const fd=new FormData();fd.append('file',f);try{const r=await fetch('/api/upload-ground-truth',{method:'POST',body:fd});const d=await r.json();if(d.success){loadGT();showToast('Ground truth uploaded.','success');}else{showToast(d.error||'Upload failed','error');}}catch(e){showToast('Upload failed: '+e.message,'error');}input.value='';}
+function editGTRow(i){const ex=_gtExamples[i];if(!ex)return;document.getElementById('gt-modal-title').textContent='Edit Ground Truth';document.getElementById('gt-edit-idx').value=i;document.getElementById('gt-edit-title').value=ex.title||'';document.getElementById('gt-edit-desc').value=ex.description||'';document.getElementById('gt-edit-category').value=ex.category||'';document.getElementById('gt-edit-color').value=ex.color||'';document.getElementById('gt-edit-rc').value=ex.run_change||'';document.getElementById('gt-edit-subcat').value=ex.subcategory||'';document.getElementById('gt-modal').classList.add('open');}
+function showAddGTRow(){document.getElementById('gt-modal-title').textContent='Add Ground Truth Example';document.getElementById('gt-edit-idx').value='new';['gt-edit-title','gt-edit-desc','gt-edit-category','gt-edit-color','gt-edit-rc','gt-edit-subcat'].forEach(id=>document.getElementById(id).value='');document.getElementById('gt-modal').classList.add('open');}
+function closeGTModal(){document.getElementById('gt-modal').classList.remove('open');}
+async function saveGTRow(){const idx=document.getElementById('gt-edit-idx').value;const body={title:document.getElementById('gt-edit-title').value,description:document.getElementById('gt-edit-desc').value,category:document.getElementById('gt-edit-category').value,color:document.getElementById('gt-edit-color').value,run_change:document.getElementById('gt-edit-rc').value,subcategory:document.getElementById('gt-edit-subcat').value};if(!body.title){alert('Title is required');return;}try{const url=idx==='new'?'/api/ground-truth/add':'/api/ground-truth/'+idx;const r=await fetch(url,{method:idx==='new'?'POST':'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(d.success){closeGTModal();loadGT();}else{alert(d.error||'Save failed');}}catch(e){alert('Save failed: '+e.message);}}
+async function deleteGTRow(i){if(!confirm('Delete this ground truth example?'))return;try{const r=await fetch('/api/ground-truth/'+i,{method:'DELETE'});const d=await r.json();if(d.success)loadGT();else alert(d.error);}catch(e){alert(e.message);}}
+
+async function loadBaselines(){try{const r=await fetch('/api/baseline/list');const d=await r.json();const el=document.getElementById('baseline-list');const st=document.getElementById('bl-status');if(!d.baselines||d.baselines.length===0){el.innerHTML='<div style="color:var(--text-muted);font-size:13px;">No baselines saved yet.</div>';st.textContent='No baselines';return;}st.textContent=d.baselines.length+' baseline'+(d.baselines.length!==1?'s':'')+' available';el.innerHTML='<table><thead><tr><th>Name</th><th>Contents</th><th style="text-align:center;">Actions</th></tr></thead><tbody>'+d.baselines.map(b=>{const ts=b.timestamp;const isDef=b.is_default;const label=isDef?'Default (Original)':ts.substring(0,4)+'-'+ts.substring(4,6)+'-'+ts.substring(6,8)+' '+ts.substring(9,11)+':'+ts.substring(11,13);const files=b.files.map(f=>esc(f.split('_baseline_')[0].replace(/-/g,' '))).join(', ');return'<tr><td style="color:var(--text-primary);font-weight:500;">'+esc(label)+(isDef?' <span style="font-size:10px;background:var(--accent);color:#fff;padding:1px 6px;border-radius:6px;">DEFAULT</span>':'')+'</td><td style="font-size:12px;">'+files+'</td><td style="text-align:center;"><button class="btn btn-primary btn-sm" onclick="restoreBaseline(\''+esc(ts)+'\')">Restore</button></td></tr>';}).join('')+'</tbody></table>';}catch(e){console.error(e);}}
+async function saveBaseline(){try{const r=await fetch('/api/baseline/save',{method:'POST'});const d=await r.json();if(d.success){loadBaselines();showToast('Baseline saved.','success');}else{showToast(d.error||'Failed','error');}}catch(e){showToast('Failed: '+e.message,'error');}}
+async function restoreBaseline(ts){const label=ts==='default'?'the default baseline':'this baseline';if(!confirm('Restore '+label+'? This replaces current WAF definitions and ground truth.'))return;try{const r=await fetch('/api/baseline/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({timestamp:ts})});const d=await r.json();if(d.success){loadWafDefs();loadGT();showToast('Baseline restored.','success');}else{showToast(d.error||'Failed','error');}}catch(e){showToast('Failed: '+e.message,'error');}}
+
+async function loadSettings(){try{const r=await fetch('/api/settings');const d=await r.json();if(d.settings){['sync_batch_size','async_batch_size'].forEach(f=>{const el=document.getElementById(f);if(el&&d.settings[f]!==undefined)el.value=d.settings[f];});document.getElementById('proc-status').textContent='Sync: '+d.settings.sync_batch_size+' / Async: '+d.settings.async_batch_size;}}catch(e){console.error(e);}}
+async function saveProcessingSettings(){const body={sync_batch_size:parseInt(document.getElementById('sync_batch_size').value,10),async_batch_size:parseInt(document.getElementById('async_batch_size').value,10)};try{const r=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(d.success){loadSettings();showToast('Settings saved.','success');}else{showToast(d.error||'Failed','error');}}catch(e){showToast('Failed: '+e.message,'error');}}
+function resetDefaults(){document.getElementById('sync_batch_size').value=25;document.getElementById('async_batch_size').value=50;showToast('Reset to defaults. Click Save to apply.','success');}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGTModal();if(_openPanel)closePanel(_openPanel);}});
+loadWafDefs();loadGT();loadBaselines();loadSettings();
+</script>
+</body>
+</html>

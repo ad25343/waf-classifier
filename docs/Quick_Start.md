@@ -34,12 +34,13 @@ Open **http://localhost:8080** in your browser. You should see the home page wit
 ## Your First Classification
 
 1. Click **Classify Stories** from the home page
-2. Type a story in the chat box, for example:
+2. The sidebar shows the current status (API, WAF definitions, ground truth). WAF definitions and ground truth are auto-loaded from sample data on first run. To manage them, go to **Settings**.
+3. Type a story in the chat box, for example:
 
    > Classify this story: "Fix production database connection pool exhaustion causing 504 errors on loan lookup service during peak hours"
 
-3. The AI returns a recommendation with category, color, confidence, and reasoning
-4. If it's correct, click **Approve** to save it as ground truth
+4. The AI returns a recommendation with category, color, confidence, and reasoning
+5. If it's correct, click **Approve** to save it as ground truth
 
 ## Try Mismatch Detection
 
@@ -56,12 +57,14 @@ Click **Analytics** to see real-time KPIs and charts. The Summary tab shows clas
 ## Analyze Historical JIRA Data
 
 1. Click **Analytics** from the home page — the Upload Data tab is the default entry point
-2. Upload a CSV or Excel file with columns: title, description, current WAF tag
-3. The AI verifies every story against the WAF framework in batches of 50 (5 concurrent threads)
-4. For files over 200 stories, processing runs in the background with a live progress bar — the browser stays responsive
-5. Review the side-by-side comparison: file tag vs AI recommendation, with mismatches highlighted
-6. Select the rows you want to keep and click **Save Selected**
-7. After saving, you're taken to the Summary tab to see insights — mismatches, trends, distributions
+2. Upload a CSV or Excel file with story data
+3. **Map your columns** — the system auto-detects column mappings but lets you confirm or adjust. Title and Description are required.
+4. Click **Continue to AI Classification** — a progress bar tracks each batch as the AI classifies every story
+5. Review the side-by-side comparison: file tag vs AI recommendation, with mismatches highlighted. Stories with no description are flagged as LOW confidence.
+6. Click any row to see full story details in a modal
+7. Select the rows you want to keep and click **Save Selected**
+8. After saving, you're taken to the Summary tab to see insights
+9. Use the **History tab** to view, reload, or delete previous uploads
 
 ## Track Epic Lineage
 
@@ -77,7 +80,9 @@ Click **Analytics** to see real-time KPIs and charts. The Summary tab shows clas
 - **Include full context.** Paste story titles AND descriptions, not just titles.
 - **Always include current tags.** Mismatch detection is the most valuable feature for catching errors.
 - **Use bulk verify quarterly.** Upload your JIRA sprint backlog exports to catch misclassifications across the portfolio.
-- **Reload previous uploads.** Previously uploaded files appear in the upload history panel — click any entry to reload without re-uploading.
+- **Reload previous uploads.** Previously uploaded files appear in the History tab — click any entry to reload without re-uploading.
+- **Save baselines.** Go to Settings > Baselines to save a snapshot of your WAF definitions and ground truth. Restore anytime if you accidentally delete something.
+- **Configure batch size.** Go to Settings > Configuration to adjust how many stories are sent per AI request.
 
 ## File Formats for Upload
 

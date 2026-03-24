@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAF Classifier</title>
+    <title>WAF Classifier | Home</title>
     <style>
         :root {
             --bg-primary: #111318;
@@ -145,7 +145,8 @@
         .menu-card.classify::before { background: linear-gradient(90deg, var(--accent), #d4722a); }
         .menu-card.dashboard::before { background: linear-gradient(90deg, var(--teal), var(--success)); }
         .menu-card.lineage::before { background: linear-gradient(90deg, var(--purple), #e879a8); }
-        .menu-card.import::before { background: linear-gradient(90deg, var(--warning), var(--accent)); }
+        .menu-card.import::before { background: linear-gradient(90deg, #f59e0b, #e8944a); }
+        .menu-card.settings::before { background: linear-gradient(90deg, #475569, #64748b); }
 
         .card-icon {
             width: 48px; height: 48px;
@@ -159,6 +160,7 @@
         .dashboard .card-icon { background: rgba(45,212,191,0.15); }
         .lineage .card-icon { background: rgba(192,132,252,0.15); }
         .import .card-icon { background: rgba(251,191,36,0.15); }
+        .settings .card-icon { background: rgba(156,160,176,0.15); }
 
         .menu-card h2 {
             font-size: 18px; font-weight: 600;
@@ -239,6 +241,7 @@
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+    <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
 
 <div class="main">
@@ -269,6 +272,13 @@
             <h2>WAF Reference</h2>
             <p>Browse the 8 WAF categories — definitions, decision rules, color codes, and examples. Your go-to guide for correct classification.</p>
             <span class="card-badge">Everyone</span>
+        </a>
+
+        <a href="/settings" class="menu-card settings">
+            <div class="card-icon">⚙️</div>
+            <h2>Settings</h2>
+            <p>Configure batch sizes, concurrent workers, rate limits, and other admin options for AI classification processing.</p>
+            <span class="card-badge">Admin</span>
         </a>
     </div>
 </div>

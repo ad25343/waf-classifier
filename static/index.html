@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAF Category Classifier</title>
+    <title>WAF Classifier | Classify</title>
     <style>
         :root {
             --bg-primary: #111318;
@@ -58,6 +58,8 @@
             align-items: center;
             gap: 12px;
         }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
         .logo {
             width: 36px;
@@ -824,6 +826,7 @@
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+    <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
 
 
@@ -834,7 +837,10 @@
         </button>
         <div class="header-left">
             <div class="logo">W</div>
-            <h1>WAF Classifier <span>| Story Alignment Tool</span></h1>
+            <div class="header-text">
+                <h1>WAF Classifier</h1>
+                <p>Work Alignment Framework — Classify, Analyze, Align</p>
+            </div>
         </div>
         <div class="status-pills">
             <div class="pill" id="api-pill">
@@ -852,32 +858,25 @@
         </div>
     </div>
 
+    <div style="padding:16px 24px 0;">
+        <h1 style="font-size:22px;font-weight:700;">Classify</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">AI-powered WAF classification for JIRA stories. Chat, get recommendations, and approve to ground truth.</p>
+    </div>
+
     <!-- Main Layout -->
     <div class="main-layout">
 
         <!-- Sidebar -->
         <div class="sidebar">
-            <!-- Step 1: WAF Definitions -->
+            <!-- Status -->
             <div class="sidebar-section">
-                <h3><span class="step-num">1</span> WAF Definitions</h3>
-                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('waf-file-input').click()">
-                    <div class="upload-icon">📋</div>
-                    <p>Upload WAF category definitions</p>
-                    <p class="hint">CSV, Excel, JSON, or text</p>
+                <h3>Status</h3>
+                <div id="sidebar-status" style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
+                    Loading...
                 </div>
-                <input type="file" id="waf-file-input" accept=".csv,.tsv,.xlsx,.xls,.json,.txt,.md">
-            </div>
-
-            <!-- Step 2: Ground Truth -->
-            <div class="sidebar-section">
-                <h3><span class="step-num">2</span> Ground Truth Examples</h3>
-                <div class="upload-zone" id="gt-upload-zone" onclick="document.getElementById('gt-file-input').click()">
-                    <div class="upload-icon">🎯</div>
-                    <p>Upload correctly classified stories</p>
-                    <p class="hint">CSV or Excel with Title, Desc, WAF Color, Category, Sub-Category</p>
+                <div style="margin-top:10px;">
+                    <a href="/settings" style="font-size:12px;color:var(--accent);text-decoration:none;">Manage in Settings →</a>
                 </div>
-                <input type="file" id="gt-file-input" accept=".csv,.tsv,.xlsx,.xls">
-                <div id="gt-stats-area" style="display:none;"></div>
             </div>
 
             <!-- Detected Categories -->
@@ -886,9 +885,9 @@
                 <div class="categories-list" id="categories-list"></div>
             </div>
 
-            <!-- Step 3: Classify -->
+            <!-- Classify -->
             <div class="sidebar-section">
-                <h3><span class="step-num">3</span> Classify Stories</h3>
+                <h3>Classify Stories</h3>
                 <div class="mode-toggle">
                     <button class="mode-btn active" data-mode="single" onclick="setMode('single')">Single Story</button>
                     <button class="mode-btn" data-mode="batch" onclick="setMode('batch')">Batch Review</button>
@@ -903,8 +902,6 @@
 
             <div class="sidebar-actions">
                 <button class="btn btn-ghost" onclick="clearChat()">Clear Chat</button>
-                <button class="btn btn-ghost" onclick="clearWaf()">Reset WAF</button>
-                <button class="btn btn-ghost" onclick="clearGroundTruth()">Reset GT</button>
             </div>
         </div>
 
@@ -913,23 +910,24 @@
             <div class="chat-messages" id="chat-messages">
                 <div class="welcome" id="welcome">
                     <div class="welcome-icon">🎯</div>
-                    <h2>WAF Category Classifier</h2>
+                    <h2>WAF Classifier</h2>
                     <p>Accurately classify JIRA stories into WAF categories using AI, calibrated by your team's ground truth data.</p>
 
                     <div class="setup-steps">
-                        <h3>Getting Started</h3>
+                        <h3>How to Use</h3>
                         <div class="setup-step">
                             <div class="num">1</div>
-                            <div class="step-text"><strong>Upload WAF Definitions</strong> — Your category names, descriptions, colors, and sub-categories (the rulebook)</div>
+                            <div class="step-text"><strong>Type or paste a story</strong> — Enter a JIRA story title and description in the chat below</div>
                         </div>
                         <div class="setup-step">
                             <div class="num">2</div>
-                            <div class="step-text"><strong>Upload Ground Truth</strong> — Previously correctly classified stories so the AI learns your team's patterns (the answer key)</div>
+                            <div class="step-text"><strong>Get AI classification</strong> — Receive WAF category, color, confidence, and reasoning</div>
                         </div>
                         <div class="setup-step">
                             <div class="num">3</div>
-                            <div class="step-text"><strong>Classify</strong> — Paste a story or use batch mode. Get category, sub-category, color, confidence, and mismatch detection</div>
+                            <div class="step-text"><strong>Approve &amp; save</strong> — Approve correct classifications to build your ground truth</div>
                         </div>
+                        <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">WAF definitions and ground truth are managed in <a href="/settings" style="color:var(--accent);">Settings</a>.</p>
                     </div>
 
                     <div class="quick-actions">
@@ -993,119 +991,6 @@
             this.style.height = "auto";
             this.style.height = Math.min(this.scrollHeight, 150) + "px";
         });
-
-        // === WAF File Upload ===
-        const wafFileInput = document.getElementById("waf-file-input");
-        const uploadZone = document.getElementById("upload-zone");
-
-        setupDragDrop(uploadZone, wafFileInput, uploadWafFile);
-        wafFileInput.addEventListener("change", () => {
-            if (wafFileInput.files.length) uploadWafFile(wafFileInput.files[0]);
-        });
-
-        // === Ground Truth File Upload ===
-        const gtFileInput = document.getElementById("gt-file-input");
-        const gtUploadZone = document.getElementById("gt-upload-zone");
-
-        setupDragDrop(gtUploadZone, gtFileInput, uploadGroundTruth);
-        gtFileInput.addEventListener("change", () => {
-            if (gtFileInput.files.length) uploadGroundTruth(gtFileInput.files[0]);
-        });
-
-        function setupDragDrop(zone, input, handler) {
-            zone.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                zone.style.borderColor = "var(--accent)";
-                zone.style.background = "var(--accent-dim)";
-            });
-            zone.addEventListener("dragleave", () => {
-                if (!zone.classList.contains("has-file")) {
-                    zone.style.borderColor = "";
-                    zone.style.background = "";
-                }
-            });
-            zone.addEventListener("drop", (e) => {
-                e.preventDefault();
-                if (e.dataTransfer.files.length) {
-                    input.files = e.dataTransfer.files;
-                    handler(e.dataTransfer.files[0]);
-                }
-            });
-        }
-
-        async function uploadWafFile(file) {
-            const formData = new FormData();
-            formData.append("file", file);
-
-            try {
-                const res = await fetch("/api/upload-waf", { method: "POST", body: formData });
-                const data = await res.json();
-
-                if (data.success) {
-                    uploadZone.classList.add("has-file");
-                    uploadZone.innerHTML = `
-                        <div class="upload-icon">✅</div>
-                        <p class="filename">${data.filename}</p>
-                        <p class="hint">${data.categories.length} categories detected</p>
-                    `;
-
-                    if (data.categories.length > 0) {
-                        const section = document.getElementById("categories-section");
-                        const list = document.getElementById("categories-list");
-                        section.style.display = "block";
-                        list.innerHTML = data.categories.map(c =>
-                            `<span class="category-tag">${c}</span>`
-                        ).join("");
-                    }
-
-                    updateStatus();
-                    showToast("WAF definitions loaded!", "success");
-                } else {
-                    showToast(data.error || "Upload failed", "error");
-                }
-            } catch (err) {
-                showToast("Upload failed: " + err.message, "error");
-            }
-        }
-
-        async function uploadGroundTruth(file) {
-            const formData = new FormData();
-            formData.append("file", file);
-
-            try {
-                const res = await fetch("/api/upload-ground-truth", { method: "POST", body: formData });
-                const data = await res.json();
-
-                if (data.success) {
-                    gtUploadZone.classList.add("has-file");
-                    gtUploadZone.innerHTML = `
-                        <div class="upload-icon">✅</div>
-                        <p class="filename">${data.filename}</p>
-                        <p class="stats-line">${data.example_count} examples across ${Object.keys(data.stats).length} categories</p>
-                    `;
-
-                    // Show category distribution
-                    const statsArea = document.getElementById("gt-stats-area");
-                    if (data.stats && Object.keys(data.stats).length > 0) {
-                        statsArea.style.display = "block";
-                        statsArea.innerHTML = '<div class="gt-stats">' +
-                            Object.entries(data.stats)
-                                .sort((a, b) => b[1] - a[1])
-                                .map(([cat, count]) =>
-                                    `<span class="gt-stat">${cat}: <span class="count">${count}</span></span>`
-                                ).join("") +
-                            '</div>';
-                    }
-
-                    updateStatus();
-                    showToast(`Ground truth loaded: ${data.example_count} examples!`, "success");
-                } else {
-                    showToast(data.error || "Upload failed", "error");
-                }
-            } catch (err) {
-                showToast("Upload failed: " + err.message, "error");
-            }
-        }
 
         function setMode(mode) {
             currentMode = mode;
@@ -1373,32 +1258,6 @@
             showToast("Chat cleared", "success");
         }
 
-        async function clearWaf() {
-            await fetch("/api/clear-waf", { method: "POST" });
-            uploadZone.classList.remove("has-file");
-            uploadZone.innerHTML = `
-                <div class="upload-icon">📋</div>
-                <p>Upload WAF category definitions</p>
-                <p class="hint">CSV, Excel, JSON, or text</p>
-            `;
-            document.getElementById("categories-section").style.display = "none";
-            updateStatus();
-            showToast("WAF definitions cleared", "success");
-        }
-
-        async function clearGroundTruth() {
-            await fetch("/api/clear-ground-truth", { method: "POST" });
-            gtUploadZone.classList.remove("has-file");
-            gtUploadZone.innerHTML = `
-                <div class="upload-icon">🎯</div>
-                <p>Upload correctly classified stories</p>
-                <p class="hint">CSV or Excel with Title, Desc, WAF Color, Category, Sub-Category</p>
-            `;
-            document.getElementById("gt-stats-area").style.display = "none";
-            updateStatus();
-            showToast("Ground truth cleared", "success");
-        }
-
         async function updateStatus() {
             try {
                 const res = await fetch("/api/status");
@@ -1423,16 +1282,6 @@
                     wafPill.className = "pill active";
                     wafText.textContent = `WAF: ${data.waf_filename}`;
 
-                    // Update sidebar upload zone to show loaded state
-                    if (!uploadZone.classList.contains("has-file")) {
-                        uploadZone.classList.add("has-file");
-                        uploadZone.innerHTML = `
-                            <div class="upload-icon">✅</div>
-                            <p class="filename">${data.waf_filename}</p>
-                            <p class="hint">${data.waf_categories.length} categories detected</p>
-                        `;
-                    }
-
                     // Show categories list
                     if (data.waf_categories && data.waf_categories.length > 0) {
                         const section = document.getElementById("categories-section");
@@ -1450,32 +1299,28 @@
                 if (data.ground_truth_loaded) {
                     gtPill.className = "pill purple";
                     gtText.textContent = `GT: ${data.ground_truth_count} examples`;
-
-                    // Update sidebar upload zone to show loaded state
-                    if (!gtUploadZone.classList.contains("has-file")) {
-                        gtUploadZone.classList.add("has-file");
-                        gtUploadZone.innerHTML = `
-                            <div class="upload-icon">✅</div>
-                            <p class="filename">${data.ground_truth_filename}</p>
-                            <p class="stats-line">${data.ground_truth_count} examples across ${Object.keys(data.ground_truth_stats).length} categories</p>
-                        `;
-
-                        // Show GT stats
-                        const statsArea = document.getElementById("gt-stats-area");
-                        if (data.ground_truth_stats && Object.keys(data.ground_truth_stats).length > 0) {
-                            statsArea.style.display = "block";
-                            statsArea.innerHTML = '<div class="gt-stats">' +
-                                Object.entries(data.ground_truth_stats)
-                                    .sort((a, b) => b[1] - a[1])
-                                    .map(([cat, count]) =>
-                                        `<span class="gt-stat">${cat}: <span class="count">${count}</span></span>`
-                                    ).join("") +
-                                '</div>';
-                        }
-                    }
                 } else {
                     gtPill.className = "pill inactive";
                     gtText.textContent = "No ground truth";
+                }
+
+                // Update sidebar status
+                const statusEl = document.getElementById("sidebar-status");
+                if (statusEl) {
+                    let html = '';
+                    html += '<div style="display:flex;align-items:center;gap:6px;">';
+                    html += '<span style="width:8px;height:8px;border-radius:50%;background:' + (data.api_key_configured ? 'var(--success)' : 'var(--error)') + ';"></span>';
+                    html += data.api_key_configured ? 'API Connected' : 'API Key Missing';
+                    html += '</div>';
+                    html += '<div style="display:flex;align-items:center;gap:6px;">';
+                    html += '<span style="width:8px;height:8px;border-radius:50%;background:' + (data.waf_loaded ? 'var(--success)' : 'var(--warning)') + ';"></span>';
+                    html += data.waf_loaded ? 'WAF: ' + data.waf_categories.length + ' categories' : 'WAF: Not loaded';
+                    html += '</div>';
+                    html += '<div style="display:flex;align-items:center;gap:6px;">';
+                    html += '<span style="width:8px;height:8px;border-radius:50%;background:' + (data.ground_truth_loaded ? 'var(--success)' : 'var(--warning)') + ';"></span>';
+                    html += data.ground_truth_loaded ? 'GT: ' + data.ground_truth_count + ' examples' : 'GT: Not loaded';
+                    html += '</div>';
+                    statusEl.innerHTML = html;
                 }
             } catch (err) {
                 console.error("Status check failed:", err);

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAF Classifier - WAF Reference</title>
+    <title>WAF Classifier | WAF Reference</title>
     <style>
         :root {
             --bg-primary: #111318;
@@ -40,6 +40,8 @@
         }
 
         .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
         .logo {
             width: 36px; height: 36px;
@@ -201,7 +203,10 @@
     </button>
     <div class="header-left">
         <div class="logo">W</div>
-        <h1>WAF Reference</h1>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Work Alignment Framework — Classify, Analyze, Align</p>
+        </div>
     </div>
 </div>
 
@@ -213,13 +218,14 @@
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+    <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
 
 <div class="content">
-    <h2 class="page-title">Work Alignment Framework</h2>
-    <p class="page-subtitle">
-        The WAF framework categorizes all work into 8 categories across two types: <strong>Run</strong> (keeping things going) and <strong>Change</strong> (building new things). Each category has a color that indicates investment type and priority level.
-    </p>
+    <div style="margin-bottom:20px;">
+        <h1 style="font-size:22px;font-weight:700;">WAF Reference</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">The 8 WAF categories across Run (keeping things going) and Change (building new things), each with a color indicating investment type.</p>
+    </div>
 
     <div class="legend">
         <div class="legend-item" data-color="GRAY" onclick="filterByColor('GRAY', this)"><div class="legend-dot" style="background:#6b7280"></div> Gray — KTLO</div>

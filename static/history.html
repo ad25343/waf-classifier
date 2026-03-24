@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAF Classifier - Analytics</title>
+    <title>WAF Classifier | Analytics</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <style>
@@ -43,6 +43,8 @@
         }
 
         .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
         .logo {
             width: 36px; height: 36px;
@@ -207,7 +209,7 @@
         .badge.low { background: rgba(248,113,113,0.15); color: var(--error); }
         .badge.mismatch { background: rgba(248,113,113,0.15); color: var(--error); }
         .badge.approved { background: rgba(74,222,128,0.15); color: var(--success); }
-        .badge.run { background: rgba(108,138,255,0.15); color: var(--accent); }
+        .badge.run { background: rgba(232,148,74,0.15); color: var(--accent); }
         .badge.change { background: rgba(167,139,250,0.15); color: var(--purple); }
 
 
@@ -275,6 +277,18 @@
         .upload-history-meta { font-size: 12px; color: var(--text-muted); }
         .upload-history-action { font-size: 13px; color: var(--accent); font-weight: 500; opacity: 0; transition: opacity 0.2s; }
         .upload-history-item:hover .upload-history-action { opacity: 1; }
+        .upload-history-delete { font-size: 14px; color: var(--error); cursor: pointer; opacity: 0; transition: opacity 0.2s; padding: 4px 6px; border-radius: 4px; }
+        .upload-history-item:hover .upload-history-delete { opacity: 0.7; }
+        .upload-history-delete:hover { opacity: 1 !important; background: rgba(248,113,113,0.15); }
+
+        .mapping-group { display: flex; flex-direction: column; gap: 4px; }
+        .mapping-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .mapping-group .required-star { color: var(--error); }
+        .mapping-group select {
+            padding: 8px 10px; background: var(--bg-tertiary); color: var(--text-primary);
+            border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none;
+        }
+        .mapping-group select:focus { border-color: var(--accent); }
 
         @media (max-width: 900px) {
             .kpi-mini-row { grid-template-columns: repeat(2, 1fr); }
@@ -289,7 +303,10 @@
     </button>
     <div class="header-left">
         <div class="logo">W</div>
-        <h1>WAF Classifier <span>| Analytics</span></h1>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Work Alignment Framework — Classify, Analyze, Align</p>
+        </div>
     </div>
 </div>
 
@@ -301,9 +318,15 @@
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
+    <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
 
 <div class="content">
+    <div style="margin-bottom:20px;">
+        <h1 style="font-size:22px;font-weight:700;">Analytics</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">Upload JIRA data, AI verifies every story, then explore insights and trends.</p>
+    </div>
+
     <!-- Global Data Source Filter -->
     <div id="analytics-source-filter" style="display:none;margin-bottom:16px;padding:12px 16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:12px;">
         <label style="font-size:13px;color:var(--text-secondary);white-space:nowrap;">Data Source:</label>
@@ -318,6 +341,7 @@
         <button class="tab active" data-tab="import">Upload Data</button>
         <button class="tab" data-tab="summary">Summary</button>
         <button class="tab" data-tab="lineage">Epic Lineage</button>
+        <button class="tab" data-tab="history">History</button>
     </div>
 
     <!-- ═══ SUMMARY ═══ -->
@@ -507,6 +531,32 @@
         </div>
     </div>
 
+    <!-- ═══ HISTORY ═══ -->
+    <div class="tab-panel" id="panel-history">
+        <div class="card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>Upload History</span>
+                <span id="history-tab-count" style="font-size:13px;color:var(--text-muted);font-weight:400;"></span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="history-tab-table" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;">Filename</th>
+                            <th style="text-align:center;">Rows</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:left;">Uploaded</th>
+                            <th style="text-align:center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tab-body">
+                        <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══ UPLOAD DATA (entry point) ═══ -->
     <div class="tab-panel active" id="panel-import">
         <!-- Step 1: Upload -->
@@ -558,12 +608,34 @@
                 </div>
             </div>
 
-            <!-- Upload History -->
+        </div>
+
+        <!-- Step 1.5: Column Mapping -->
+        <div id="import-step-mapping" style="display:none;">
             <div class="card">
-                <div class="card-title">📋 Upload History</div>
-                <div id="upload-history-list" style="display:flex;flex-direction:column;gap:4px;">
-                    <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div>
+                <div class="card-title">
+                    <span>Map Columns</span>
+                    <span style="font-size:12px;color:var(--text-muted);font-weight:400;">Step 1.5 — Confirm field mappings</span>
                 </div>
+                <div style="margin-bottom:12px;">
+                    <span id="mapping-filename" style="color:var(--accent);font-weight:600;"></span>
+                    <span id="mapping-rowcount" style="color:var(--text-muted);font-size:13px;margin-left:8px;"></span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;" id="mapping-fields"></div>
+                <div style="margin-bottom:16px;">
+                    <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">Sample Data Preview</div>
+                    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:8px;">
+                        <table style="width:100%;">
+                            <thead><tr id="mapping-preview-header"></tr></thead>
+                            <tbody id="mapping-preview-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:center;">
+                    <button class="btn btn-primary" onclick="confirmMapping()">Continue to AI Classification</button>
+                    <button class="btn btn-outline" onclick="cancelMapping()">Re-upload</button>
+                </div>
+                <div id="mapping-status" style="margin-top:8px;font-size:13px;"></div>
             </div>
         </div>
 
@@ -820,7 +892,7 @@ async function loadSummary() {
                 labels: data.daily_trend.map(i => i.date),
                 datasets: [{
                     label: "Classifications", data: data.daily_trend.map(i => i.count),
-                    borderColor: "#e8944a", backgroundColor: "rgba(108,138,255,0.1)",
+                    borderColor: "#e8944a", backgroundColor: "rgba(232,148,74,0.1)",
                     fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#e8944a"
                 }]
             },
@@ -963,7 +1035,7 @@ function renderDrillDownTable() {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No stories found.</td></tr>';
         return;
     }
-    tbody.innerHTML = stories.map(s => {
+    tbody.innerHTML = stories.map((s, idx) => {
         const dot = WAF_COLORS_MAP[s.color] || '#e8944a';
         const isMismatch = s.mismatch;
         const title = esc(s.title.length > 45 ? s.title.substring(0,45)+'...' : s.title);
@@ -974,7 +1046,7 @@ function renderDrillDownTable() {
             ? '<span class="badge mismatch">Mismatch</span>'
             : '<span class="badge high">Correct</span>';
         const confClass = (s.confidence||'').toLowerCase();
-        return '<tr class="' + (isMismatch ? 'lin-mismatch-row' : '') + '">' +
+        return '<tr class="' + (isMismatch ? 'lin-mismatch-row' : '') + '" style="cursor:pointer;" onclick="showStoryDetail(drillDownStories[' + idx + '])">' +
             '<td style="padding:0;width:6px;background:' + dot + ';"></td>' +
             '<td style="color:var(--text-primary)" title="' + esc(s.title) + '">' + title + '</td>' +
             '<td style="color:var(--text-muted);font-size:12px;" title="' + esc(s.epic||'') + '">' + epic + '</td>' +
@@ -1113,16 +1185,123 @@ function renderProgress(statusEl, filename, storiesProcessed, totalStories, batc
         </div>`;
 }
 
+// Store preview data for the mapping step
+let _previewData = null;
+
 async function handleVerify(input) {
     const file = input.files[0];
     if (!file) return;
 
     const statusEl = document.getElementById('import-status');
-    statusEl.innerHTML = `<span style="color:var(--accent)">Uploading ${file.name}...</span>`;
-    window._verifyStartTime = Date.now();
+    statusEl.innerHTML = `<span style="color:var(--accent)">Analyzing file columns...</span>`;
 
     const formData = new FormData();
     formData.append('file', file);
+
+    try {
+        // Step 1: Get column preview for mapping
+        const res = await fetch('/api/bulk-verify/preview', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+            _previewData = data;
+            showMappingStep(data);
+        } else {
+            statusEl.innerHTML = `<span style="color:var(--error)">Error: ${data.error}</span>`;
+        }
+    } catch (err) {
+        statusEl.innerHTML = `<span style="color:var(--error)">Failed to analyze file: ${err.message}</span>`;
+    }
+
+    input.value = '';
+}
+
+function showMappingStep(data) {
+    document.getElementById('import-step-upload').style.display = 'none';
+    document.getElementById('import-step-mapping').style.display = 'block';
+    document.getElementById('mapping-filename').textContent = data.filename;
+    document.getElementById('mapping-rowcount').textContent = `(${data.total_rows} rows)`;
+
+    const fieldsEl = document.getElementById('mapping-fields');
+    fieldsEl.innerHTML = data.target_fields.map(f => {
+        const options = ['<option value="">(none)</option>'].concat(
+            data.file_columns.map(col => {
+                const selected = data.suggested_mappings[f.key] === col ? ' selected' : '';
+                return `<option value="${esc(col)}"${selected}>${esc(col)}</option>`;
+            })
+        ).join('');
+        const star = f.required ? '<span class="required-star">*</span>' : '';
+        return `<div class="mapping-group">
+            <label>${esc(f.label)} ${star}</label>
+            <select id="map-${f.key}" onchange="updateMappingPreview()">${options}</select>
+        </div>`;
+    }).join('');
+
+    updateMappingPreview();
+}
+
+function updateMappingPreview() {
+    if (!_previewData) return;
+    const mappedKeys = (_previewData.target_fields || []).map(f => ({
+        key: f.key,
+        label: f.label,
+        col: document.getElementById('map-' + f.key)?.value || ''
+    })).filter(m => m.col);
+
+    const headerEl = document.getElementById('mapping-preview-header');
+    headerEl.innerHTML = mappedKeys.map(m => `<th style="font-size:11px;">${esc(m.label)}</th>`).join('');
+
+    const bodyEl = document.getElementById('mapping-preview-body');
+    bodyEl.innerHTML = (_previewData.sample_rows || []).map(row => {
+        return '<tr>' + mappedKeys.map(m => `<td style="font-size:12px;">${esc(String(row[m.col] || ''))}</td>`).join('') + '</tr>';
+    }).join('');
+}
+
+function cancelMapping() {
+    _previewData = null;
+    document.getElementById('import-step-mapping').style.display = 'none';
+    document.getElementById('import-step-upload').style.display = 'block';
+    document.getElementById('import-area').style.display = '';
+    document.getElementById('import-status').innerHTML = '';
+}
+
+async function confirmMapping() {
+    if (!_previewData) return;
+
+    const titleCol = document.getElementById('map-title')?.value;
+    const descCol = document.getElementById('map-description')?.value;
+    const missing = [];
+    if (!titleCol) missing.push('Title');
+    if (!descCol) missing.push('Description');
+    if (missing.length > 0) {
+        document.getElementById('mapping-status').innerHTML = '<span style="color:var(--error)">' + missing.join(' and ') + ' mapping is required.</span>';
+        return;
+    }
+
+    // Collect all mappings
+    const mappings = {};
+    (_previewData.target_fields || []).forEach(f => {
+        const val = document.getElementById('map-' + f.key)?.value || '';
+        if (val) mappings[f.key] = val;
+    });
+
+    window._verifyStartTime = Date.now();
+    const savedFilename = _previewData.filename;
+    const savedTotalRows = _previewData.total_rows;
+
+    // Hide mapping, show upload step with progress (upload area hidden)
+    document.getElementById('import-step-mapping').style.display = 'none';
+    document.getElementById('import-step-upload').style.display = 'block';
+    document.getElementById('import-area').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const importStatus = document.getElementById('import-status');
+
+    // Show progress bar
+    renderProgress(importStatus, savedFilename, 0, savedTotalRows, 0, 0);
+
+    const formData = new FormData();
+    formData.append('preview_id', _previewData.preview_id);
+    formData.append('column_mappings', JSON.stringify(mappings));
 
     try {
         const res = await fetch('/api/bulk-verify', { method: 'POST', body: formData });
@@ -1130,14 +1309,13 @@ async function handleVerify(input) {
 
         if (data.async && data.job_id) {
             // Large file — poll for progress
-            renderProgress(statusEl, file.name, 0, data.total_stories, 0, 0);
             const jobId = data.job_id;
             const poll = setInterval(async () => {
                 try {
                     const pr = await fetch(`/api/bulk-verify/status/${jobId}`);
                     const pd = await pr.json();
                     if (pd.status === 'processing') {
-                        renderProgress(statusEl, file.name, pd.stories_processed, pd.total_stories, pd.completed_batches, pd.total_batches);
+                        renderProgress(importStatus, savedFilename, pd.stories_processed, pd.total_stories, pd.completed_batches, pd.total_batches);
                     } else if (pd.status === 'done' && pd.results) {
                         clearInterval(poll);
                         verifyResults = pd.results;
@@ -1145,10 +1323,9 @@ async function handleVerify(input) {
                         showReviewStep(pd);
                     } else if (pd.status === 'error') {
                         clearInterval(poll);
-                        statusEl.innerHTML = `<span style="color:var(--error)">Error: ${pd.error}</span>`;
+                        importStatus.innerHTML = `<span style="color:var(--error)">Error: ${pd.error}</span>`;
                     }
                 } catch (pollErr) {
-                    // Network blip — keep trying
                     console.warn('Poll error, retrying...', pollErr);
                 }
             }, 2000);
@@ -1158,20 +1335,22 @@ async function handleVerify(input) {
             verifyUploadId = data.upload_id || null;
             showReviewStep(data);
         } else {
-            statusEl.innerHTML = `<span style="color:var(--error)">Error: ${data.error}</span>`;
+            importStatus.innerHTML = `<span style="color:var(--error)">Error: ${data.error}</span>`;
         }
     } catch (err) {
-        statusEl.innerHTML = `<span style="color:var(--error)">Verification failed: ${err.message}</span>`;
+        importStatus.innerHTML = `<span style="color:var(--error)">Verification failed: ${err.message}</span>`;
     }
 
-    input.value = '';
+    _previewData = null;
 }
 
 function showReviewStep(data) {
     document.getElementById('import-step-upload').style.display = 'none';
     document.getElementById('import-step-review').style.display = 'block';
+    document.getElementById('import-area').style.display = '';
     // Show sticky save bar so Save is always visible regardless of scroll
     document.getElementById('sticky-save-bar').style.display = 'flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // KPIs
     document.getElementById('verify-kpis').innerHTML = `
@@ -1200,7 +1379,12 @@ function renderVerifyTable() {
     const tbody = document.getElementById('verify-table-body');
     tbody.innerHTML = verifyResults.map((r, i) => {
         const title = esc(r.title.length > 45 ? r.title.substring(0, 45) + '...' : r.title);
-        const fileTag = r.file_category ? esc(r.file_category) : '<span style="color:var(--text-muted)">—</span>';
+        let fileTag;
+        if (r.was_normalized && r.file_category_normalized) {
+            fileTag = esc(r.file_category_normalized) + ' <span title="Normalized from: ' + esc(r.file_category) + '" style="cursor:help;font-size:11px;color:var(--warning);">&#x1F504;</span>';
+        } else {
+            fileTag = r.file_category ? esc(r.file_category) : '<span style="color:var(--text-muted)">—</span>';
+        }
         const aiTag = r.ai_category ? esc(r.ai_category) : '<span style="color:var(--text-muted)">—</span>';
 
         let statusBadge;
@@ -1213,15 +1397,16 @@ function renderVerifyTable() {
         }
 
         const confClass = (r.ai_confidence || '').toLowerCase().replace('confidence: ', '');
+        const missingDesc = r.missing_description ? ' <span title="No description provided" style="color:var(--warning);font-size:11px;cursor:help;">⚠</span>' : '';
         const reason = esc(r.ai_reason ? (r.ai_reason.length > 60 ? r.ai_reason.substring(0, 60) + '...' : r.ai_reason) : '—');
 
-        return `<tr data-idx="${i}" class="${r.is_match === false ? 'mismatch-row' : ''}">
+        return `<tr data-idx="${i}" class="${r.is_match === false ? 'mismatch-row' : ''}" style="cursor:pointer;" onclick="if(event.target.tagName!=='INPUT')showStoryDetail(verifyResults[${i}])">
             <td><input type="checkbox" class="row-cb" data-idx="${i}" onchange="updateSelectedCount()" checked></td>
             <td style="color:var(--text-primary)" title="${esc(r.title)}">${title}</td>
             <td>${fileTag}</td>
             <td style="color:var(--text-primary);font-weight:500;">${aiTag}</td>
             <td>${esc(r.ai_color || '—')}</td>
-            <td><span class="badge ${confClass}">${esc(r.ai_confidence || '—')}</span></td>
+            <td><span class="badge ${confClass}">${esc(r.ai_confidence || '—')}</span>${missingDesc}</td>
             <td>${statusBadge}</td>
             <td style="font-size:12px;color:var(--text-muted);" title="${esc(r.ai_reason || '')}">${reason}</td>
         </tr>`;
@@ -1331,7 +1516,9 @@ async function saveVerified() {
 
 function backToUpload() {
     document.getElementById('import-step-upload').style.display = 'block';
+    document.getElementById('import-area').style.display = '';
     document.getElementById('import-step-review').style.display = 'none';
+    document.getElementById('import-step-mapping').style.display = 'none';
     document.getElementById('sticky-save-bar').style.display = 'none';
     document.getElementById('import-status').innerHTML = '';
     document.getElementById('save-verified-btn').textContent = 'Save Selected to History';
@@ -1736,43 +1923,65 @@ function loadUploadHistory() {
     fetch('/api/history/uploads')
         .then(r => r.json())
         .then(data => {
-            const list = document.getElementById('upload-history-list');
-            if (!list) return;
+            const tbody = document.getElementById('history-tab-body');
+            const countEl = document.getElementById('history-tab-count');
+            if (!tbody) return;
             if (!data.uploads || data.uploads.length === 0) {
-                list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">No previous uploads yet.</div>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">No uploads yet. Go to Upload Data to get started.</td></tr>';
+                if (countEl) countEl.textContent = '';
                 return;
             }
-            list.innerHTML = data.uploads.map(u => {
+            if (countEl) countEl.textContent = data.uploads.length + ' upload' + (data.uploads.length !== 1 ? 's' : '');
+            tbody.innerHTML = data.uploads.map(u => {
                 const sc = parseInt(u.saved_count, 10) || 0;
                 const hr = u.has_results === true || u.has_results === 1 || u.has_results === '1';
-                console.log('[UploadHistory] id=' + u.id + ' saved_count=' + u.saved_count + ' sc=' + sc + ' has_results=' + u.has_results);
-                const savedBadge = sc > 0
-                    ? `<span style="background:#22c55e;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">✓ Saved (${sc})</span>`
+                const statusBadge = sc > 0
+                    ? `<span class="badge high">Saved (${sc})</span>`
                     : (hr
-                        ? `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">⚠ Not Saved</span>`
-                        : `<span style="background:#6c7086;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">No Results</span>`);
-                // Not Saved: show a persistent visible save button; others show hover arrow
-                const actionEl = (sc === 0 && hr)
-                    ? `<button onclick="event.stopPropagation();reloadUpload(${Number(u.id)}, false)"
-                               style="background:var(--accent);color:#fff;border:none;border-radius:6px;
-                                      padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;
-                                      white-space:nowrap;">Save Now</button>`
-                    : `<span class="upload-history-action">View →</span>`;
-                return `
-                <div class="upload-history-item" onclick="reloadUpload(${Number(u.id)}, ${sc > 0})">
-                    <div class="upload-history-info">
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <span class="upload-history-name">${esc(u.filename)}</span>
-                            ${savedBadge}
-                        </div>
-                        <span class="upload-history-meta">${Number(u.row_count)} rows &middot; ${esc(new Date(u.uploaded_at).toLocaleDateString())} ${esc(new Date(u.uploaded_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))}</span>
-                    </div>
-                    ${actionEl}
-                </div>
-                `;
+                        ? `<span class="badge medium">Not Saved</span>`
+                        : `<span style="color:var(--text-muted);font-size:12px;">No Results</span>`);
+                const dt = new Date(u.uploaded_at);
+                const dateStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                // Action buttons
+                let actions = '';
+                if (sc === 0 && hr) {
+                    actions += `<button onclick="event.stopPropagation();reloadUpload(${Number(u.id)}, false)"
+                                   class="btn btn-primary" style="padding:4px 10px;font-size:11px;">Save Now</button> `;
+                } else {
+                    actions += `<button onclick="event.stopPropagation();reloadUpload(${Number(u.id)}, ${sc > 0})"
+                                   class="btn btn-outline" style="padding:4px 10px;font-size:11px;">View</button> `;
+                }
+                actions += `<button onclick="event.stopPropagation();deleteUpload(${Number(u.id)},'${esc(u.filename)}')"
+                               class="btn btn-outline" style="padding:4px 10px;font-size:11px;color:var(--error);border-color:var(--error);" title="Delete">🗑</button>`;
+                return `<tr style="cursor:pointer;" onclick="reloadUpload(${Number(u.id)}, ${sc > 0})">
+                    <td style="color:var(--text-primary);font-weight:500;">${esc(u.filename)}</td>
+                    <td style="text-align:center;">${Number(u.row_count)}</td>
+                    <td style="text-align:center;">${statusBadge}</td>
+                    <td style="font-size:13px;color:var(--text-secondary);">${esc(dateStr)}</td>
+                    <td style="text-align:center;white-space:nowrap;">${actions}</td>
+                </tr>`;
             }).join('');
         })
         .catch(err => console.error('[UploadHistory] fetch error:', err));
+}
+
+function deleteUpload(uploadId, filename) {
+    if (!confirm(`Delete upload "${filename}" and all its saved classifications? This cannot be undone.`)) return;
+    fetch(`/api/history/uploads/${uploadId}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                loadUploadHistory();
+                // Refresh existing classification count
+                fetch('/api/dashboard/summary').then(r => r.json()).then(d => {
+                    document.getElementById('existing-count').textContent = d.total_classifications;
+                    if (d.total_classifications === 0) document.getElementById('existing-data-card').style.display = 'none';
+                }).catch(() => {});
+            } else {
+                alert('Delete failed: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => alert('Delete failed: ' + err.message));
 }
 
 function reloadUpload(uploadId, alreadySaved) {
@@ -1826,5 +2035,82 @@ loadUploadHistory();
                 onclick="saveVerified()" id="sticky-save-btn">Save Selected to History</button>
     </div>
 </div>
+
+<!-- Story Detail Modal -->
+<div id="story-detail-overlay" onclick="if(event.target===this)closeStoryDetail()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;max-width:720px;width:92%;max-height:85vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,0.5);">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:16px;font-weight:700;color:var(--text-primary);">Story Details</span>
+            <button onclick="closeStoryDetail()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px 8px;">&times;</button>
+        </div>
+        <div id="story-detail-body" style="padding:24px;"></div>
+    </div>
+</div>
+
+<script>
+function showStoryDetail(data) {
+    if (!data) return;
+
+    // Determine the WAF color dot
+    const colorMap = { GRAY:'#6b7280', BLACK:'#1f2937', RED:'#dc2626', ORANGE:'#ea580c', YELLOW:'#ca8a04', GREEN:'#16a34a' };
+    const wafColor = (data.ai_color || data.waf_color || data.color || '').toUpperCase().trim();
+    const dotColor = colorMap[wafColor] || 'var(--text-muted)';
+
+    // Match status
+    let matchHtml = '';
+    if (data.is_match === true) matchHtml = '<span class="badge high">Match</span>';
+    else if (data.is_match === false) matchHtml = '<span class="badge mismatch">Mismatch</span>';
+    else matchHtml = '<span class="badge medium">Untagged</span>';
+
+    // Confidence
+    const conf = (data.ai_confidence || data.confidence || '').replace(/confidence:\s*/i, '');
+    const confClass = conf.toLowerCase();
+
+    // File category (with normalization note)
+    let fileCatHtml = esc(data.file_category || data.original_tag || '—');
+    if (data.was_normalized && data.file_category_normalized) {
+        fileCatHtml = esc(data.file_category_normalized) + ' <span style="font-size:11px;color:var(--warning);">(was: ' + esc(data.file_category) + ')</span>';
+    }
+
+    function field(label, value, fullWidth) {
+        const w = fullWidth ? 'grid-column:1/-1;' : '';
+        return `<div style="${w}">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">${label}</div>
+            <div style="font-size:14px;color:var(--text-primary);word-break:break-word;">${value || '<span style="color:var(--text-muted)">—</span>'}</div>
+        </div>`;
+    }
+
+    const body = document.getElementById('story-detail-body');
+    body.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;">
+            ${field('Title', esc(data.title || data.story_title || ''), true)}
+            ${field('Description', esc(data.description || data.story_description || ''), true)}
+            ${field('File Category', fileCatHtml)}
+            ${field('AI Category', esc(data.ai_category || data.waf_category || data.category || ''))}
+            ${field('WAF Color', '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + dotColor + ';vertical-align:middle;margin-right:6px;' + (wafColor === 'BLACK' ? 'border:1px solid #4b5563;' : '') + '"></span>' + esc(wafColor || '—'))}
+            ${field('Run / Change', esc(data.ai_run_change || data.run_change || ''))}
+            ${field('Sub-Category', esc(data.ai_subcategory || data.waf_subcategory || ''))}
+            ${field('Confidence', '<span class="badge ' + confClass + '">' + esc(conf || '—') + '</span>')}
+            ${field('Match Status', matchHtml)}
+            ${field('Team', esc(data.team || ''))}
+            ${field('Epic', esc(data.epic || ''))}
+            ${field('Parent Feature', esc(data.parent_feature || ''))}
+            ${field('AI Reasoning', esc(data.ai_reason || ''), true)}
+            ${field('Timestamp', esc(data.timestamp || ''))}
+        </div>
+    `;
+
+    const overlay = document.getElementById('story-detail-overlay');
+    overlay.style.display = 'flex';
+}
+
+function closeStoryDetail() {
+    document.getElementById('story-detail-overlay').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeStoryDetail();
+});
+</script>
 </body>
 </html>

@@ -2,6 +2,60 @@
 
 ---
 
+## v3.0 — March 2026
+
+Major feature release: upload management, admin settings, field mapping, and UX overhaul.
+
+### New Features
+
+- **Delete uploaded jobs** — Trash icon on each upload in the History tab. Deletes the upload and all associated classifications with confirmation dialog.
+- **Story detail modal** — Click any story row in the verify table or drilldown to see full details in a read-only modal (title, description, file vs AI category, color, confidence, reasoning, team, epic).
+- **Admin settings page** — New `/settings` page with 2x2 card layout: WAF Definitions, Ground Truth, Baselines, and Configuration.
+- **WAF Definitions management** — View, upload, and replace WAF definitions from Settings. Moved from the Classifier page sidebar.
+- **Ground Truth management** — View, edit, add, delete individual ground truth examples from Settings. Upload new ground truth files. Moved from the Classifier page sidebar.
+- **Baseline snapshots** — Save current WAF definitions and ground truth as a named baseline. Restore any baseline anytime. A default baseline (from sample-data) is auto-saved on first startup and always available.
+- **Configurable batch size** — Sync and async batch sizes stored in SQLite settings table. Configurable from Settings > Configuration.
+- **Field mapping on upload** — After uploading a file, a mapping step shows detected columns with auto-suggested mappings. User confirms or adjusts before AI classification begins. Title and Description are required.
+- **Fuzzy WAF category matching** — Input categories like "KTLO", "Tech Maintenance", or "reg mandated" are normalized to official WAF category names via substring matching and alias lookup. Ambiguous matches are left for AI to resolve. Normalized values shown with indicator icon.
+- **History tab** — Upload history moved from the bottom of Upload Data into its own dedicated tab with a full table (filename, rows, status, date, actions).
+- **Missing description flagging** — Stories with no description are still classified but forced to LOW confidence with a note and warning icon.
+
+### UX Improvements
+
+- **Consistent page titles** — Every page now shows a title and subtitle below the header (Analytics, Classify, Epic Lineage, WAF Reference, Settings).
+- **Consistent `<title>` tags** — All pages use format `WAF Classifier | Page Name`.
+- **Consistent header** — All pages show the same header: W logo + "WAF Classifier" + "Work Alignment Framework — Classify, Analyze, Align".
+- **Settings nav link** — Added to hamburger menu and home page card grid on all pages.
+- **Classifier page cleaned up** — WAF Definition and Ground Truth upload sections removed from sidebar. Replaced with compact status display linking to Settings.
+- **All uploads now async** — Removed the sync processing path (≤200 stories). All uploads go through async with real progress bar regardless of file size.
+- **Progress bar on all uploads** — No more stuck 0% for small files. Progress updates as each batch completes.
+- **Upload area hides during processing** — Prevents starting a second upload while one is running.
+- **Scroll to top** — Page scrolls to top when transitioning between mapping, progress, and review steps.
+- **macOS Apple Silicon fix** — Added `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` to prevent Python threading crash on M1/M2 Macs.
+
+### API Changes
+
+- `DELETE /api/history/uploads/<id>` — Delete an upload and its classifications
+- `GET /api/settings` — Return all settings
+- `PUT /api/settings` — Update settings with validation
+- `GET /settings` — Settings page
+- `POST /api/bulk-verify/preview` — Upload file and return column info for field mapping
+- `POST /api/bulk-verify` — Now accepts optional `preview_id` + `column_mappings` for mapped uploads
+- `GET /api/classifications/<id>` — Return full details for a single classification
+- `GET /api/ground-truth` — Return all ground truth examples
+- `PUT /api/ground-truth/<idx>` — Update a ground truth example
+- `POST /api/ground-truth/add` — Add a new ground truth example
+- `DELETE /api/ground-truth/<idx>` — Delete a ground truth example
+- `POST /api/baseline/save` — Save current state as baseline
+- `GET /api/baseline/list` — List all baselines
+- `POST /api/baseline/restore` — Restore a baseline
+
+### File Changes
+
+- Renamed sample data files for clarity: `synthetic-100-clean.csv` → `synthetic-100-stories.csv`, `synthetic-100-with-epics.csv` → `synthetic-100-answer-key.csv` (same for 5000-record sets)
+
+---
+
 ## v2.3 — March 2026
 
 UX polish and upload history improvements.

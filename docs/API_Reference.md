@@ -377,44 +377,40 @@ Reload a previous upload batch into the verify/review view.
 
 ## Bulk Verify
 
-### POST /api/bulk-verify
+### POST /api/bulk-verify/preview
 
-Upload a file and AI-classify every story. Small files (≤200 stories) return results synchronously. Large files (>200 stories) return a job ID for async polling.
+Upload a file and return column info for field mapping without starting AI classification.
 
 **Request:** `multipart/form-data` with `file` field (CSV or XLSX)
 
-**Rate limit:** 5 requests per IP address per minute. Exceeding this returns HTTP 429.
-
-Stories are classified in batches of 50 using 5 concurrent threads.
-
-**Response (synchronous, ≤200 stories):**
+**Response:**
 ```json
 {
-  "results": [
-    {
-      "row": 0,
-      "story_title": "Fix connection pool",
-      "description": "...",
-      "original_tag": "New Feature",
-      "ai_category": "KTLO",
-      "ai_sub_category": "Production Support",
-      "ai_color": "GRAY",
-      "ai_confidence": "High",
-      "is_mismatch": true,
-      "epic": "Platform Reliability",
-      "parent_feature": "Database Health"
-    }
-  ],
-  "total": 25
+  "success": true,
+  "filename": "stories.csv",
+  "file_columns": ["story title", "description", "waf category"],
+  "suggested_mappings": {"title": "story title", "description": "description"},
+  "target_fields": [{"key": "title", "label": "Title", "required": true}],
+  "sample_rows": [{"story title": "Fix bug", "description": "..."}],
+  "total_rows": 100,
+  "preview_id": "uuid"
 }
 ```
 
-**Response (async, >200 stories):**
+### POST /api/bulk-verify
+
+Upload a file and AI-classify every story. All uploads process asynchronously with progress polling.
+
+**Request:** `multipart/form-data` with `file` field (CSV or XLSX). Optionally include `preview_id` and `column_mappings` (JSON) from the preview step.
+
+**Rate limit:** Configurable (default 5 requests per IP per minute). Returns HTTP 429 if exceeded.
+
+**Response:**
 ```json
 {
   "async": true,
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
-  "total_stories": 5000,
+  "total_stories": 100,
   "message": "Processing started"
 }
 ```
@@ -565,6 +561,114 @@ Bulk assign epic and parent feature to classification IDs.
   "updated": 3
 }
 ```
+
+---
+
+## Settings
+
+### GET /api/settings
+
+Returns all configurable settings.
+
+**Response:**
+```json
+{
+  "settings": {
+    "sync_batch_size": "25",
+    "async_batch_size": "50",
+    "max_concurrent_workers": "5",
+    "rate_limit_per_minute": "5"
+  }
+}
+```
+
+### PUT /api/settings
+
+Update settings. Validates ranges (batch: 1-200, workers: 1-20, rate: 1-60).
+
+**Request:**
+```json
+{ "sync_batch_size": 30, "async_batch_size": 100 }
+```
+
+---
+
+## Ground Truth
+
+### GET /api/ground-truth
+
+Returns all ground truth examples.
+
+**Response:**
+```json
+{
+  "loaded": true,
+  "filename": "sample-ground-truth.csv",
+  "example_count": 18,
+  "examples": [{"title": "...", "category": "KTLO", "color": "GRAY", "run_change": "Run"}]
+}
+```
+
+### PUT /api/ground-truth/{idx}
+
+Update a ground truth example by index. Accepts partial updates.
+
+### POST /api/ground-truth/add
+
+Add a new ground truth example. Title is required.
+
+### DELETE /api/ground-truth/{idx}
+
+Delete a ground truth example by index.
+
+---
+
+## Baselines
+
+### POST /api/baseline/save
+
+Save current WAF definitions and ground truth as a timestamped baseline snapshot.
+
+### GET /api/baseline/list
+
+List all available baselines. Default baseline is always first.
+
+**Response:**
+```json
+{
+  "baselines": [
+    {"timestamp": "default", "files": ["waf-definitions_baseline_default.csv", "ground-truth_baseline_default.csv"], "is_default": true}
+  ]
+}
+```
+
+### POST /api/baseline/restore
+
+Restore WAF definitions and ground truth from a baseline.
+
+**Request:**
+```json
+{ "timestamp": "default" }
+```
+
+---
+
+## Upload Management
+
+### DELETE /api/history/uploads/{upload_id}
+
+Delete an upload and all its associated classifications.
+
+**Response:**
+```json
+{ "success": true, "deleted_classifications": 100 }
+```
+
+### GET /api/classifications/{id}
+
+Return full details for a single saved classification.
+
+---
 
 ### GET /api/epics/autocomplete?q=plat
 

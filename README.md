@@ -11,9 +11,10 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 | Feature | Description |
 |---------|-------------|
 | **Classify** | Live chat or batch classification for new stories during grooming |
-| **Analytics** | Upload JIRA data → AI reviews every row → flag mismatches → approve & save → summary insights |
+| **Analytics** | Upload JIRA data → map columns → AI reviews every row → flag mismatches → approve & save → summary insights |
 | **Epic Lineage** | Health scores, mismatch flags, story tree drill-down with Table and Graph views |
 | **WAF Reference** | Browse all 8 WAF categories — definitions, decision rules, color codes, and examples |
+| **Settings** | Manage WAF definitions, ground truth (view/edit/add/delete), baseline snapshots (save/restore), and batch size configuration |
 | **Ground Truth Loop** | Approve correct classifications to continuously improve AI accuracy |
 
 ## WAF Categories
@@ -57,18 +58,21 @@ The app auto-loads WAF definitions and ground truth from `sample-data/` on start
 |-------|------|---------|
 | `/` | Home | Landing page with navigation cards and system status |
 | `/classify` | Classifier | Chat-based AI classification with epic tagging |
-| `/history` | Analytics | Upload → AI verify → Summary → Epic Lineage (3 tabs) |
+| `/history` | Analytics | Upload → Map Columns → AI verify → Summary → Epic Lineage → History (4 tabs) |
 | `/waf-reference` | WAF Reference | Browse all 8 WAF categories with definitions and decision rules |
+| `/settings` | Settings | WAF definitions, ground truth, baselines, and processing configuration |
 
 ## Analytics Workflow
 
 1. **Upload Data** — Select a CSV or Excel file with JIRA stories
-2. **AI Review** — Claude classifies every row against the WAF framework in batches of 50 (5 concurrent threads). Files over 200 stories are processed in the background with a live progress bar — the browser never times out.
-3. **Review & Approve** — Sortable table shows file tags vs AI recommendations with match/mismatch status. All rows pre-selected; save to history.
-4. **Summary** — Portfolio-level charts with percentages: category distribution, color breakdown, Run vs Change, confidence levels, mismatch rate. Click any KPI card to drill down into matching stories.
-5. **Epic Lineage** — Health dashboard with scores (0–100), flagged epics needing review, per-epic drill-down in Table or Graph view. KPI cards are clickable to filter by correct/mismatch.
+2. **Map Columns** — Confirm or adjust auto-detected column mappings (Title and Description required)
+3. **AI Review** — Claude classifies every row against the WAF framework. All files process asynchronously with a live progress bar.
+4. **Review & Approve** — Sortable table shows file tags vs AI recommendations with match/mismatch status. Click any row for full story details. All rows pre-selected; save to history.
+5. **Summary** — Portfolio-level charts with percentages: category distribution, color breakdown, Run vs Change, confidence levels, mismatch rate. Click any KPI card to drill down into matching stories.
+6. **Epic Lineage** — Health dashboard with scores (0–100), flagged epics needing review, per-epic drill-down in Table or Graph view. KPI cards are clickable to filter by correct/mismatch.
+7. **History** — View, reload, or delete previous uploads from the dedicated History tab.
 
-Each upload gets a unique ID. Use the Data Source filter to view analytics for a specific upload or all uploads combined. Previous uploads are listed in the history panel for easy reload.
+Each upload gets a unique ID. Use the Data Source filter to view analytics for a specific upload or all uploads combined.
 
 ## Epic Health Scoring
 
@@ -109,18 +113,20 @@ waf-classifier/
 ├── .env                            # API key (not committed)
 ├── requirements.txt                # Python dependencies
 ├── waf_history.db                  # SQLite DB (auto-created)
+├── baselines/                      # Saved baseline snapshots (auto-created)
 ├── static/
 │   ├── home.html                   # Home landing page
 │   ├── index.html                  # Classifier chat UI
-│   ├── history.html                # Analytics (3 tabs: Upload Data, Summary, Epic Lineage)
+│   ├── history.html                # Analytics (4 tabs: Upload Data, Summary, Epic Lineage, History)
+│   ├── settings.html               # Admin settings (WAF defs, ground truth, baselines, config)
 │   └── waf-reference.html          # WAF framework reference guide
 ├── sample-data/
 │   ├── waf-definitions.csv         # WAF framework (8 categories)
 │   ├── sample-ground-truth.csv     # 18 calibration examples
-│   ├── synthetic-100-clean.csv     # 100-record test set (quick testing)
-│   ├── synthetic-100-with-epics.csv  # 100-record answer key
-│   ├── synthetic-5000-clean.csv    # 5000-record full test set
-│   └── synthetic-5000-with-epics.csv # 5000-record answer key
+│   ├── synthetic-100-stories.csv   # 100-record test set (quick testing)
+│   ├── synthetic-100-answer-key.csv  # 100-record answer key
+│   ├── synthetic-5000-stories.csv  # 5000-record full test set
+│   └── synthetic-5000-answer-key.csv # 5000-record answer key
 └── docs/
     ├── PRD_WAF_Classifier.docx     # Product Requirements Document
     ├── User_Guide.docx             # User Guide
@@ -136,10 +142,10 @@ Two test datasets are included in `sample-data/`:
 
 | File | Records | Purpose |
 |------|---------|---------|
-| `synthetic-100-clean.csv` | 100 | Quick testing — covers all 28 epics, 8 categories, 6 colors, 15 teams, ~15% mismatches |
-| `synthetic-5000-clean.csv` | 5,000 | Full testing — same distribution at scale |
+| `synthetic-100-stories.csv` | 100 | Quick testing — covers all 28 epics, 8 categories, 6 colors, 15 teams, ~15% mismatches |
+| `synthetic-5000-stories.csv` | 5,000 | Full testing — same distribution at scale |
 
-The `-with-epics.csv` variants include answer key columns (Correct WAF Category, Correct WAF Color, Correct Run/Change, Is Mismatch).
+The `-answer-key.csv` variants include answer key columns (Correct WAF Category, Correct WAF Color, Correct Run/Change, Is Mismatch).
 
 ## Documentation
 
