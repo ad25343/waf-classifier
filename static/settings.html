@@ -107,6 +107,37 @@
         .expand-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px 8px; }
         .expand-close:hover { color: var(--text-primary); }
 
+        .list-search {
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .list-search input {
+            width: 100%;
+            padding: 8px 32px 8px 12px;
+            font-size: 13px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            outline: none;
+            box-sizing: border-box;
+        }
+        .list-search input::placeholder { color: var(--text-muted); }
+        .list-search input:focus { border-color: var(--accent); }
+        .list-search .clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            display: none;
+        }
+        .list-search input:not(:placeholder-shown) + .clear-btn { display: block; }
+
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
         td { padding: 8px 10px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
@@ -132,15 +163,43 @@
         .modal-header h3 { font-size: 16px; font-weight: 700; }
         .modal-body { padding: 20px; }
         .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+        .top-nav {
+            display: flex;
+            gap: 4px;
+            padding: 8px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .top-nav-link {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .top-nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .top-nav-link.active {
+            background: var(--accent);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
 <div class="header">
     <button class="hamburger" onclick="toggleNav()" aria-label="Menu"><span></span><span></span><span></span></button>
-    <div class="header-left">
+    <a href="/" class="header-left" style="text-decoration:none;color:inherit;">
         <div class="logo">W</div>
         <div class="header-text"><h1>WAF Classifier</h1><p>Work Alignment Framework — Classify, Analyze, Align</p></div>
-    </div>
+    </a>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
         <span class="theme-icon"></span>
     </button>
@@ -155,6 +214,16 @@
     <a href="/teams"><span class="nav-icon">&#128101;</span> Teams</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
     <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
+</nav>
+
+<nav class="top-nav">
+    <a href="/" class="top-nav-link">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <a href="/history" class="top-nav-link">Analytics</a>
+    <a href="/lineage" class="top-nav-link">Epic Lineage</a>
+    <a href="/teams" class="top-nav-link">Teams</a>
+    <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
+    <a href="/settings" class="top-nav-link active">Settings</a>
 </nav>
 
 <div class="main">
@@ -223,6 +292,10 @@
         <!-- Expand: GT -->
         <div class="expand-panel" id="panel-gt">
             <div class="panel-header"><h3>Ground Truth Examples</h3><button class="expand-close" onclick="closePanel('gt')">&times;</button></div>
+            <div class="list-search">
+                <input type="text" id="gt-search" placeholder="Search ground truth examples..." oninput="filterGTTable()">
+                <button class="clear-btn" onclick="document.getElementById('gt-search').value='';filterGTTable();">&times;</button>
+            </div>
             <div style="overflow-x:auto;">
                 <table><thead><tr><th>Title</th><th>Category</th><th>Color</th><th>Run/Change</th><th style="text-align:center;">Actions</th></tr></thead>
                 <tbody id="gt-table-body"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading...</td></tr></tbody></table>
@@ -232,6 +305,10 @@
         <!-- Expand: Baselines -->
         <div class="expand-panel" id="panel-bl">
             <div class="panel-header"><h3>All Baselines</h3><button class="expand-close" onclick="closePanel('bl')">&times;</button></div>
+            <div class="list-search">
+                <input type="text" id="baseline-search" placeholder="Search baselines..." oninput="filterBaselineList()">
+                <button class="clear-btn" onclick="document.getElementById('baseline-search').value='';filterBaselineList();">&times;</button>
+            </div>
             <div id="baseline-list"></div>
         </div>
 
@@ -320,6 +397,25 @@ async function restoreBaseline(ts){const label=ts==='default'?'the default basel
 async function loadSettings(){try{const r=await fetch('/api/settings');const d=await r.json();if(d.settings){['sync_batch_size','async_batch_size'].forEach(f=>{const el=document.getElementById(f);if(el&&d.settings[f]!==undefined)el.value=d.settings[f];});document.getElementById('proc-status').textContent='Sync: '+d.settings.sync_batch_size+' / Async: '+d.settings.async_batch_size;}}catch(e){console.error(e);}}
 async function saveProcessingSettings(){const body={sync_batch_size:parseInt(document.getElementById('sync_batch_size').value,10),async_batch_size:parseInt(document.getElementById('async_batch_size').value,10)};try{const r=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(d.success){loadSettings();showToast('Settings saved.','success');}else{showToast(d.error||'Failed','error');}}catch(e){showToast('Failed: '+e.message,'error');}}
 function resetDefaults(){document.getElementById('sync_batch_size').value=25;document.getElementById('async_batch_size').value=50;showToast('Reset to defaults. Click Save to apply.','success');}
+
+function filterGTTable() {
+    const q = document.getElementById('gt-search').value.toLowerCase();
+    const rows = document.getElementById('gt-table-body').querySelectorAll('tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+
+function filterBaselineList() {
+    const q = document.getElementById('baseline-search').value.toLowerCase();
+    const rows = document.getElementById('baseline-list').querySelectorAll('tr');
+    rows.forEach(row => {
+        if (row.closest('thead')) return;
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+    });
+}
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGTModal();if(_openPanel)closePanel(_openPanel);}});
 loadWafDefs();loadGT();loadBaselines();loadSettings();

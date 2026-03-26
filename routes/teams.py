@@ -120,7 +120,7 @@ def teams_summary():
 
 @teams_bp.route("/api/teams/detail")
 def teams_detail():
-    """Return full story list for a single team."""
+    """Return stories for a single team, grouped by epic and feature."""
     team = request.args.get("team", "")
     if not team:
         return jsonify({"error": "team parameter is required"}), 400
@@ -128,16 +128,32 @@ def teams_detail():
     db = get_db()
     rows = db.execute(
         """SELECT id, story_title, story_description, waf_category, waf_color,
-                  run_change, confidence, was_mismatch, epic, timestamp
+                  run_change, confidence, was_mismatch, epic, parent_feature,
+                  timestamp
            FROM classifications
            WHERE team = ?
-           ORDER BY timestamp DESC""",
+           ORDER BY epic, parent_feature, timestamp DESC""",
         (team,),
     ).fetchall()
 
-    stories = []
+    # Group stories by epic -> feature
+    epic_map = defaultdict(lambda: {
+        "story_count": 0,
+        "mismatches": 0,
+        "features": defaultdict(lambda: {"stories": [], "story_count": 0}),
+    })
+
+    total_stories = 0
+    categories = defaultdict(int)
+    dominant_cat = ""
+
     for r in rows:
-        stories.append({
+        epic_name = r["epic"] or "(No Epic)"
+        feature_name = r["parent_feature"] or "(No Feature)"
+        ep = epic_map[epic_name]
+        ft = ep["features"][feature_name]
+
+        story = {
             "id": r["id"],
             "title": r["story_title"],
             "description": r["story_description"] or "",
@@ -147,7 +163,158 @@ def teams_detail():
             "confidence": r["confidence"] or "",
             "was_mismatch": bool(r["was_mismatch"]),
             "epic": r["epic"] or "",
+            "parent_feature": r["parent_feature"] or "",
             "timestamp": r["timestamp"],
+        }
+
+        ft["stories"].append(story)
+        ft["story_count"] += 1
+        ep["story_count"] += 1
+        if r["was_mismatch"]:
+            ep["mismatches"] += 1
+        total_stories += 1
+        if r["waf_category"]:
+            categories[r["waf_category"]] += 1
+
+    if categories:
+        dominant_cat = max(categories, key=categories.get)
+
+    # Build structured response
+    epics = []
+    for epic_name in sorted(epic_map.keys()):
+        ep = epic_map[epic_name]
+        features = []
+        for feat_name in sorted(ep["features"].keys()):
+            ft = ep["features"][feat_name]
+            features.append({
+                "name": feat_name,
+                "story_count": ft["story_count"],
+                "stories": ft["stories"],
+            })
+        epics.append({
+            "name": epic_name,
+            "story_count": ep["story_count"],
+            "mismatches": ep["mismatches"],
+            "features": features,
         })
 
-    return jsonify({"team": team, "stories": stories})
+    mismatch_count = sum(e["mismatches"] for e in epics)
+    mismatch_rate = round((mismatch_count / total_stories) * 100, 1) if total_stories else 0
+
+    return jsonify({
+        "team": team,
+        "total_stories": total_stories,
+        "epic_count": len(epics),
+        "mismatch_count": mismatch_count,
+        "mismatch_rate": mismatch_rate,
+        "dominant_category": dominant_cat,
+        "epics": epics,
+    })
+
+
+@teams_bp.route("/api/teams/by-epic")
+def teams_by_epic():
+    """Return all teams working on a specific epic."""
+    epic = request.args.get("epic", "")
+    if not epic:
+        return jsonify({"error": "epic parameter is required"}), 400
+
+    db = get_db()
+    rows = db.execute(
+        """SELECT id, story_title, story_description, waf_category, waf_color,
+                  run_change, confidence, was_mismatch, team, parent_feature,
+                  timestamp
+           FROM classifications
+           WHERE epic = ?
+           ORDER BY team, timestamp DESC""",
+        (epic,),
+    ).fetchall()
+
+    team_map = defaultdict(lambda: {
+        "stories": [],
+        "story_count": 0,
+        "mismatches": 0,
+        "categories": defaultdict(int),
+    })
+
+    total_stories = 0
+
+    for r in rows:
+        team_name = r["team"] or "(No Team)"
+        tm = team_map[team_name]
+
+        story = {
+            "id": r["id"],
+            "title": r["story_title"],
+            "description": r["story_description"] or "",
+            "waf_category": r["waf_category"],
+            "waf_color": r["waf_color"] or "",
+            "run_change": r["run_change"] or "",
+            "confidence": r["confidence"] or "",
+            "was_mismatch": bool(r["was_mismatch"]),
+            "parent_feature": r["parent_feature"] or "",
+            "timestamp": r["timestamp"],
+        }
+
+        tm["stories"].append(story)
+        tm["story_count"] += 1
+        if r["was_mismatch"]:
+            tm["mismatches"] += 1
+        if r["waf_category"]:
+            tm["categories"][r["waf_category"]] += 1
+        total_stories += 1
+
+    # Compute category distribution across all teams
+    all_categories = defaultdict(int)
+    teams = []
+    for name in sorted(team_map.keys()):
+        tm = team_map[name]
+        mismatch_rate = round((tm["mismatches"] / tm["story_count"]) * 100, 1) if tm["story_count"] else 0
+        cats = dict(tm["categories"])
+        for c, v in cats.items():
+            all_categories[c] += v
+        teams.append({
+            "name": name,
+            "story_count": tm["story_count"],
+            "mismatches": tm["mismatches"],
+            "mismatch_rate": mismatch_rate,
+            "categories": cats,
+            "stories": tm["stories"],
+        })
+
+    return jsonify({
+        "epic": epic,
+        "total_stories": total_stories,
+        "team_count": len(teams),
+        "category_distribution": dict(all_categories),
+        "teams": teams,
+    })
+
+
+@teams_bp.route("/api/teams/epics-list")
+def epics_list():
+    """Return list of all epics with team and story counts."""
+    db = get_db()
+    rows = db.execute(
+        """SELECT epic, team, COUNT(*) as cnt
+           FROM classifications
+           WHERE epic != '' AND team != '' AND team != 'default'
+           GROUP BY epic, team"""
+    ).fetchall()
+
+    epic_map = defaultdict(lambda: {"teams": set(), "story_count": 0})
+    for r in rows:
+        ep = epic_map[r["epic"]]
+        ep["teams"].add(r["team"])
+        ep["story_count"] += r["cnt"]
+
+    epics = []
+    for name in sorted(epic_map.keys()):
+        ep = epic_map[name]
+        epics.append({
+            "name": name,
+            "team_count": len(ep["teams"]),
+            "story_count": ep["story_count"],
+        })
+
+    return jsonify({"epics": epics})

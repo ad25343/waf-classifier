@@ -53,9 +53,7 @@
             color: var(--text-primary);
             transition: background 0.2s;
         }
-        .theme-toggle:hover {
-            background: var(--border);
-        }
+        .theme-toggle:hover { background: var(--border); }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -74,16 +72,13 @@
             align-items: center;
             justify-content: space-between;
         }
-
         .header-left { display: flex; align-items: center; gap: 12px; }
-
         .logo {
             width: 36px; height: 36px;
             background: linear-gradient(135deg, var(--accent), #d4722a);
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
             font-size: 18px; font-weight: 700; color: white;
         }
-
         .header-text h1 { font-size: 22px; font-weight: 700; }
         .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
@@ -128,363 +123,243 @@
         .nav-menu .nav-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px 4px; }
 
         /* Content */
-        .content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px 32px;
-        }
+        .content { max-width: 1400px; margin: 0 auto; padding: 24px 32px; }
 
-        .page-title {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 24px;
+        .page-header { margin-bottom: 20px; }
+        .page-header h1 { font-size: 22px; font-weight: 700; }
+        .page-header p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex; gap: 0; margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
         }
+        .tab-btn {
+            padding: 10px 24px; font-size: 14px; font-weight: 600;
+            background: none; border: none; border-bottom: 2px solid transparent;
+            color: var(--text-muted); cursor: pointer;
+            margin-bottom: -2px; transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--text-secondary); }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
         /* KPI Cards */
         .kpi-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-bottom: 24px;
         }
-
         .kpi-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
         }
-
         .kpi-label {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            font-size: 12px; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+        }
+        .kpi-value { font-size: 28px; font-weight: 700; }
+        .kpi-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Selector pills */
+        .selector-row {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            margin-bottom: 24px; max-height: 100px; overflow-y: auto;
+            padding: 4px 0;
+        }
+        .selector-pill {
+            padding: 6px 16px; border-radius: 20px; font-size: 13px;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            color: var(--text-secondary); cursor: pointer;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .selector-pill:hover { border-color: var(--accent); color: var(--text-primary); }
+        .selector-pill.active {
+            background: var(--accent); border-color: var(--accent);
+            color: #fff; font-weight: 600;
+        }
+        .selector-pill .pill-count {
+            font-size: 11px; opacity: 0.7; margin-left: 4px;
         }
 
-        .kpi-value {
-            font-size: 28px;
-            font-weight: 700;
+        /* Tree styles */
+        .tree-node { padding: 4px 0; cursor: pointer; }
+        .tree-toggle { display: inline-block; width: 20px; color: var(--text-muted); font-size: 12px; }
+        .tree-children { margin-left: 24px; border-left: 1px solid var(--border); padding-left: 12px; }
+        .tree-children.collapsed { display: none; }
+        .tree-epic {
+            font-weight: 600; font-size: 14px; padding: 8px 0;
+            display: flex; align-items: center; gap: 8px;
         }
-
-        .kpi-sub {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
+        .tree-epic:hover { color: var(--accent); }
+        .tree-feature {
+            font-weight: 500; font-size: 13px; color: var(--text-secondary);
+            padding: 6px 0; display: flex; align-items: center; gap: 8px;
         }
-
-        /* Team Cards Grid */
-        .team-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 32px;
-        }
-
-        .team-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-        }
-
-        .team-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(232, 148, 74, 0.1);
-        }
-
-        .team-card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .team-card-header h3 {
-            font-size: 17px;
-            font-weight: 600;
-        }
-
-        .team-card-header .arrow {
-            color: var(--text-muted);
-            font-size: 18px;
-        }
-
-        .team-mini-kpis {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 16px;
-        }
-
-        .mini-kpi {
-            font-size: 12px;
+        .tree-feature:hover { color: var(--text-primary); }
+        .tree-story {
+            font-size: 12px; padding: 4px 0;
+            display: flex; align-items: center; gap: 8px;
             color: var(--text-secondary);
         }
-
-        .mini-kpi strong {
-            display: block;
-            font-size: 16px;
-            color: var(--text-primary);
-            margin-bottom: 2px;
+        .tree-story:hover { color: var(--text-primary); }
+        .tree-stat {
+            font-size: 11px; color: var(--text-muted);
+            background: var(--bg-tertiary); padding: 1px 8px;
+            border-radius: 10px;
         }
+        .tree-stat.mismatch { color: var(--error); background: rgba(248,113,113,0.1); }
 
-        /* Stacked bar */
-        .stacked-bar {
-            height: 8px;
-            border-radius: 4px;
-            display: flex;
-            overflow: hidden;
-            margin-bottom: 14px;
-            background: var(--bg-tertiary);
-        }
-
-        .stacked-bar .segment {
-            height: 100%;
-            transition: width 0.3s ease;
-        }
-
-        /* Epic pills */
-        .epic-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .epic-pill {
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border);
-        }
-
-        /* Detail View */
-        .detail-view {
-            display: none;
-        }
-
-        .detail-view.active {
-            display: block;
-        }
-
-        .grid-view.hidden {
-            display: none;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 13px;
-            margin-bottom: 20px;
-            transition: all 0.2s;
-        }
-
-        .back-btn:hover {
-            color: var(--text-primary);
-            border-color: var(--accent);
-        }
-
-        .detail-header {
-            margin-bottom: 24px;
-        }
-
-        .detail-header h2 {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .detail-charts {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 28px;
-        }
-
-        .chart-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-        }
-
-        .chart-card h4 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: var(--text-secondary);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 260px;
-        }
-
-        /* Story table */
-        .story-table-wrap {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            margin-bottom: 32px;
-        }
-
-        .story-table-wrap h4 {
-            padding: 16px 20px 12px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .story-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .story-table th {
-            text-align: left;
-            padding: 10px 16px;
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-        }
-
-        .story-table th:hover {
-            color: var(--text-primary);
-        }
-
-        .story-table th .sort-arrow {
-            margin-left: 4px;
-            font-size: 10px;
-        }
-
-        .story-table td {
-            padding: 10px 16px;
-            font-size: 13px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-secondary);
-            max-width: 300px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .story-table tr:hover td {
-            background: var(--bg-tertiary);
-        }
-
+        /* Badges */
         .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 500;
+            display: inline-block; padding: 2px 8px; border-radius: 6px;
+            font-size: 11px; font-weight: 500;
         }
-
-        .badge-mismatch {
-            background: rgba(248,113,113,0.15);
-            color: var(--error);
+        .badge-cat {
+            background: rgba(232,148,74,0.15); color: var(--accent);
         }
-
-        .badge-ok {
-            background: rgba(74,222,128,0.15);
-            color: var(--success);
-        }
-
+        .badge-mismatch { background: rgba(248,113,113,0.15); color: var(--error); }
+        .badge-ok { background: rgba(74,222,128,0.15); color: var(--success); }
         .badge-high { background: rgba(74,222,128,0.15); color: var(--success); }
         .badge-medium { background: rgba(251,191,36,0.15); color: var(--warning); }
         .badge-low { background: rgba(248,113,113,0.15); color: var(--error); }
 
-        /* Cross-Team Matrix */
-        .matrix-section {
-            margin-bottom: 32px;
+        /* Color dots */
+        .color-dot {
+            display: inline-block; width: 10px; height: 10px;
+            border-radius: 50%; flex-shrink: 0;
         }
 
-        .matrix-section h3 {
-            font-size: 17px;
-            font-weight: 600;
-            margin-bottom: 16px;
+        /* Stacked bar */
+        .stacked-bar {
+            height: 8px; border-radius: 4px;
+            display: flex; overflow: hidden;
+            background: var(--bg-tertiary);
         }
+        .stacked-bar .segment { height: 100%; transition: width 0.3s ease; }
 
-        .matrix-wrap {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow-x: auto;
+        /* Team cards for By Epic view */
+        .epic-team-card {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+            margin-bottom: 16px; transition: border-color 0.2s;
         }
-
-        .matrix-table {
-            width: 100%;
-            border-collapse: collapse;
+        .epic-team-card:hover { border-color: var(--accent); }
+        .epic-team-header {
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; margin-bottom: 12px;
         }
-
-        .matrix-table th,
-        .matrix-table td {
-            padding: 10px 14px;
-            font-size: 12px;
-            border-bottom: 1px solid var(--border);
-            text-align: center;
+        .epic-team-header h3 { font-size: 15px; font-weight: 600; }
+        .epic-team-meta {
+            display: flex; gap: 16px; margin-bottom: 12px;
         }
-
-        .matrix-table th {
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 11px;
+        .epic-team-meta .meta-item {
+            font-size: 12px; color: var(--text-secondary);
         }
-
-        .matrix-table th:first-child,
-        .matrix-table td:first-child {
-            text-align: left;
-            font-weight: 500;
-            color: var(--text-primary);
+        .epic-team-meta .meta-item strong {
+            color: var(--text-primary); margin-right: 4px;
         }
+        .epic-team-stories { display: none; margin-top: 12px; }
+        .epic-team-stories.open { display: block; }
+        .epic-team-stories .tree-story { padding: 5px 0; }
 
-        .matrix-table td.shared {
-            background: rgba(232, 148, 74, 0.1);
-            color: var(--accent);
-            font-weight: 600;
+        /* Chart card */
+        .chart-card {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
         }
-
-        .matrix-table td.count-cell {
+        .chart-card h4 {
+            font-size: 14px; font-weight: 600; margin-bottom: 16px;
             color: var(--text-secondary);
         }
+        .chart-container { position: relative; height: 260px; }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
+        .detail-charts {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 20px; margin-bottom: 24px;
         }
 
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--text-muted);
+        }
         .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
         .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-secondary); }
         .empty-state p { font-size: 13px; }
 
-        @media (max-width: 900px) {
-            .kpi-row { grid-template-columns: repeat(2, 1fr); }
-            .team-grid { grid-template-columns: 1fr; }
-            .detail-charts { grid-template-columns: 1fr; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Loading */
+        .loading-spinner {
+            text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px;
         }
 
+        @media (max-width: 900px) {
+            .kpi-row { grid-template-columns: repeat(2, 1fr); }
+            .detail-charts { grid-template-columns: 1fr; }
+        }
         @media (max-width: 600px) {
             .kpi-row { grid-template-columns: 1fr; }
             .content { padding: 16px; }
+        }
+
+        /* Search inputs */
+        .list-search {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .list-search input {
+            width: 100%;
+            padding: 8px 32px 8px 12px;
+            font-size: 13px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            outline: none;
+            box-sizing: border-box;
+        }
+        .list-search input::placeholder { color: var(--text-muted); }
+        .list-search input:focus { border-color: var(--accent); }
+        .list-search .clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            display: none;
+        }
+        .list-search .clear-btn.visible { display: block; }
+
+        .top-nav {
+            display: flex;
+            gap: 4px;
+            padding: 8px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .top-nav-link {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .top-nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .top-nav-link.active {
+            background: var(--accent);
+            color: #fff;
         }
     </style>
 </head>
@@ -494,13 +369,13 @@
     <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
         <span></span><span></span><span></span>
     </button>
-    <div class="header-left">
+    <a href="/" class="header-left" style="text-decoration:none;color:inherit;">
         <div class="logo">W</div>
         <div class="header-text">
             <h1>WAF Classifier</h1>
             <p>Work Alignment Framework — Classify, Analyze, Align</p>
         </div>
-    </div>
+    </a>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
         <span class="theme-icon"></span>
     </button>
@@ -518,79 +393,73 @@
     <a href="/settings"><span class="nav-icon">&#9881;&#65039;</span> Settings</a>
 </nav>
 
+<nav class="top-nav">
+    <a href="/" class="top-nav-link">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <a href="/history" class="top-nav-link">Analytics</a>
+    <a href="/lineage" class="top-nav-link">Epic Lineage</a>
+    <a href="/teams" class="top-nav-link active">Teams</a>
+    <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
+    <a href="/settings" class="top-nav-link">Settings</a>
+</nav>
+
 <div class="content">
-    <h1 class="page-title">Team Report</h1>
+    <div class="page-header">
+        <h1>Teams</h1>
+        <p>Explore team allocations by team or by epic</p>
+    </div>
 
-    <!-- KPI Cards -->
-    <div class="kpi-row">
-        <div class="kpi-card">
-            <div class="kpi-label">Total Teams</div>
-            <div class="kpi-value" id="kpi-teams">-</div>
+    <!-- Tabs -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="by-team" onclick="switchTab('by-team')">By Team</button>
+        <button class="tab-btn" data-tab="by-epic" onclick="switchTab('by-epic')">By Epic</button>
+    </div>
+
+    <!-- ========== BY TEAM TAB ========== -->
+    <div class="tab-content active" id="tab-by-team">
+        <div class="kpi-row" id="kpi-team">
+            <div class="kpi-card"><div class="kpi-label">Total Stories</div><div class="kpi-value" id="kt-stories">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Epics</div><div class="kpi-value" id="kt-epics">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Mismatch Rate</div><div class="kpi-value" id="kt-mismatch">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Dominant Category</div><div class="kpi-value" id="kt-dominant" style="font-size:16px;">-</div></div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-label">Total Stories</div>
-            <div class="kpi-value" id="kpi-stories">-</div>
+
+        <div class="list-search">
+            <input type="text" id="team-search" placeholder="Search teams..." oninput="filterPills('team-search', '#team-selector')">
+            <button class="clear-btn" onclick="clearSearch('team-search', '#team-selector')">&times;</button>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-label">Avg Mismatch Rate</div>
-            <div class="kpi-value" id="kpi-mismatch">-</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-label">Most Active Team</div>
-            <div class="kpi-value" id="kpi-active" style="font-size:18px;">-</div>
-            <div class="kpi-sub" id="kpi-active-sub"></div>
+        <div class="selector-row" id="team-selector"></div>
+
+        <div id="team-detail-area">
+            <div class="empty-state" id="team-empty">
+                <div class="icon">&#128101;</div>
+                <h3>Select a team above</h3>
+                <p>Choose a team to view its epic/feature/story tree</p>
+            </div>
         </div>
     </div>
 
-    <!-- Grid View -->
-    <div class="grid-view" id="grid-view">
-        <div class="team-grid" id="team-grid"></div>
+    <!-- ========== BY EPIC TAB ========== -->
+    <div class="tab-content" id="tab-by-epic">
+        <div class="kpi-row" id="kpi-epic">
+            <div class="kpi-card"><div class="kpi-label">Teams on this Epic</div><div class="kpi-value" id="ke-teams">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Total Stories</div><div class="kpi-value" id="ke-stories">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Category Distribution</div><div class="kpi-value" id="ke-catdist" style="font-size:14px;">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Avg Mismatch Rate</div><div class="kpi-value" id="ke-mismatch">-</div></div>
+        </div>
 
-        <!-- Cross-Team Matrix -->
-        <div class="matrix-section" id="matrix-section" style="display:none;">
-            <h3>Cross-Team Epic Matrix</h3>
-            <div class="matrix-wrap">
-                <table class="matrix-table" id="matrix-table"></table>
-            </div>
+        <div class="list-search">
+            <input type="text" id="epic-search" placeholder="Search epics..." oninput="filterPills('epic-search', '#epic-selector')">
+            <button class="clear-btn" onclick="clearSearch('epic-search', '#epic-selector')">&times;</button>
         </div>
-    </div>
+        <div class="selector-row" id="epic-selector"></div>
 
-    <!-- Detail View -->
-    <div class="detail-view" id="detail-view">
-        <button class="back-btn" onclick="backToTeamGrid()">&#8592; Back to Teams</button>
-        <div class="detail-header">
-            <h2 id="detail-team-name"></h2>
-        </div>
-        <div class="detail-charts">
-            <div class="chart-card">
-                <h4>WAF Category Distribution</h4>
-                <div class="chart-container">
-                    <canvas id="chart-category"></canvas>
-                </div>
+        <div id="epic-detail-area">
+            <div class="empty-state" id="epic-empty">
+                <div class="icon">&#128209;</div>
+                <h3>Select an epic above</h3>
+                <p>Choose an epic to see which teams contribute to it</p>
             </div>
-            <div class="chart-card">
-                <h4>WAF Color Breakdown</h4>
-                <div class="chart-container">
-                    <canvas id="chart-color"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="story-table-wrap">
-            <h4>Stories (<span id="detail-story-count">0</span>)</h4>
-            <table class="story-table" id="story-table">
-                <thead>
-                    <tr>
-                        <th data-col="title" onclick="sortTable('title')">Title <span class="sort-arrow"></span></th>
-                        <th data-col="waf_category" onclick="sortTable('waf_category')">Category <span class="sort-arrow"></span></th>
-                        <th data-col="waf_color" onclick="sortTable('waf_color')">Color <span class="sort-arrow"></span></th>
-                        <th data-col="run_change" onclick="sortTable('run_change')">Run/Change <span class="sort-arrow"></span></th>
-                        <th data-col="confidence" onclick="sortTable('confidence')">Confidence <span class="sort-arrow"></span></th>
-                        <th data-col="epic" onclick="sortTable('epic')">Epic <span class="sort-arrow"></span></th>
-                        <th data-col="was_mismatch" onclick="sortTable('was_mismatch')">Mismatch <span class="sort-arrow"></span></th>
-                    </tr>
-                </thead>
-                <tbody id="story-tbody"></tbody>
-            </table>
         </div>
     </div>
 </div>
@@ -622,291 +491,342 @@ function toggleNav() {
     document.getElementById('nav-overlay').classList.toggle('open');
 }
 
-// ── Category colors ────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────
 const CAT_COLORS = [
     '#e8944a', '#2dd4bf', '#c084fc', '#f87171',
     '#4ade80', '#fbbf24', '#60a5fa', '#f472b6',
     '#a78bfa', '#34d399', '#fb923c', '#38bdf8'
 ];
-
 const WAF_COLOR_MAP = {
-    'GRAY': '#9ca0b0',
-    'BLACK': '#4a4a5a',
-    'GREEN': '#4ade80',
-    'ORANGE': '#fb923c',
-    'RED': '#f87171',
-    'BLUE': '#60a5fa',
-    'YELLOW': '#fbbf24',
-    'PURPLE': '#c084fc',
-    'WHITE': '#e0e0e0'
+    'GRAY': '#9ca0b0', 'BLACK': '#4a4a5a', 'GREEN': '#4ade80',
+    'ORANGE': '#fb923c', 'RED': '#f87171', 'BLUE': '#60a5fa',
+    'YELLOW': '#fbbf24', 'PURPLE': '#c084fc', 'WHITE': '#e0e0e0'
 };
+
+function getCatColor(cat, allCats) {
+    const idx = allCats.indexOf(cat);
+    return CAT_COLORS[idx >= 0 ? idx % CAT_COLORS.length : 0];
+}
 
 // ── State ──────────────────────────────────────────────────
 let summaryData = null;
-let detailStories = [];
-let sortCol = '';
-let sortAsc = true;
-let categoryChart = null;
-let colorChart = null;
+let epicsList = null;
+let selectedTeam = null;
+let selectedEpic = null;
+let allCategories = [];
 
-// ── Load Summary ───────────────────────────────────────────
-async function loadTeamsSummary() {
+// ── Tabs ───────────────────────────────────────────────────
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ── Load Data ──────────────────────────────────────────────
+async function init() {
     try {
-        const res = await fetch('/api/teams/summary');
-        summaryData = await res.json();
-        renderKPIs();
-        renderTeamCards();
-        renderMatrix();
+        const [sumRes, epicsRes] = await Promise.all([
+            fetch('/api/teams/summary'),
+            fetch('/api/teams/epics-list')
+        ]);
+        summaryData = await sumRes.json();
+        epicsList = await epicsRes.json();
+
+        // Collect all categories globally
+        const catSet = new Set();
+        summaryData.teams.forEach(t => Object.keys(t.categories).forEach(c => catSet.add(c)));
+        allCategories = [...catSet].sort();
+
+        renderTeamPills();
+        renderEpicPills();
     } catch (err) {
-        console.error('Failed to load teams summary:', err);
-        document.getElementById('team-grid').innerHTML =
-            '<div class="empty-state"><div class="icon">&#128101;</div><h3>Unable to load team data</h3><p>Check your connection and try again.</p></div>';
+        console.error('Failed to load data:', err);
     }
 }
 
-function renderKPIs() {
-    const t = summaryData.totals;
-    document.getElementById('kpi-teams').textContent = t.team_count;
-    document.getElementById('kpi-stories').textContent = t.total_stories.toLocaleString();
-    document.getElementById('kpi-mismatch').textContent = t.avg_mismatch_rate + '%';
-    document.getElementById('kpi-active').textContent = t.most_active_team || '-';
-    if (t.most_active_team) {
-        const team = summaryData.teams.find(x => x.name === t.most_active_team);
-        if (team) document.getElementById('kpi-active-sub').textContent = team.total_stories + ' stories';
+// ── By Team: Pills ─────────────────────────────────────────
+function renderTeamPills() {
+    const row = document.getElementById('team-selector');
+    if (!summaryData || !summaryData.teams.length) {
+        row.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">No teams found</span>';
+        return;
+    }
+    row.innerHTML = summaryData.teams.map(t =>
+        `<button class="selector-pill" onclick="selectTeam('${escapeAttr(t.name)}')">${escapeHtml(t.name)}<span class="pill-count">(${t.total_stories})</span></button>`
+    ).join('');
+}
+
+async function selectTeam(name) {
+    selectedTeam = name;
+    // Highlight pill
+    document.querySelectorAll('#team-selector .selector-pill').forEach(p => {
+        p.classList.toggle('active', p.textContent.startsWith(name));
+    });
+
+    const area = document.getElementById('team-detail-area');
+    area.innerHTML = '<div class="loading-spinner">Loading team data...</div>';
+
+    try {
+        const res = await fetch('/api/teams/detail?team=' + encodeURIComponent(name));
+        const data = await res.json();
+        renderTeamKPIs(data);
+        renderTeamTree(data, area);
+    } catch (err) {
+        area.innerHTML = '<div class="empty-state"><h3>Error loading team</h3></div>';
     }
 }
 
-function renderTeamCards() {
-    const grid = document.getElementById('team-grid');
-    if (!summaryData.teams.length) {
-        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="icon">&#128101;</div><h3>No team data yet</h3><p>Classify stories with team assignments to see team analytics here.</p></div>';
+function renderTeamKPIs(data) {
+    document.getElementById('kt-stories').textContent = data.total_stories.toLocaleString();
+    document.getElementById('kt-epics').textContent = data.epic_count;
+    document.getElementById('kt-mismatch').textContent = data.mismatch_rate + '%';
+    document.getElementById('kt-dominant').textContent = data.dominant_category || '-';
+}
+
+function renderTeamTree(data, container) {
+    if (!data.epics || !data.epics.length) {
+        container.innerHTML = '<div class="empty-state"><h3>No stories for this team</h3></div>';
         return;
     }
 
-    // Collect all unique categories for consistent colors
-    const allCats = new Set();
-    summaryData.teams.forEach(t => Object.keys(t.categories).forEach(c => allCats.add(c)));
-    const catList = [...allCats].sort();
-    const catColorMap = {};
-    catList.forEach((c, i) => { catColorMap[c] = CAT_COLORS[i % CAT_COLORS.length]; });
+    let html = '<div class="detail-charts" id="team-charts-area"></div>';
+    html += '<div class="list-search"><input type="text" id="tree-search" placeholder="Search stories..." oninput="filterTree(\'tree-search\')"><button class="clear-btn" onclick="clearTreeSearch(\'tree-search\')">&times;</button></div>';
+    html += '<div class="tree-root">';
 
-    grid.innerHTML = summaryData.teams.map(team => {
-        // Build stacked bar segments
-        const total = team.total_stories;
-        const segments = catList
-            .filter(c => team.categories[c])
-            .map(c => {
-                const pct = (team.categories[c] / total * 100).toFixed(1);
-                return `<div class="segment" style="width:${pct}%;background:${catColorMap[c]}" title="${c}: ${team.categories[c]} (${pct}%)"></div>`;
-            }).join('');
-
-        // Epic pills (max 5)
-        const epicPills = team.epics.slice(0, 5).map(e =>
-            `<span class="epic-pill">${escapeHtml(e)}</span>`
-        ).join('');
-        const moreEpics = team.epics.length > 5 ? `<span class="epic-pill">+${team.epics.length - 5} more</span>` : '';
-
-        return `
-        <div class="team-card" onclick="showTeamDetail('${escapeAttr(team.name)}')">
-            <div class="team-card-header">
-                <h3>${escapeHtml(team.name)}</h3>
-                <span class="arrow">&#8594;</span>
+    data.epics.forEach((epic, ei) => {
+        const epicId = 'epic-' + ei;
+        const mismatchBadge = epic.mismatches > 0
+            ? `<span class="tree-stat mismatch">${epic.mismatches} mismatch${epic.mismatches > 1 ? 'es' : ''}</span>`
+            : '';
+        html += `
+        <div class="tree-node">
+            <div class="tree-epic" onclick="toggleTree('${epicId}')">
+                <span class="tree-toggle" id="toggle-${epicId}">\u25B8</span>
+                ${escapeHtml(epic.name)}
+                <span class="tree-stat">${epic.story_count} stories</span>
+                ${mismatchBadge}
             </div>
-            <div class="team-mini-kpis">
-                <div class="mini-kpi"><strong>${team.total_stories}</strong>Stories</div>
-                <div class="mini-kpi"><strong>${team.epic_count}</strong>Epics</div>
-                <div class="mini-kpi"><strong>${team.mismatch_rate}%</strong>Mismatch</div>
-            </div>
-            <div class="stacked-bar">${segments}</div>
-            <div class="epic-pills">${epicPills}${moreEpics}</div>
-        </div>`;
-    }).join('');
+            <div class="tree-children collapsed" id="${epicId}">`;
+
+        epic.features.forEach((feat, fi) => {
+            const featId = epicId + '-f' + fi;
+            html += `
+                <div class="tree-node">
+                    <div class="tree-feature" onclick="toggleTree('${featId}')">
+                        <span class="tree-toggle" id="toggle-${featId}">\u25B8</span>
+                        ${escapeHtml(feat.name)}
+                        <span class="tree-stat">${feat.story_count} stories</span>
+                    </div>
+                    <div class="tree-children collapsed" id="${featId}">`;
+
+            feat.stories.forEach(s => {
+                const confClass = (s.confidence || '').toUpperCase() === 'HIGH' ? 'badge-high' :
+                                  (s.confidence || '').toUpperCase() === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+                const catColor = getCatColor(s.waf_category, allCategories);
+                const colorHex = WAF_COLOR_MAP[(s.waf_color || '').toUpperCase()] || '#888';
+                html += `
+                        <div class="tree-story">
+                            <span class="color-dot" style="background:${colorHex}" title="${escapeAttr(s.waf_color)}"></span>
+                            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeAttr(s.title)}">${escapeHtml(s.title)}</span>
+                            <span class="badge badge-cat" style="background:${catColor}22;color:${catColor}">${escapeHtml(s.waf_category)}</span>
+                            <span class="badge ${confClass}">${escapeHtml(s.confidence)}</span>
+                            ${s.was_mismatch ? '<span class="badge badge-mismatch">Mismatch</span>' : '<span class="badge badge-ok">Match</span>'}
+                        </div>`;
+            });
+
+            html += `</div></div>`;
+        });
+
+        html += `</div></div>`;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Render charts
+    renderTeamCharts(data);
 }
 
-function renderMatrix() {
-    const ct = summaryData.cross_team;
-    const epicNames = Object.keys(ct.teams_by_epic).sort();
-    const teamNames = summaryData.teams.map(t => t.name).sort();
+function toggleTree(id) {
+    const el = document.getElementById(id);
+    const toggle = document.getElementById('toggle-' + id);
+    if (!el) return;
+    const isCollapsed = el.classList.contains('collapsed');
+    el.classList.toggle('collapsed');
+    if (toggle) toggle.textContent = isCollapsed ? '\u25BE' : '\u25B8';
+}
 
-    if (!epicNames.length || !teamNames.length) {
-        document.getElementById('matrix-section').style.display = 'none';
-        return;
-    }
+function renderTeamCharts(data) {
+    const area = document.getElementById('team-charts-area');
+    if (!area) return;
 
-    document.getElementById('matrix-section').style.display = 'block';
-
-    // Build epic-to-team story count lookup
-    const epicTeamCounts = {};
-    summaryData.teams.forEach(team => {
-        team.epics.forEach(epic => {
-            if (!epicTeamCounts[epic]) epicTeamCounts[epic] = {};
-            // Count stories for this epic from category data (approximate by dividing evenly)
-            // For accurate counts, we use the team total / epic count as an estimate
-            // Better approach: just mark presence
+    // Aggregate categories and colors from all stories
+    const catCounts = {};
+    const colorCounts = {};
+    data.epics.forEach(ep => {
+        ep.features.forEach(ft => {
+            ft.stories.forEach(s => {
+                if (s.waf_category) catCounts[s.waf_category] = (catCounts[s.waf_category] || 0) + 1;
+                if (s.waf_color) colorCounts[s.waf_color] = (colorCounts[s.waf_color] || 0) + 1;
+            });
         });
     });
 
-    const thead = `<thead><tr><th>Epic</th>${teamNames.map(t => `<th>${escapeHtml(t)}</th>`).join('')}</tr></thead>`;
-
-    const tbody = epicNames.map(epic => {
-        const teams = ct.teams_by_epic[epic] || [];
-        const isShared = teams.length > 1;
-        const cells = teamNames.map(t => {
-            const hasEpic = teams.includes(t);
-            if (hasEpic) {
-                return `<td class="${isShared ? 'shared' : 'count-cell'}">&#10003;</td>`;
-            }
-            return '<td class="count-cell">-</td>';
-        }).join('');
-        return `<tr><td>${escapeHtml(epic)}</td>${cells}</tr>`;
-    }).join('');
-
-    document.getElementById('matrix-table').innerHTML = thead + '<tbody>' + tbody + '</tbody>';
-}
-
-// ── Detail View ────────────────────────────────────────────
-async function showTeamDetail(teamName) {
-    document.getElementById('grid-view').classList.add('hidden');
-    document.getElementById('detail-view').classList.add('active');
-    document.getElementById('detail-team-name').textContent = teamName;
-
-    try {
-        const res = await fetch('/api/teams/detail?team=' + encodeURIComponent(teamName));
-        const data = await res.json();
-        detailStories = data.stories || [];
-        document.getElementById('detail-story-count').textContent = detailStories.length;
-
-        renderDetailCharts(teamName);
-        renderStoryTable();
-    } catch (err) {
-        console.error('Failed to load team detail:', err);
-    }
-}
-
-function renderDetailCharts(teamName) {
-    const team = summaryData.teams.find(t => t.name === teamName);
-    if (!team) return;
+    area.innerHTML = `
+        <div class="chart-card">
+            <h4>WAF Category Distribution</h4>
+            <div class="chart-container"><canvas id="chart-cat-team"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <h4>WAF Color Breakdown</h4>
+            <div class="chart-container"><canvas id="chart-color-team"></canvas></div>
+        </div>`;
 
     const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
     const textColor = isDark ? '#9ca0b0' : '#4a4a6a';
 
-    // Destroy existing charts
-    if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
-    if (colorChart) { colorChart.destroy(); colorChart = null; }
+    const catLabels = Object.keys(catCounts);
+    const catValues = Object.values(catCounts);
+    const catColors = catLabels.map(c => getCatColor(c, allCategories));
 
-    // Category doughnut
-    const catLabels = Object.keys(team.categories);
-    const catValues = Object.values(team.categories);
-    const catColors = catLabels.map((_, i) => CAT_COLORS[i % CAT_COLORS.length]);
-
-    const catCtx = document.getElementById('chart-category').getContext('2d');
-    categoryChart = new Chart(catCtx, {
+    new Chart(document.getElementById('chart-cat-team').getContext('2d'), {
         type: 'doughnut',
-        data: {
-            labels: catLabels,
-            datasets: [{
-                data: catValues,
-                backgroundColor: catColors,
-                borderWidth: 0
-            }]
-        },
+        data: { labels: catLabels, datasets: [{ data: catValues, backgroundColor: catColors, borderWidth: 0 }] },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: { color: textColor, font: { size: 11 }, padding: 12 }
-                }
-            }
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 11 }, padding: 12 } } }
         }
     });
 
-    // Color bar chart
-    const colorLabels = Object.keys(team.colors);
-    const colorValues = Object.values(team.colors);
-    const bgColors = colorLabels.map(c => WAF_COLOR_MAP[c] || '#888');
+    const clrLabels = Object.keys(colorCounts);
+    const clrValues = Object.values(colorCounts);
+    const bgColors = clrLabels.map(c => WAF_COLOR_MAP[c] || '#888');
 
-    const colorCtx = document.getElementById('chart-color').getContext('2d');
-    colorChart = new Chart(colorCtx, {
+    new Chart(document.getElementById('chart-color-team').getContext('2d'), {
         type: 'bar',
-        data: {
-            labels: colorLabels,
-            datasets: [{
-                data: colorValues,
-                backgroundColor: bgColors,
-                borderRadius: 4,
-                barThickness: 32
-            }]
-        },
+        data: { labels: clrLabels, datasets: [{ data: clrValues, backgroundColor: bgColors, borderRadius: 4, barThickness: 32 }] },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: {
-                x: {
-                    ticks: { color: textColor, font: { size: 11 } },
-                    grid: { display: false }
-                },
-                y: {
-                    ticks: { color: textColor, font: { size: 11 } },
-                    grid: { color: isDark ? '#2e3244' : '#d1d5db' }
-                }
+                x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } },
+                y: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: isDark ? '#2e3244' : '#d1d5db' } }
             }
         }
     });
 }
 
-function renderStoryTable() {
-    const tbody = document.getElementById('story-tbody');
-    tbody.innerHTML = detailStories.map(s => {
-        const confClass = (s.confidence || '').toUpperCase() === 'HIGH' ? 'badge-high' :
-                          (s.confidence || '').toUpperCase() === 'MEDIUM' ? 'badge-medium' : 'badge-low';
-        return `<tr>
-            <td title="${escapeAttr(s.title)}">${escapeHtml(s.title)}</td>
-            <td>${escapeHtml(s.waf_category)}</td>
-            <td>${escapeHtml(s.waf_color)}</td>
-            <td>${escapeHtml(s.run_change)}</td>
-            <td><span class="badge ${confClass}">${escapeHtml(s.confidence)}</span></td>
-            <td>${escapeHtml(s.epic)}</td>
-            <td>${s.was_mismatch ? '<span class="badge badge-mismatch">Yes</span>' : '<span class="badge badge-ok">No</span>'}</td>
-        </tr>`;
-    }).join('');
+// ── By Epic: Pills ─────────────────────────────────────────
+function renderEpicPills() {
+    const row = document.getElementById('epic-selector');
+    if (!epicsList || !epicsList.epics.length) {
+        row.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">No epics found</span>';
+        return;
+    }
+    row.innerHTML = epicsList.epics.map(e =>
+        `<button class="selector-pill" onclick="selectEpic('${escapeAttr(e.name)}')">${escapeHtml(e.name)}<span class="pill-count">(${e.story_count})</span></button>`
+    ).join('');
 }
 
-function sortTable(col) {
-    if (sortCol === col) {
-        sortAsc = !sortAsc;
+async function selectEpic(name) {
+    selectedEpic = name;
+    document.querySelectorAll('#epic-selector .selector-pill').forEach(p => {
+        p.classList.toggle('active', p.textContent.startsWith(name));
+    });
+
+    const area = document.getElementById('epic-detail-area');
+    area.innerHTML = '<div class="loading-spinner">Loading epic data...</div>';
+
+    try {
+        const res = await fetch('/api/teams/by-epic?epic=' + encodeURIComponent(name));
+        const data = await res.json();
+        renderEpicKPIs(data);
+        renderEpicTeams(data, area);
+    } catch (err) {
+        area.innerHTML = '<div class="empty-state"><h3>Error loading epic</h3></div>';
+    }
+}
+
+function renderEpicKPIs(data) {
+    document.getElementById('ke-teams').textContent = data.team_count;
+    document.getElementById('ke-stories').textContent = data.total_stories.toLocaleString();
+
+    // Category distribution as top 3
+    const cats = data.category_distribution || {};
+    const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+    const top3 = sorted.slice(0, 3).map(([c, v]) => `${c}: ${v}`).join(', ');
+    document.getElementById('ke-catdist').textContent = top3 || '-';
+
+    // Avg mismatch
+    if (data.teams && data.teams.length) {
+        const avgMm = data.teams.reduce((s, t) => s + t.mismatch_rate, 0) / data.teams.length;
+        document.getElementById('ke-mismatch').textContent = avgMm.toFixed(1) + '%';
     } else {
-        sortCol = col;
-        sortAsc = true;
+        document.getElementById('ke-mismatch').textContent = '-';
+    }
+}
+
+function renderEpicTeams(data, container) {
+    if (!data.teams || !data.teams.length) {
+        container.innerHTML = '<div class="empty-state"><h3>No teams on this epic</h3></div>';
+        return;
     }
 
-    detailStories.sort((a, b) => {
-        let va = a[col] || '';
-        let vb = b[col] || '';
-        if (typeof va === 'boolean') { va = va ? 1 : 0; vb = vb ? 1 : 0; }
-        if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
-        if (va < vb) return sortAsc ? -1 : 1;
-        if (va > vb) return sortAsc ? 1 : -1;
-        return 0;
+    let html = '<div class="list-search"><input type="text" id="epic-team-search" placeholder="Search teams..." oninput="filterEpicTeamCards(\'epic-team-search\')"><button class="clear-btn" onclick="clearEpicTeamSearch(\'epic-team-search\')">&times;</button></div>';
+    data.teams.forEach((team, ti) => {
+        const teamId = 'eteam-' + ti;
+        // Build stacked bar
+        const total = team.story_count;
+        const segments = allCategories
+            .filter(c => team.categories[c])
+            .map(c => {
+                const pct = (team.categories[c] / total * 100).toFixed(1);
+                const clr = getCatColor(c, allCategories);
+                return `<div class="segment" style="width:${pct}%;background:${clr}" title="${c}: ${team.categories[c]} (${pct}%)"></div>`;
+            }).join('');
+
+        html += `
+        <div class="epic-team-card">
+            <div class="epic-team-header" onclick="toggleEpicTeam('${teamId}')">
+                <h3>${escapeHtml(team.name)}</h3>
+                <span class="tree-toggle" id="toggle-${teamId}" style="font-size:14px;">\u25B8</span>
+            </div>
+            <div class="epic-team-meta">
+                <div class="meta-item"><strong>${team.story_count}</strong> stories</div>
+                <div class="meta-item"><strong>${team.mismatch_rate}%</strong> mismatch</div>
+                <div class="meta-item"><strong>${team.mismatches}</strong> mismatches</div>
+            </div>
+            <div class="stacked-bar">${segments}</div>
+            <div class="epic-team-stories" id="${teamId}">`;
+
+        team.stories.forEach(s => {
+            const confClass = (s.confidence || '').toUpperCase() === 'HIGH' ? 'badge-high' :
+                              (s.confidence || '').toUpperCase() === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+            const catColor = getCatColor(s.waf_category, allCategories);
+            const colorHex = WAF_COLOR_MAP[(s.waf_color || '').toUpperCase()] || '#888';
+            html += `
+                <div class="tree-story">
+                    <span class="color-dot" style="background:${colorHex}" title="${escapeAttr(s.waf_color)}"></span>
+                    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeAttr(s.title)}">${escapeHtml(s.title)}</span>
+                    <span class="badge badge-cat" style="background:${catColor}22;color:${catColor}">${escapeHtml(s.waf_category)}</span>
+                    <span class="badge ${confClass}">${escapeHtml(s.confidence)}</span>
+                    ${s.was_mismatch ? '<span class="badge badge-mismatch">Mismatch</span>' : '<span class="badge badge-ok">Match</span>'}
+                </div>`;
+        });
+
+        html += `</div></div>`;
     });
 
-    renderStoryTable();
-
-    // Update sort arrows
-    document.querySelectorAll('.story-table th .sort-arrow').forEach(el => el.textContent = '');
-    const th = document.querySelector(`.story-table th[data-col="${col}"] .sort-arrow`);
-    if (th) th.textContent = sortAsc ? ' \u25B2' : ' \u25BC';
+    container.innerHTML = html;
 }
 
-function backToTeamGrid() {
-    document.getElementById('grid-view').classList.remove('hidden');
-    document.getElementById('detail-view').classList.remove('active');
-    if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
-    if (colorChart) { colorChart.destroy(); colorChart = null; }
+function toggleEpicTeam(id) {
+    const el = document.getElementById(id);
+    const toggle = document.getElementById('toggle-' + id);
+    if (!el) return;
+    const isOpen = el.classList.contains('open');
+    el.classList.toggle('open');
+    if (toggle) toggle.textContent = isOpen ? '\u25B8' : '\u25BE';
 }
 
 // ── Helpers ────────────────────────────────────────────────
@@ -914,14 +834,106 @@ function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-
 function escapeAttr(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// ── Search helpers ─────────────────────────────────────────
+function filterPills(inputId, containerSelector) {
+    const q = document.getElementById(inputId).value.toLowerCase().trim();
+    const clearBtn = document.getElementById(inputId).parentNode.querySelector('.clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
+    document.querySelectorAll(containerSelector + ' > *').forEach(el => {
+        const text = el.textContent.toLowerCase();
+        el.style.display = text.includes(q) || !q ? '' : 'none';
+    });
+}
+
+function clearSearch(inputId, containerSelector) {
+    const input = document.getElementById(inputId);
+    input.value = '';
+    filterPills(inputId, containerSelector);
+    input.focus();
+}
+
+function filterTree(inputId) {
+    const q = document.getElementById(inputId).value.toLowerCase().trim();
+    const clearBtn = document.getElementById(inputId).parentNode.querySelector('.clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
+
+    const root = document.querySelector('.tree-root');
+    if (!root) return;
+
+    // Iterate each epic node
+    root.querySelectorAll(':scope > .tree-node').forEach(epicNode => {
+        let epicHasMatch = false;
+        const epicChildren = epicNode.querySelector('.tree-children');
+        if (!epicChildren) return;
+
+        // Iterate each feature node inside epic
+        epicChildren.querySelectorAll(':scope > .tree-node').forEach(featNode => {
+            let featHasMatch = false;
+            const featChildren = featNode.querySelector('.tree-children');
+            if (!featChildren) return;
+
+            // Iterate stories
+            featChildren.querySelectorAll('.tree-story').forEach(story => {
+                const text = story.textContent.toLowerCase();
+                const match = !q || text.includes(q);
+                story.style.display = match ? '' : 'none';
+                if (match) featHasMatch = true;
+            });
+
+            featNode.style.display = featHasMatch || !q ? '' : 'none';
+            if (featHasMatch && q) {
+                // Auto-expand feature
+                featChildren.classList.remove('collapsed');
+                const toggle = featNode.querySelector('.tree-toggle');
+                if (toggle) toggle.textContent = '\u25BE';
+            }
+        });
+
+        epicHasMatch = epicChildren.querySelectorAll(':scope > .tree-node').length === 0 ||
+            [...epicChildren.querySelectorAll(':scope > .tree-node')].some(n => n.style.display !== 'none');
+
+        epicNode.style.display = epicHasMatch || !q ? '' : 'none';
+        if (epicHasMatch && q) {
+            // Auto-expand epic
+            epicChildren.classList.remove('collapsed');
+            const toggle = epicNode.querySelector('.tree-toggle');
+            if (toggle) toggle.textContent = '\u25BE';
+        }
+    });
+}
+
+function clearTreeSearch(inputId) {
+    const input = document.getElementById(inputId);
+    input.value = '';
+    filterTree(inputId);
+    input.focus();
+}
+
+function filterEpicTeamCards(inputId) {
+    const q = document.getElementById(inputId).value.toLowerCase().trim();
+    const clearBtn = document.getElementById(inputId).parentNode.querySelector('.clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
+
+    document.querySelectorAll('#epic-detail-area .epic-team-card').forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(q) || !q ? '' : 'none';
+    });
+}
+
+function clearEpicTeamSearch(inputId) {
+    const input = document.getElementById(inputId);
+    input.value = '';
+    filterEpicTeamCards(inputId);
+    input.focus();
+}
+
 // ── Init ───────────────────────────────────────────────────
-loadTeamsSummary();
+init();
 </script>
 </body>
 </html>

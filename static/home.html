@@ -249,6 +249,34 @@
         .dot.yellow { background: var(--warning); }
         .dot.red { background: var(--error); }
 
+        .top-nav {
+            display: flex;
+            gap: 4px;
+            padding: 8px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .top-nav-link {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .top-nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .top-nav-link.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
         @media (max-width: 700px) {
             .menu-grid { grid-template-columns: 1fr; }
         }
@@ -260,13 +288,13 @@
     <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
         <span></span><span></span><span></span>
     </button>
-    <div class="header-left">
+    <a href="/" class="header-left" style="text-decoration:none;color:inherit;">
         <div class="logo">W</div>
         <div class="header-text">
             <h1>WAF Classifier</h1>
             <p>Work Alignment Framework — Classify, Analyze, Align</p>
         </div>
-    </div>
+    </a>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
         <span class="theme-icon"></span>
     </button>
@@ -282,6 +310,16 @@
     <a href="/teams"><span class="nav-icon">&#128101;</span> Teams</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
     <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
+</nav>
+
+<nav class="top-nav">
+    <a href="/" class="top-nav-link active">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <a href="/history" class="top-nav-link">Analytics</a>
+    <a href="/lineage" class="top-nav-link">Epic Lineage</a>
+    <a href="/teams" class="top-nav-link">Teams</a>
+    <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
+    <a href="/settings" class="top-nav-link">Settings</a>
 </nav>
 
 <div class="main">

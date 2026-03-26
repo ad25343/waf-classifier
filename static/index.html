@@ -855,6 +855,34 @@
         .nav-menu a:hover { color: var(--text-primary); background: var(--bg-tertiary); }
         .nav-menu a .nav-icon { font-size: 18px; width: 24px; text-align: center; }
         .nav-menu .nav-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px 4px; }
+
+        .top-nav {
+            display: flex;
+            gap: 4px;
+            padding: 8px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .top-nav-link {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .top-nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .top-nav-link.active {
+            background: var(--accent);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -876,13 +904,13 @@
         <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
             <span></span><span></span><span></span>
         </button>
-        <div class="header-left">
+        <a href="/" class="header-left" style="text-decoration:none;color:inherit;">
             <div class="logo">W</div>
             <div class="header-text">
                 <h1>WAF Classifier</h1>
                 <p>Work Alignment Framework — Classify, Analyze, Align</p>
             </div>
-        </div>
+        </a>
         <div class="status-pills">
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
                 <span class="theme-icon"></span>
@@ -901,6 +929,16 @@
             </div>
         </div>
     </div>
+
+    <nav class="top-nav">
+        <a href="/" class="top-nav-link">Home</a>
+        <a href="/classify" class="top-nav-link active">Classify</a>
+        <a href="/history" class="top-nav-link">Analytics</a>
+        <a href="/lineage" class="top-nav-link">Epic Lineage</a>
+        <a href="/teams" class="top-nav-link">Teams</a>
+        <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
+        <a href="/settings" class="top-nav-link">Settings</a>
+    </nav>
 
     <div style="padding:16px 24px 0;">
         <h1 style="font-size:22px;font-weight:700;">Classify</h1>

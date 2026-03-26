@@ -382,6 +382,34 @@
             .kpi-row { grid-template-columns: repeat(3, 1fr); }
             .chart-grid { grid-template-columns: 1fr; }
         }
+
+        .top-nav {
+            display: flex;
+            gap: 4px;
+            padding: 8px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .top-nav-link {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .top-nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .top-nav-link.active {
+            background: var(--accent);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -390,13 +418,13 @@
     <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
         <span></span><span></span><span></span>
     </button>
-    <div class="header-left">
+    <a href="/" class="header-left" style="text-decoration:none;color:inherit;">
         <div class="logo">W</div>
         <div class="header-text">
             <h1>WAF Classifier</h1>
             <p>Work Alignment Framework — Classify, Analyze, Align</p>
         </div>
-    </div>
+    </a>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
         <span class="theme-icon"></span>
     </button>
@@ -414,6 +442,16 @@
     <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
 
+<nav class="top-nav">
+    <a href="/" class="top-nav-link">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <a href="/history" class="top-nav-link">Analytics</a>
+    <a href="/lineage" class="top-nav-link active">Epic Lineage</a>
+    <a href="/teams" class="top-nav-link">Teams</a>
+    <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
+    <a href="/settings" class="top-nav-link">Settings</a>
+</nav>
+
 <div class="content">
     <div style="margin-bottom:20px;">
         <h1 style="font-size:22px;font-weight:700;">Epic Lineage</h1>
@@ -423,9 +461,14 @@
     <!-- Upload filter bar -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);">
         <label style="font-size:13px;color:var(--text-secondary);white-space:nowrap;">Data Source:</label>
-        <select id="upload-filter" onchange="onUploadFilterChange()" style="flex:1;max-width:400px;padding:8px 12px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        <div style="flex:1;max-width:400px;display:flex;flex-direction:column;">
+        <input type="text" id="lineage-upload-search" placeholder="Search uploads..."
+               style="width:100%;padding:6px 10px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);margin-bottom:4px;box-sizing:border-box;outline:none;"
+               oninput="filterUploadDropdown('lineage-upload-search','upload-filter')">
+        <select id="upload-filter" onchange="onUploadFilterChange()" style="width:100%;padding:8px 12px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;font-size:13px;">
             <option value="">All Uploads</option>
         </select>
+        </div>
         <span id="upload-filter-count" style="font-size:12px;color:var(--text-muted);"></span>
     </div>
 
@@ -842,6 +885,17 @@ function toggleFeature(header) {
 
 function destroyChart(id) {
     if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function filterUploadDropdown(searchId, selectId) {
+    const q = document.getElementById(searchId).value.toLowerCase();
+    const sel = document.getElementById(selectId);
+    const opts = sel.querySelectorAll('option');
+    opts.forEach(opt => {
+        if (opt.value === '') { opt.style.display = ''; return; }
+        const text = opt.textContent.toLowerCase();
+        opt.style.display = text.includes(q) ? '' : 'none';
+    });
 }
 
 // ── Initialize ──
