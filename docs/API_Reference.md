@@ -681,3 +681,76 @@ Get autocomplete suggestions for epic and feature names.
   "features": ["Platform Security", "Platform Monitoring"]
 }
 ```
+
+---
+
+## Team Report
+
+### GET /api/teams/summary
+
+Get team-level analytics with category breakdowns, cross-team epic matrix, and totals.
+
+**Query Parameters:**
+- `upload_id` (optional) — Filter to a specific upload
+
+**Response:**
+```json
+{
+  "teams": [
+    {
+      "name": "Treasury Tech",
+      "total_stories": 45,
+      "epics": ["Epic A", "Epic B"],
+      "epic_count": 2,
+      "mismatches": 3,
+      "mismatch_rate": 6.7,
+      "approved": 40,
+      "categories": {"KTLO": 20, "Technical Maintenance": 15},
+      "colors": {"GRAY": 10, "BLACK": 15},
+      "run_change": {"Run": 30, "Change": 15},
+      "dominant_category": "KTLO",
+      "confidence_breakdown": {"HIGH": 30, "MEDIUM": 10, "LOW": 5}
+    }
+  ],
+  "cross_team": {
+    "teams_by_epic": {"Epic A": ["Treasury Tech", "DevOps"]},
+    "epics_by_team": {"Treasury Tech": ["Epic A", "Epic B"]}
+  },
+  "totals": {
+    "team_count": 5,
+    "total_stories": 200,
+    "avg_mismatch_rate": 8.5,
+    "most_active_team": "Treasury Tech"
+  }
+}
+```
+
+---
+
+### GET /api/teams/detail?team=Treasury+Tech
+
+Get full story list for a specific team.
+
+**Query Parameters:**
+- `team` (required) — Team name
+
+**Response:**
+```json
+{
+  "team": "Treasury Tech",
+  "stories": [
+    {
+      "id": 1,
+      "title": "Implement API rate limiting",
+      "description": "Add rate limits to all public endpoints",
+      "waf_category": "KTLO",
+      "waf_color": "GRAY",
+      "run_change": "Run",
+      "confidence": "HIGH",
+      "was_mismatch": false,
+      "epic": "Platform Reliability",
+      "timestamp": "2026-03-20T14:30:00"
+    }
+  ]
+}
+```

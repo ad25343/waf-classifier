@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WAF Classifier | Settings</title>
     <style>
-        :root {
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
             --bg-primary: #111318;
             --bg-secondary: #1a1c25;
             --bg-tertiary: #252838;
@@ -19,6 +20,36 @@
             --warning: #fbbf24;
             --error: #f87171;
             --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8888a0;
+            --accent: #d4722a;
+            --accent-hover: #c0611e;
+            --success: #16a34a;
+            --warning: #d97706;
+            --error: #dc2626;
+            --radius: 12px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--border);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
@@ -110,6 +141,9 @@
         <div class="logo">W</div>
         <div class="header-text"><h1>WAF Classifier</h1><p>Work Alignment Framework — Classify, Analyze, Align</p></div>
     </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+        <span class="theme-icon"></span>
+    </button>
 </div>
 <div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
 <nav class="nav-menu" id="nav-menu">
@@ -118,6 +152,7 @@
     <a href="/classify"><span class="nav-icon">💬</span> Classifier</a>
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
+    <a href="/teams"><span class="nav-icon">&#128101;</span> Teams</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
     <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
@@ -239,6 +274,25 @@
 </div>
 
 <script>
+// Theme toggle
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('waf-theme', next);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = next === 'dark' ? '\u263E' : '\u2600';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+});
+
 function toggleNav(){document.querySelector('.hamburger').classList.toggle('active');document.getElementById('nav-menu').classList.toggle('open');document.getElementById('nav-overlay').classList.toggle('open');}
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function showToast(msg,type){const t=document.getElementById('toast');t.className='toast '+type;t.textContent=msg;setTimeout(()=>{t.className='toast';},4000);}

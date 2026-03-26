@@ -6,7 +6,8 @@
     <title>WAF Classifier | Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        :root {
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
             --bg-primary: #111318;
             --bg-secondary: #1a1c25;
             --bg-tertiary: #252838;
@@ -20,6 +21,36 @@
             --error: #f87171;
             --purple: #c084fc;
             --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8888a0;
+            --accent: #d4722a;
+            --success: #16a34a;
+            --warning: #d97706;
+            --error: #dc2626;
+            --purple: #9333ea;
+            --radius: 12px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--border);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -158,7 +189,10 @@
             <p>Work Alignment Framework — Classify, Analyze, Align</p>
         </div>
     </div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;align-items:center;">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+            <span class="theme-icon"></span>
+        </button>
         <a href="/" class="nav-link">Home</a>
         <a href="/classify" class="nav-link">Classifier</a>
         <a href="/history" class="nav-link">History</a>
@@ -240,6 +274,25 @@
 </div>
 
 <script>
+// Theme toggle
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('waf-theme', next);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = next === 'dark' ? '\u263E' : '\u2600';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+});
+
 const WAF_COLORS_MAP = {
     GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
     ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"

@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WAF Classifier | Home</title>
     <style>
-        :root {
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
             --bg-primary: #111318;
             --bg-secondary: #1a1c25;
             --bg-tertiary: #252838;
@@ -21,6 +22,38 @@
             --teal: #2dd4bf;
             --purple: #c084fc;
             --radius: 16px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8888a0;
+            --accent: #d4722a;
+            --accent-hover: #c0611e;
+            --success: #16a34a;
+            --warning: #d97706;
+            --error: #dc2626;
+            --teal: #0d9488;
+            --purple: #9333ea;
+            --radius: 16px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--border);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -146,6 +179,7 @@
         .menu-card.dashboard::before { background: linear-gradient(90deg, var(--teal), var(--success)); }
         .menu-card.lineage::before { background: linear-gradient(90deg, var(--purple), #e879a8); }
         .menu-card.import::before { background: linear-gradient(90deg, #f59e0b, #e8944a); }
+        .menu-card.teams::before { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
         .menu-card.settings::before { background: linear-gradient(90deg, #475569, #64748b); }
 
         .card-icon {
@@ -160,6 +194,7 @@
         .dashboard .card-icon { background: rgba(45,212,191,0.15); }
         .lineage .card-icon { background: rgba(192,132,252,0.15); }
         .import .card-icon { background: rgba(251,191,36,0.15); }
+        .teams .card-icon { background: rgba(96,165,250,0.15); }
         .settings .card-icon { background: rgba(156,160,176,0.15); }
 
         .menu-card h2 {
@@ -185,6 +220,7 @@
         .dashboard .card-badge { background: rgba(45,212,191,0.15); color: var(--teal); }
         .lineage .card-badge { background: rgba(192,132,252,0.15); color: var(--purple); }
         .import .card-badge { background: rgba(251,191,36,0.15); color: var(--warning); }
+        .teams .card-badge { background: rgba(96,165,250,0.15); color: #60a5fa; }
 
         .status-bar {
             background: var(--bg-secondary);
@@ -231,6 +267,9 @@
             <p>Work Alignment Framework — Classify, Analyze, Align</p>
         </div>
     </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+        <span class="theme-icon"></span>
+    </button>
 </div>
 
 <div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
@@ -240,6 +279,7 @@
     <a href="/classify"><span class="nav-icon">💬</span> Classifier</a>
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
+    <a href="/teams"><span class="nav-icon">&#128101;</span> Teams</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
     <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
@@ -274,6 +314,13 @@
             <span class="card-badge">Everyone</span>
         </a>
 
+        <a href="/teams" class="menu-card teams">
+            <div class="card-icon">&#128101;</div>
+            <h2>Teams</h2>
+            <p>Team-level WAF analytics, epic assignments, and cross-team reporting</p>
+            <span class="card-badge">PMOs &amp; Leadership</span>
+        </a>
+
         <a href="/settings" class="menu-card settings">
             <div class="card-icon">⚙️</div>
             <h2>Settings</h2>
@@ -306,6 +353,26 @@
 </div>
 
 <script>
+// Theme toggle
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('waf-theme', next);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = next === 'dark' ? '\u263E' : '\u2600';
+}
+// Set initial icon
+document.addEventListener('DOMContentLoaded', function() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+});
+
 function toggleNav() {
     document.querySelector('.hamburger').classList.toggle('active');
     document.getElementById('nav-menu').classList.toggle('open');

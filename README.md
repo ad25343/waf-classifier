@@ -61,6 +61,7 @@ The app auto-loads WAF definitions and ground truth from `sample-data/` on start
 | `/history` | Analytics | Upload → Map Columns → AI verify → Summary → Epic Lineage → History (4 tabs) |
 | `/waf-reference` | WAF Reference | Browse all 8 WAF categories with definitions and decision rules |
 | `/settings` | Settings | WAF definitions, ground truth, baselines, and processing configuration |
+| `/teams` | Teams | Team-level WAF analytics, cross-team epic matrix, and drill-down reporting |
 
 ## Analytics Workflow
 
@@ -109,7 +110,19 @@ This application includes the following security controls:
 
 ```
 waf-classifier/
-├── app.py                          # Flask server + all API endpoints
+├── app.py                          # Flask init, blueprint registration, startup
+├── config.py                       # Constants, AI backend detection, paths
+├── database.py                     # SQLite schema, queries, settings cache
+├── state.py                        # Shared in-memory stores
+├── waf_core.py                     # WAF categories, normalization, AI client, prompts
+├── routes/
+│   ├── pages.py                    # Page-serving routes
+│   ├── classify.py                 # Classification API endpoints
+│   ├── settings_api.py             # Settings, ground truth, baselines API
+│   ├── analytics.py                # Dashboard, history, export API
+│   ├── verify.py                   # Bulk verify API + worker threads
+│   ├── lineage.py                  # Epic lineage API
+│   └── teams.py                    # Team report API
 ├── .env                            # API key (not committed)
 ├── requirements.txt                # Python dependencies
 ├── waf_history.db                  # SQLite DB (auto-created)
@@ -118,6 +131,7 @@ waf-classifier/
 │   ├── home.html                   # Home landing page
 │   ├── index.html                  # Classifier chat UI
 │   ├── history.html                # Analytics (4 tabs: Upload Data, Summary, Epic Lineage, History)
+│   ├── teams.html                  # Team report with cross-team analytics
 │   ├── settings.html               # Admin settings (WAF defs, ground truth, baselines, config)
 │   └── waf-reference.html          # WAF framework reference guide
 ├── sample-data/

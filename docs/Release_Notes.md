@@ -2,6 +2,43 @@
 
 ---
 
+## v3.1 — March 2026
+
+Architecture refactor, new features, and UX improvements.
+
+### Architecture
+
+- **Modular codebase** — Split the 2,834-line `app.py` monolith into focused modules using Flask Blueprints:
+  - `config.py` — Constants, AI backend detection, paths
+  - `database.py` — SQLite schema, queries, settings cache
+  - `state.py` — Shared in-memory stores
+  - `waf_core.py` — WAF categories, normalization, AI client, prompt building
+  - `routes/pages.py` — Page routes
+  - `routes/classify.py` — Classification API
+  - `routes/settings_api.py` — Settings, ground truth, baselines API
+  - `routes/analytics.py` — Dashboard, history, export API
+  - `routes/verify.py` — Bulk verify API and worker threads
+  - `routes/lineage.py` — Epic lineage API
+  - `routes/teams.py` — Team report API (new)
+
+### New Features
+
+- **Team Report page** — New `/teams` page with team-focused analytics: KPI cards (total teams, stories, avg mismatch rate, most active team), team cards grid with WAF category distribution bars and epic pill badges, team detail view with Chart.js charts, and a cross-team epic matrix showing shared epics.
+- **Per-column search** — All data tables (verify, drilldown, recent, uploads, epic lineage) now have filter inputs below each column header. Type to filter in real-time with 200ms debounce. Works alongside existing sort.
+- **Dark/Light mode toggle** — Sun/moon toggle button in the header on every page. Preference saved in localStorage and persists across navigation.
+
+### API Changes
+
+- `GET /api/teams/summary` — Team-level analytics with category/color/confidence breakdowns and cross-team epic matrix
+- `GET /api/teams/detail?team=X` — Full story list for a specific team
+
+### UX Improvements
+
+- Teams link added to hamburger nav and home page card grid on all pages
+- Column filter inputs styled to match dark and light themes
+
+---
+
 ## v3.0 — March 2026
 
 Major feature release: upload management, admin settings, field mapping, and UX overhaul.

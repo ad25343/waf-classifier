@@ -6,7 +6,8 @@
     <title>WAF Classifier | Epic Lineage</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        :root {
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
             --bg-primary: #111318;
             --bg-secondary: #1a1c25;
             --bg-tertiary: #252838;
@@ -21,6 +22,37 @@
             --error: #f87171;
             --purple: #c084fc;
             --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8888a0;
+            --accent: #d4722a;
+            --accent-hover: #c0611e;
+            --success: #16a34a;
+            --warning: #d97706;
+            --error: #dc2626;
+            --purple: #9333ea;
+            --radius: 12px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--border);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -329,6 +361,22 @@
         .cat-bar-fill { height: 100%; border-radius: 3px; }
         .cat-bar-count { width: 24px; color: var(--text-muted); font-size: 11px; }
 
+        /* Column filter row */
+        .col-filter-row td { padding: 4px 6px; }
+        .col-filter-row input {
+            width: 100%;
+            padding: 4px 8px;
+            font-size: 11px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            outline: none;
+            box-sizing: border-box;
+        }
+        .col-filter-row input::placeholder { color: var(--text-muted); font-size: 10px; }
+        .col-filter-row input:focus { border-color: var(--accent); }
+
         @media (max-width: 900px) {
             .layout { grid-template-columns: 1fr; }
             .kpi-row { grid-template-columns: repeat(3, 1fr); }
@@ -349,6 +397,9 @@
             <p>Work Alignment Framework — Classify, Analyze, Align</p>
         </div>
     </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+        <span class="theme-icon"></span>
+    </button>
 </div>
 
 <div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
@@ -358,6 +409,7 @@
     <a href="/classify"><span class="nav-icon">💬</span> Classifier</a>
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
+    <a href="/teams"><span class="nav-icon">&#128101;</span> Teams</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
     <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
@@ -425,6 +477,9 @@
                 <!-- Tree: Features -> Stories -->
                 <div class="card">
                     <div class="card-title" id="tree-title">Story Lineage</div>
+                    <div style="margin-bottom:12px;">
+                        <input type="text" id="lineage-story-search" placeholder="Search stories by title, category, or confidence..." oninput="filterLineageStories()" style="width:100%;max-width:400px;padding:6px 12px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);outline:none;">
+                    </div>
                     <div class="tree" id="tree-container"></div>
                 </div>
             </div>
@@ -433,6 +488,25 @@
 </div>
 
 <script>
+// Theme toggle
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('waf-theme', next);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = next === 'dark' ? '\u263E' : '\u2600';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+});
+
 function toggleNav() {
     document.querySelector('.hamburger').classList.toggle('active');
     document.getElementById('nav-menu').classList.toggle('open');
@@ -607,11 +681,42 @@ function selectEpic(name, el) {
 
     document.getElementById('overview-view').style.display = 'none';
     document.getElementById('epic-detail-view').style.display = 'block';
+    // Clear story search when selecting a new epic
+    const searchInput = document.getElementById('lineage-story-search');
+    if (searchInput) searchInput.value = '';
 
     const epic = allEpicData.find(e => e.epic === name);
     if (!epic) return;
 
     renderEpicDetail(epic);
+}
+
+let _lineageFilterTimer = null;
+function filterLineageStories() {
+    clearTimeout(_lineageFilterTimer);
+    _lineageFilterTimer = setTimeout(function() {
+        const q = (document.getElementById('lineage-story-search').value || '').toLowerCase().trim();
+        const storyItems = document.querySelectorAll('#tree-container .story-item');
+        storyItems.forEach(item => {
+            if (!q) { item.style.display = ''; return; }
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(q) ? '' : 'none';
+        });
+        // Update feature counts and auto-expand/collapse
+        document.querySelectorAll('#tree-container .tree-feature').forEach(feat => {
+            const stories = feat.querySelectorAll('.story-item');
+            const visible = feat.querySelectorAll('.story-item:not([style*="display: none"])');
+            const countEl = feat.querySelector('.feature-count');
+            if (countEl) {
+                countEl.textContent = (q ? visible.length + '/' : '') + stories.length + ' stories';
+            }
+            // Auto-expand features with matches when filtering
+            if (q && visible.length > 0) {
+                feat.querySelector('.feature-toggle')?.classList.add('open');
+                feat.querySelector('.story-list')?.classList.add('open');
+            }
+        });
+    }, 200);
 }
 
 function renderEpicDetail(epic) {

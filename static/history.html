@@ -7,7 +7,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <style>
-        :root {
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
             --bg-primary: #111318;
             --bg-secondary: #1a1c25;
             --bg-tertiary: #252838;
@@ -22,6 +23,37 @@
             --error: #f87171;
             --purple: #c084fc;
             --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8888a0;
+            --accent: #d4722a;
+            --accent-hover: #c0611e;
+            --success: #16a34a;
+            --warning: #d97706;
+            --error: #dc2626;
+            --purple: #9333ea;
+            --radius: 12px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--border);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -290,6 +322,22 @@
         }
         .mapping-group select:focus { border-color: var(--accent); }
 
+        /* Column filter row */
+        .col-filter-row td { padding: 4px 6px; }
+        .col-filter-row input {
+            width: 100%;
+            padding: 4px 8px;
+            font-size: 11px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            outline: none;
+            box-sizing: border-box;
+        }
+        .col-filter-row input::placeholder { color: var(--text-muted); font-size: 10px; }
+        .col-filter-row input:focus { border-color: var(--accent); }
+
         @media (max-width: 900px) {
             .kpi-mini-row { grid-template-columns: repeat(2, 1fr); }
         }
@@ -308,6 +356,9 @@
             <p>Work Alignment Framework — Classify, Analyze, Align</p>
         </div>
     </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+        <span class="theme-icon"></span>
+    </button>
 </div>
 
 <div class="nav-overlay" id="nav-overlay" onclick="toggleNav()"></div>
@@ -317,6 +368,7 @@
     <a href="/classify"><span class="nav-icon">💬</span> Classifier</a>
     <a href="/history"><span class="nav-icon">📊</span> Analytics</a>
     <a href="/lineage"><span class="nav-icon">🔗</span> Epic Lineage</a>
+    <a href="/teams"><span class="nav-icon">&#128101;</span> Teams</a>
     <a href="/waf-reference"><span class="nav-icon">📖</span> WAF Reference</a>
     <a href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
 </nav>
@@ -398,6 +450,17 @@
                             <th class="sortable" style="text-align:center;" onclick="sortDrillDown('run_change')">Run/Change <span class="sort-arrow"></span></th>
                             <th class="sortable" style="text-align:center;" onclick="sortDrillDown('confidence')">Confidence <span class="sort-arrow"></span></th>
                             <th class="sortable" style="text-align:center;" onclick="sortDrillDown('status')">Status <span class="sort-arrow"></span></th>
+                        </tr>
+                        <tr id="drilldown-filters" class="col-filter-row">
+                            <td></td>
+                            <td><input type="text" placeholder="Filter story..." oninput="debounceFilter('drilldown', onDrillDownFilter)"></td>
+                            <td><input type="text" placeholder="Filter epic..." oninput="debounceFilter('drilldown', onDrillDownFilter)"></td>
+                            <td><input type="text" placeholder="Filter tag..." oninput="debounceFilter('drilldown', onDrillDownFilter)"></td>
+                            <td><input type="text" placeholder="Filter category..." oninput="debounceFilter('drilldown', onDrillDownFilter)"></td>
+                            <td><input type="text" placeholder="Filter color..." oninput="debounceFilter('drilldown', onDrillDownFilter)"></td>
+                            <td><input type="text" placeholder="Filter R/C..." oninput="debounceFilter('drilldown', onDrillDownFilter)"></td>
+                            <td><input type="text" placeholder="Filter conf..." oninput="debounceFilter('drilldown', onDrillDownFilter)"></td>
+                            <td><input type="text" placeholder="Filter status..." oninput="debounceFilter('drilldown', onDrillDownFilter)"></td>
                         </tr>
                     </thead>
                     <tbody id="drilldown-tbody"></tbody>
@@ -538,6 +601,9 @@
                 <span>Upload History</span>
                 <span id="history-tab-count" style="font-size:13px;color:var(--text-muted);font-weight:400;"></span>
             </div>
+            <div style="margin-bottom:12px;">
+                <input type="text" id="history-search" placeholder="Search by filename..." oninput="debounceFilter('history', filterHistoryTable)" style="width:100%;max-width:320px;padding:6px 12px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);outline:none;">
+            </div>
             <div style="overflow-x:auto;">
                 <table id="history-tab-table" style="width:100%;">
                     <thead>
@@ -676,6 +742,16 @@
                             <th class="sortable" onclick="sortVerifyTable('status')">Status <span class="sort-arrow"></span></th>
                             <th style="min-width:180px;">AI Reasoning</th>
                         </tr>
+                        <tr id="verify-filters" class="col-filter-row">
+                            <td></td>
+                            <td><input type="text" placeholder="Filter story..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
+                            <td><input type="text" placeholder="Filter tag..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
+                            <td><input type="text" placeholder="Filter AI cat..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
+                            <td><input type="text" placeholder="Filter color..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
+                            <td><input type="text" placeholder="Filter conf..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
+                            <td><input type="text" placeholder="Filter status..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
+                            <td></td>
+                        </tr>
                     </thead>
                     <tbody id="verify-table-body"></tbody>
                 </table>
@@ -685,6 +761,25 @@
 </div>
 
 <script>
+// Theme toggle
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('waf-theme', next);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = next === 'dark' ? '\u263E' : '\u2600';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+});
+
 const WAF_COLORS_MAP = {
     GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
     ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"
@@ -706,6 +801,28 @@ function esc(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+// ── Column filter utility ──
+function applyColumnFilters(data, filterRowId, fieldMap) {
+    const inputs = document.querySelectorAll('#' + filterRowId + ' input');
+    return data.filter(row => {
+        for (let i = 0; i < inputs.length; i++) {
+            const q = (inputs[i].value || '').toLowerCase().trim();
+            if (!q) continue;
+            const field = fieldMap[i];
+            if (!field) continue;
+            const val = typeof field === 'function' ? field(row) : String(row[field] || '').toLowerCase();
+            if (!val.includes(q)) return false;
+        }
+        return true;
+    });
+}
+
+let _filterDebounceTimers = {};
+function debounceFilter(key, fn, delay) {
+    clearTimeout(_filterDebounceTimers[key]);
+    _filterDebounceTimers[key] = setTimeout(fn, delay || 200);
 }
 
 // Register datalabels plugin globally but disable by default
@@ -953,6 +1070,7 @@ let drillDownFilter = '';
 let drillDownValue = '';
 let drillDownPage = 1;
 let drillDownStories = [];
+let drillDownStoriesFull = [];
 let drillDownSortCol = null;
 let drillDownSortDir = 'asc';
 
@@ -1013,11 +1131,13 @@ async function loadDrillDown() {
             pagDiv.innerHTML = '';
         }
 
-        drillDownStories = data.stories;
+        drillDownStoriesFull = data.stories;
+        drillDownStories = data.stories.slice();
         drillDownSortCol = null;
         drillDownSortDir = 'asc';
-        // Clear sort indicators
+        // Clear sort indicators and filter inputs
         document.querySelectorAll('#drilldown-table th.sortable').forEach(th => th.classList.remove('asc', 'desc'));
+        document.querySelectorAll('#drilldown-filters input').forEach(inp => inp.value = '');
         renderDrillDownTable();
     } catch (err) {
         console.error('Drilldown load failed:', err);
@@ -1027,6 +1147,22 @@ async function loadDrillDown() {
 // ════════════════════════════════════════════════════════════════
 // AI VERIFY
 // ════════════════════════════════════════════════════════════════
+
+function onDrillDownFilter() {
+    const drillDownFieldMap = [
+        null, // color stripe
+        'title',
+        'epic',
+        'original_tag',
+        'category',
+        'color',
+        'run_change',
+        'confidence',
+        function(r) { return r.mismatch ? 'mismatch' : 'correct'; }
+    ];
+    drillDownStories = applyColumnFilters(drillDownStoriesFull, 'drilldown-filters', drillDownFieldMap);
+    renderDrillDownTable();
+}
 
 function renderDrillDownTable() {
     const tbody = document.getElementById('drilldown-tbody');
@@ -1075,9 +1211,9 @@ function sortDrillDown(col) {
         const th = document.querySelectorAll('#drilldown-table th.sortable')[idx];
         if (th) th.classList.add(drillDownSortDir);
     }
-    // Sort
+    // Sort the full set then re-apply filters
     const confOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-    drillDownStories.sort((a, b) => {
+    drillDownStoriesFull.sort((a, b) => {
         let va, vb;
         if (col === 'status') {
             va = a.mismatch ? 0 : 1;
@@ -1093,7 +1229,7 @@ function sortDrillDown(col) {
         if (va > vb) return drillDownSortDir === 'asc' ? 1 : -1;
         return 0;
     });
-    renderDrillDownTable();
+    onDrillDownFilter();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1101,6 +1237,7 @@ function sortDrillDown(col) {
 // ════════════════════════════════════════════════════════════════
 
 let verifyResults = [];
+let verifyResultsFull = [];
 let verifyUploadId = null;
 let verifySortCol = null;
 let verifySortDir = 'asc';
@@ -1120,10 +1257,10 @@ function sortVerifyTable(col) {
         const th = document.querySelectorAll('#verify-table th.sortable')[thIdx];
         if (th) th.classList.add(verifySortDir);
     }
-    // Sort verifyResults
+    // Sort verifyResultsFull then re-apply filters
     const confOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
     const statusOrder = (r) => r.is_match === false ? 0 : r.is_match === true ? 2 : 1;
-    verifyResults.sort((a, b) => {
+    verifyResultsFull.sort((a, b) => {
         let va, vb;
         if (col === 'status') {
             va = statusOrder(a); vb = statusOrder(b);
@@ -1138,7 +1275,7 @@ function sortVerifyTable(col) {
         if (va > vb) return verifySortDir === 'asc' ? 1 : -1;
         return 0;
     });
-    renderVerifyTable();
+    onVerifyFilter();
 }
 
 const PROGRESS_MESSAGES = [
@@ -1318,7 +1455,8 @@ async function confirmMapping() {
                         renderProgress(importStatus, savedFilename, pd.stories_processed, pd.total_stories, pd.completed_batches, pd.total_batches);
                     } else if (pd.status === 'done' && pd.results) {
                         clearInterval(poll);
-                        verifyResults = pd.results;
+                        verifyResultsFull = pd.results;
+                        verifyResults = pd.results.slice();
                         verifyUploadId = pd.upload_id || null;
                         showReviewStep(pd);
                     } else if (pd.status === 'error') {
@@ -1331,7 +1469,8 @@ async function confirmMapping() {
             }, 2000);
         } else if (data.success) {
             // Small file — results returned directly
-            verifyResults = data.results;
+            verifyResultsFull = data.results;
+            verifyResults = data.results.slice();
             verifyUploadId = data.upload_id || null;
             showReviewStep(data);
         } else {
@@ -1375,9 +1514,24 @@ function showReviewStep(data) {
     renderVerifyTable();
 }
 
+function onVerifyFilter() {
+    const verifyFieldMap = [
+        null, // checkbox
+        'title',
+        function(r) { return String(r.file_category_normalized || r.file_category || '').toLowerCase(); },
+        'ai_category',
+        'ai_color',
+        'ai_confidence',
+        function(r) { return r.is_match === true ? 'match' : r.is_match === false ? 'mismatch' : 'new'; }
+    ];
+    verifyResults = applyColumnFilters(verifyResultsFull, 'verify-filters', verifyFieldMap);
+    renderVerifyTable();
+}
+
 function renderVerifyTable() {
     const tbody = document.getElementById('verify-table-body');
     tbody.innerHTML = verifyResults.map((r, i) => {
+        const fullIdx = verifyResultsFull.indexOf(r);
         const title = esc(r.title.length > 45 ? r.title.substring(0, 45) + '...' : r.title);
         let fileTag;
         if (r.was_normalized && r.file_category_normalized) {
@@ -1400,8 +1554,8 @@ function renderVerifyTable() {
         const missingDesc = r.missing_description ? ' <span title="No description provided" style="color:var(--warning);font-size:11px;cursor:help;">⚠</span>' : '';
         const reason = esc(r.ai_reason ? (r.ai_reason.length > 60 ? r.ai_reason.substring(0, 60) + '...' : r.ai_reason) : '—');
 
-        return `<tr data-idx="${i}" class="${r.is_match === false ? 'mismatch-row' : ''}" style="cursor:pointer;" onclick="if(event.target.tagName!=='INPUT')showStoryDetail(verifyResults[${i}])">
-            <td><input type="checkbox" class="row-cb" data-idx="${i}" onchange="updateSelectedCount()" checked></td>
+        return `<tr data-idx="${fullIdx}" class="${r.is_match === false ? 'mismatch-row' : ''}" style="cursor:pointer;" onclick="if(event.target.tagName!=='INPUT')showStoryDetail(verifyResultsFull[${fullIdx}])">
+            <td><input type="checkbox" class="row-cb" data-idx="${fullIdx}" onchange="updateSelectedCount()" checked></td>
             <td style="color:var(--text-primary)" title="${esc(r.title)}">${title}</td>
             <td>${fileTag}</td>
             <td style="color:var(--text-primary);font-weight:500;">${aiTag}</td>
@@ -1424,7 +1578,7 @@ function selectAll(checked) {
 function selectMismatches() {
     document.querySelectorAll('.row-cb').forEach(cb => {
         const idx = parseInt(cb.dataset.idx);
-        cb.checked = verifyResults[idx].is_match === false;
+        cb.checked = verifyResultsFull[idx].is_match === false;
     });
     updateSelectedCount();
 }
@@ -1447,7 +1601,7 @@ async function saveVerified() {
     const rows = [];
     checked.forEach(cb => {
         const idx = parseInt(cb.dataset.idx);
-        const r = verifyResults[idx];
+        const r = verifyResultsFull[idx];
         rows.push({
             title: r.title,
             description: r.description,
@@ -1527,6 +1681,7 @@ function backToUpload() {
     document.getElementById('sticky-save-btn').textContent = 'Save Selected to History';
     document.getElementById('sticky-save-btn').disabled = false;
     document.getElementById('sticky-save-btn').style.background = '';
+    verifyResultsFull = [];
     verifyResults = [];
 }
 
@@ -1998,7 +2153,8 @@ function reloadUpload(uploadId, alreadySaved) {
             if (!data.success) return;
             if (data.has_results && data.results && data.results.length > 0) {
                 // Unsaved results exist — restore the verify table
-                verifyResults = data.results;
+                verifyResultsFull = data.results;
+                verifyResults = data.results.slice();
                 verifyUploadId = data.upload_id;
                 document.querySelector('.tab[data-tab="import"]').click();
                 showReviewStep(data);
@@ -2010,6 +2166,17 @@ function reloadUpload(uploadId, alreadySaved) {
             }
         })
         .catch(err => console.error('Reload failed:', err));
+}
+
+function filterHistoryTable() {
+    const q = (document.getElementById('history-search').value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('#history-tab-body tr');
+    rows.forEach(row => {
+        const firstCell = row.querySelector('td');
+        if (!firstCell) return;
+        const text = firstCell.textContent.toLowerCase();
+        row.style.display = !q || text.includes(q) ? '' : 'none';
+    });
 }
 
 // Load upload history on page load
