@@ -36,16 +36,17 @@ Open **http://localhost:8080** in your browser. You should see the home page wit
 ## Your First Classification
 
 1. Click **Classify Stories** from the home page
-2. Type a story in the chat box, for example:
+2. Optionally enter a **Story Key** (e.g. `PROJ-123`), **Epic**, and **Parent Feature** in the fields above the chat box — these are saved alongside the classification for lineage tracking
+3. Type a story in the chat box, for example:
 
    > Classify this story: "Fix production database connection pool exhaustion causing 504 errors on loan lookup service during peak hours"
 
-3. The AI returns a recommendation with category, color, confidence, and reasoning
-4. To flag a mismatch, include the current tag in your message:
+4. The AI returns a recommendation with category, color, confidence, and reasoning
+5. To flag a mismatch, include the current tag in your message:
 
    > This story is currently tagged as "New Feature": Remediate audit finding on insufficient access control logging for admin actions
 
-5. If you see a mismatch and the AI recommendation is correct, click **Approve & Save to Ground Truth**
+6. If you see a mismatch and the AI recommendation is correct, click **Approve & Save to Ground Truth**
 
 ---
 
@@ -104,6 +105,25 @@ Click the **moon/sun icon** in the top-right nav bar to toggle between dark and 
 
 ---
 
+## Test Data
+
+The `test-data/` folder contains synthetic datasets for testing and exploration:
+
+| File | Stories | Focus | Mismatch Rate |
+|------|---------|-------|---------------|
+| `compliance-focus-60.csv` | 60 | Regulatory, audit, compliance — 5 teams | 30% |
+| `platform-engineering-80.csv` | 80 | Cloud, DevOps, SRE — 5 teams, cross-team epics | 15% |
+| `multi-team-product-120.csv` | 120 | Mixed product + tech — 8 teams, all epics cross-team | 20% |
+| `synthetic-100-stories.csv` | 100 | General mixed — original test file | varies |
+| `synthetic-5000-stories.csv` | 5000 | Large dataset for performance testing | varies |
+| `sample-ground-truth.csv` | — | Load via Settings → Ground Truth | — |
+| `ground-truth-maintenance.csv` | — | Extended ground truth set | — |
+| `waf-definitions.csv` | — | Load via Settings → WAF Definitions | — |
+
+Re-generate or modify test datasets using `test-data/generate_test_data.py`.
+
+---
+
 ## Tips for Best Results
 
 - **More ground truth = better accuracy.** Approve correct classifications to grow your training data. Aim for 5+ examples per WAF category.
@@ -111,6 +131,7 @@ Click the **moon/sun icon** in the top-right nav bar to toggle between dark and 
 - **Always include current tags.** Mismatch detection is the most valuable feature for catching errors.
 - **Use bulk verify quarterly.** Upload your JIRA sprint backlog exports to catch misclassifications across the portfolio.
 - **Include ID columns.** Add `Issue key`, `Epic Link`, or `Feature ID` columns to your CSV/Excel file to track story IDs through the app.
+- **Select a specific upload.** Use the Data Source dropdown on Teams and Lineage pages to scope all views to a single upload batch. Dates shown in the dropdown (e.g. 3/27/2026) help distinguish multiple uploads of the same file.
 - **Use the Teams page for portfolio reviews.** Filter to a specific upload, then drill into each team's story table to review classifications before sharing.
 - **Save baselines.** Go to **Settings > Baselines** to snapshot your WAF definitions and ground truth. Restore anytime.
 

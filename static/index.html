@@ -1101,6 +1101,8 @@
 
             <div class="chat-input-area">
                 <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <input type="text" id="story-id-input" placeholder="Story Key (e.g. PROJ-123)"
+                        style="flex:0 0 160px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;">
                     <input type="text" id="epic-input" placeholder="Epic (optional)"
                         style="flex:1;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
                         list="epic-suggestions">
@@ -1118,7 +1120,7 @@
                     <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
                 </div>
                 <div class="input-hint">
-                    Press Enter to send · Shift+Enter for new line · Epic/Feature tags link this story to its lineage
+                    Press Enter to send · Shift+Enter for new line · Story Key, Epic &amp; Feature are optional — they link this story to its lineage
                 </div>
             </div>
         </div>
@@ -1194,10 +1196,11 @@
             try {
                 const epic = document.getElementById("epic-input").value.trim();
                 const parentFeature = document.getElementById("feature-input").value.trim();
+                const storyId = document.getElementById("story-id-input").value.trim();
                 const res = await fetch("/api/classify", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message, epic, parent_feature: parentFeature })
+                    body: JSON.stringify({ message, epic, parent_feature: parentFeature, story_id: storyId })
                 });
                 const data = await res.json();
 

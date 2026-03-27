@@ -54,7 +54,17 @@ python app.py
 open http://localhost:8080
 ```
 
-The app auto-loads WAF definitions and ground truth from `sample-data/` on startup — no manual upload needed.
+The app auto-loads WAF definitions and ground truth from `test-data/` on startup — no manual upload needed.
+
+**Test datasets** are in `test-data/` — use these to explore all features:
+
+| File | Stories | Best for testing |
+|------|---------|-----------------|
+| `compliance-focus-60.csv` | 60 | Regulatory category, high mismatch rate |
+| `platform-engineering-80.csv` | 80 | Infrastructure categories, cross-team epics |
+| `multi-team-product-120.csv` | 120 | Multi-team views, By Epic tab, empty description edge cases |
+| `synthetic-100-stories.csv` | 100 | General mixed dataset |
+| `synthetic-5000-stories.csv` | 5000 | Performance and large-dataset testing |
 
 ## Pages
 

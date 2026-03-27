@@ -2,6 +2,33 @@
 
 ---
 
+## v3.2.1 — March 2026
+
+Bug fixes, upload filter reliability, and test data expansion.
+
+### Bug Fixes
+
+- **Teams upload filter date bug** — Data Source dropdown was using `created_at` (non-existent field) instead of `uploaded_at`. All dates showed "(Invalid Date)", making multiple uploads of the same file indistinguishable and causing users to stay on "All Uploads (combined)" view without realising it. Fixed to `uploaded_at`.
+- **DB migration not applied** — `story_id`, `feature_id`, `epic_id` columns were defined in `database.py` but not yet present in existing databases. Migration now applied on server start; also applied retroactively via direct SQL for running instances.
+- **Teams detail endpoint returning unfiltered data** — When the server hadn't been restarted after code changes, the old `teams_detail` handler (without `upload_id` filter) remained active. Resolved by restarting the server to pick up all route changes from v3.2.
+
+### New Features
+
+- **Story Key input on single-story classifier** — `Story Key (e.g. PROJ-123)` input field added to the chat input area alongside Epic and Parent Feature. Saved to `story_id` in the database. Wired through `POST /api/classify`.
+- **Expected File Format table updated** — History page upload section now lists `Story ID / Issue Key`, `Feature ID`, and `Epic ID` as optional columns with descriptions.
+
+### Test Data
+
+- **3 new synthetic datasets** added to `test-data/`:
+  - `compliance-focus-60.csv` — 60 stories, 5 teams, financial compliance/regulatory focus, 30% mismatch rate
+  - `platform-engineering-80.csv` — 80 stories, 5 teams, cloud/DevOps/SRE focus, 15% mismatch rate, cross-team epics
+  - `multi-team-product-120.csv` — 120 stories, 8 teams, mixed product/tech, 20% mismatch rate, all epics cross-team, 10 empty-description edge cases
+- **`sample-data/` folder merged into `test-data/`** — single location for all test files
+- **Redundant files removed**: `synthetic-100-answer-key.csv`, `synthetic-5000-answer-key.csv`, `synthetic-stories-classified.csv`, `synthetic-stories-classified-clean.csv`, `synthetic-stories-raw.csv`
+- **`generate_test_data.py`** saved in `test-data/` for future dataset regeneration or modification
+
+---
+
 ## v3.2 — March 2026
 
 UX overhaul, global search, team analytics redesign, and data model improvements.

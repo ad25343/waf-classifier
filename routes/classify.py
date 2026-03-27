@@ -102,6 +102,7 @@ def classify():
     user_message = data["message"]
     epic = data.get("epic", "")
     parent_feature = data.get("parent_feature", "")
+    story_id = data.get("story_id", "")
     chat_history.append({"role": "user", "content": user_message})
     recent_history = chat_history[-20:]
 
@@ -138,6 +139,7 @@ def classify():
                     was_mismatch=mismatch,
                     epic=epic,
                     parent_feature=parent_feature,
+                    story_id=story_id,
                 )
             except Exception:
                 pass  # Best-effort save

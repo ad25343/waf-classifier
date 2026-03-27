@@ -120,9 +120,12 @@ Classify a single story via chat.
   "message": "Classify: Fix production DB connection pool exhaustion causing 504 errors",
   "session_id": "optional-session-id",
   "epic": "Platform Reliability",
-  "parent_feature": "Database Health"
+  "parent_feature": "Database Health",
+  "story_id": "PROJ-123"
 }
 ```
+
+All three context fields (`epic`, `parent_feature`, `story_id`) are optional. When provided, they are saved alongside the AI classification in the database.
 
 **Response:**
 ```json

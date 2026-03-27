@@ -732,7 +732,7 @@ async function loadJobOptions() {
         saved.forEach(u => {
             const opt = document.createElement('option');
             opt.value = u.id;
-            const d = new Date(u.created_at).toLocaleDateString();
+            const d = new Date(u.uploaded_at).toLocaleDateString();
             opt.textContent = `${u.filename} — ${u.saved_count} stories (${d})`;
             sel.appendChild(opt);
         });
