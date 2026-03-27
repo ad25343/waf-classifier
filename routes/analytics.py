@@ -860,3 +860,71 @@ def history_export_xlsx():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment;filename=waf-history-report.xlsx"}
     )
+
+
+@analytics_bp.route("/api/search")
+def search_classifications():
+    """Full-text search across all classifications using FTS5."""
+    q = request.args.get("q", "").strip()
+    upload_id = request.args.get("upload_id", "")
+    limit = min(int(request.args.get("limit", 25)), 100)
+
+    if len(q) < 2:
+        return jsonify({"results": [], "total": 0, "query": q})
+
+    db = get_db()
+
+    # Build FTS5 match term — prefix match on last token, exact on others
+    safe_q = q.replace('"', '').replace("'", "")
+    fts_term = " ".join(
+        (tok + "*" if i == len(safe_q.split()) - 1 else tok)
+        for i, tok in enumerate(safe_q.split())
+    )
+
+    uid_clause = "AND c.upload_id = ?" if upload_id else ""
+    params = [fts_term]
+    if upload_id:
+        params.append(upload_id)
+    params.append(limit)
+
+    try:
+        rows = db.execute(f"""
+            SELECT c.id, c.story_title, c.waf_category, c.waf_color,
+                   c.confidence, c.was_mismatch, c.team, c.epic,
+                   c.parent_feature, c.upload_id, c.timestamp,
+                   u.filename, u.uploaded_at,
+                   rank
+            FROM classifications c
+            LEFT JOIN upload_history u ON c.upload_id = u.id
+            JOIN (
+                SELECT rowid, rank
+                FROM classifications_fts
+                WHERE classifications_fts MATCH ?
+            ) fts ON fts.rowid = c.id
+            WHERE 1=1 {uid_clause}
+            ORDER BY fts.rank
+            LIMIT ?
+        """, params).fetchall()
+    except Exception as e:
+        return jsonify({"error": str(e), "results": [], "total": 0, "query": q}), 500
+
+    results = []
+    for r in rows:
+        # Highlight matched term in title
+        title = r["story_title"] or ""
+        results.append({
+            "id": r["id"],
+            "title": title,
+            "team": r["team"] or "",
+            "epic": r["epic"] or "",
+            "feature": r["parent_feature"] or "",
+            "category": r["waf_category"] or "",
+            "color": r["waf_color"] or "",
+            "confidence": r["confidence"] or "",
+            "is_mismatch": bool(r["was_mismatch"]),
+            "upload_id": r["upload_id"],
+            "filename": r["filename"] or "Unknown source",
+            "date": (r["uploaded_at"] or r["timestamp"] or "")[:10],
+        })
+
+    return jsonify({"results": results, "total": len(results), "query": q})

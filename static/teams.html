@@ -70,7 +70,7 @@
             padding: 16px 32px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
         }
         .header-left { display: flex; align-items: center; gap: 12px; }
         .logo {
@@ -234,7 +234,7 @@
 
         .detail-charts {
             display: grid; grid-template-columns: 1fr 1fr;
-            gap: 20px; margin-bottom: 24px;
+            gap: 20px; margin-bottom: 16px;
         }
 
         /* Empty state */
@@ -252,6 +252,138 @@
         .loading-spinner {
             text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px;
         }
+
+        /* Two-panel layout */
+        .two-panel {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+        .tree-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            position: sticky;
+            top: 16px;
+            max-height: calc(100vh - 260px);
+            overflow-y: auto;
+        }
+        .tree-panel-label {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px;
+        }
+        .story-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+        .story-panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .story-panel-title { font-size: 15px; font-weight: 600; }
+        .story-panel-count { font-size: 12px; color: var(--text-muted); }
+
+        /* Tree nav */
+        .nav-epic {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 8px; border-radius: 6px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: background 0.15s; user-select: none;
+        }
+        .nav-epic:hover { background: var(--bg-tertiary); }
+        .nav-epic.selected { background: rgba(232,148,74,0.15); color: var(--accent); }
+        .nav-feature {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 8px 5px 22px;
+            border-radius: 6px; font-size: 12px;
+            color: var(--text-secondary); cursor: pointer;
+            transition: background 0.15s; user-select: none;
+        }
+        .nav-feature:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-feature.selected { background: rgba(232,148,74,0.1); color: var(--accent); }
+        .nav-features { display: none; }
+        .nav-features.open { display: block; }
+        .nav-toggle {
+            display: inline-block; width: 14px; font-size: 10px;
+            color: var(--text-muted); flex-shrink: 0;
+        }
+        .nav-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Story table */
+        .story-table {
+            width: 100%; border-collapse: collapse; font-size: 13px;
+        }
+        .story-table th {
+            text-align: left; padding: 8px 12px;
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-muted);
+            border-bottom: 2px solid var(--border); white-space: nowrap;
+            cursor: pointer; user-select: none;
+        }
+        .story-table th:hover { color: var(--text-secondary); }
+        .story-table th .sa::after { content: '▲▼'; font-size: 9px; margin-left: 4px; opacity: 0.35; }
+        .story-table th.asc .sa::after { content: '▲'; opacity: 1; color: var(--accent); }
+        .story-table th.desc .sa::after { content: '▼'; opacity: 1; color: var(--accent); }
+        .story-table td {
+            padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle;
+        }
+        .story-table tr:hover td { background: var(--bg-tertiary); }
+        .story-title {
+            max-width: 320px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; display: inline-block;
+        }
+
+        /* Team list for By Epic panel */
+        .nav-team {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 7px 8px; border-radius: 6px;
+            font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: background 0.15s; user-select: none;
+        }
+        .nav-team:hover { background: var(--bg-tertiary); }
+        .nav-team.selected { background: rgba(232,148,74,0.15); color: var(--accent); }
+        .nav-all {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 7px 8px; border-radius: 6px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: background 0.15s; margin-bottom: 4px;
+            border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px;
+        }
+        .nav-all:hover { background: var(--bg-tertiary); }
+        .nav-all.selected { color: var(--accent); }
+
+        /* Job selector bar */
+        .job-bar {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 20px; padding: 12px 16px;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .job-bar label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+        .job-select {
+            flex: 1; max-width: 420px;
+            padding: 7px 12px; font-size: 13px;
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            border-radius: 6px; color: var(--text-primary); outline: none; cursor: pointer;
+        }
+        .job-select:focus { border-color: var(--accent); }
+
+        /* Insights toggle */
+        .insights-toggle {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+            margin-bottom: 16px;
+        }
+        .insights-toggle:hover { border-color: var(--accent); color: var(--accent); }
+        .insights-toggle.open { background: rgba(232,148,74,0.1); border-color: var(--accent); color: var(--accent); }
+        .insights-section { display: none; }
+        .insights-section.open { display: block; }
 
         @media (max-width: 900px) {
             .kpi-row { grid-template-columns: repeat(2, 1fr); }
@@ -295,6 +427,7 @@
         .list-search .clear-btn.visible { display: block; }
 
         .top-nav {
+            justify-content: flex-end;
             display: flex;
             gap: 4px;
             padding: 8px 24px;
@@ -321,6 +454,120 @@
             background: var(--accent);
             color: #fff;
         }
+
+        /* ── Global search ───────────────────────────────────── */
+        .global-search-wrap {
+            position: relative;
+            margin-left: auto;
+            margin-right: 12px;
+        }
+        .global-search-input {
+            width: 220px;
+            padding: 5px 32px 5px 30px;
+            font-size: 13px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-primary);
+            outline: none;
+            transition: width 0.2s, border-color 0.2s;
+        }
+        .global-search-input:focus {
+            width: 300px;
+            border-color: var(--accent);
+        }
+        .global-search-input::placeholder { color: var(--text-muted); }
+        .global-search-icon {
+            position: absolute;
+            left: 10px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .global-search-results {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 520px;
+            max-height: 480px;
+            overflow-y: auto;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius, 12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            z-index: 9999;
+            display: none;
+        }
+        .global-search-results.visible { display: block; }
+        .search-results-header {
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .search-result-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+        .search-result-item:hover { background: var(--bg-tertiary); }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .search-result-title mark {
+            background: rgba(232,148,74,0.3);
+            color: var(--accent);
+            border-radius: 2px;
+            padding: 0 2px;
+            font-style: normal;
+        }
+        .search-result-breadcrumb {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .search-result-breadcrumb span { color: var(--text-secondary); }
+        .search-result-badges {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .search-result-source {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .search-empty {
+            padding: 24px 16px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .search-loading {
+            padding: 16px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -333,9 +580,6 @@
             <p>Work Alignment Framework — Classify, Analyze, Align</p>
         </div>
     </a>
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
-        <span class="theme-icon"></span>
-    </button>
 </div>
 
 <nav class="top-nav">
@@ -346,12 +590,23 @@
     <a href="/teams" class="top-nav-link active">Teams</a>
     <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
     <a href="/settings" class="top-nav-link">Settings</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" style="margin-left:8px;">
+        <span class="theme-icon"></span>
+    </button>
 </nav>
 
 <div class="content">
     <div class="page-header">
         <h1>Teams</h1>
         <p>Explore team allocations by team or by epic</p>
+    </div>
+
+    <!-- Job selector -->
+    <div class="job-bar">
+        <label for="job-select">Data Source:</label>
+        <select id="job-select" class="job-select" onchange="onJobChange()">
+            <option value="">All uploads (combined)</option>
+        </select>
     </div>
 
     <!-- Tabs -->
@@ -362,42 +617,55 @@
 
     <!-- ========== BY TEAM TAB ========== -->
     <div class="tab-content active" id="tab-by-team">
-        <div class="kpi-row" id="kpi-team">
-            <div class="kpi-card"><div class="kpi-label">Total Stories</div><div class="kpi-value" id="kt-stories">-</div></div>
-            <div class="kpi-card"><div class="kpi-label">Epics</div><div class="kpi-value" id="kt-epics">-</div></div>
-            <div class="kpi-card"><div class="kpi-label">Mismatch Rate</div><div class="kpi-value" id="kt-mismatch">-</div></div>
-            <div class="kpi-card"><div class="kpi-label">Dominant Category</div><div class="kpi-value" id="kt-dominant" style="font-size:16px;">-</div></div>
-        </div>
-
         <div class="list-search">
             <input type="text" id="team-search" placeholder="Search teams..." oninput="filterPills('team-search', '#team-selector')">
             <button class="clear-btn" onclick="clearSearch('team-search', '#team-selector')">&times;</button>
         </div>
         <div class="selector-row" id="team-selector"></div>
 
+        <!-- Insights: KPI + charts, hidden by default -->
+        <div id="team-insights-wrap" style="display:none;">
+            <button class="insights-toggle" id="team-insights-btn" onclick="toggleInsights('team')">&#128200; Show Insights</button>
+            <div class="insights-section" id="team-insights">
+                <div class="kpi-row" id="kpi-team">
+                    <div class="kpi-card"><div class="kpi-label">Total Stories</div><div class="kpi-value" id="kt-stories">-</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Epics</div><div class="kpi-value" id="kt-epics">-</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Mismatch Rate</div><div class="kpi-value" id="kt-mismatch">-</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Dominant Category</div><div class="kpi-value" id="kt-dominant" style="font-size:16px;">-</div></div>
+                </div>
+                <div class="detail-charts" id="team-charts-area-placeholder" style="margin-bottom:16px;"></div>
+            </div>
+        </div>
+
         <div id="team-detail-area">
             <div class="empty-state" id="team-empty">
                 <div class="icon">&#128101;</div>
                 <h3>Select a team above</h3>
-                <p>Choose a team to view its epic/feature/story tree</p>
+                <p>Choose a team to view its story breakdown</p>
             </div>
         </div>
     </div>
 
     <!-- ========== BY EPIC TAB ========== -->
     <div class="tab-content" id="tab-by-epic">
-        <div class="kpi-row" id="kpi-epic">
-            <div class="kpi-card"><div class="kpi-label">Teams on this Epic</div><div class="kpi-value" id="ke-teams">-</div></div>
-            <div class="kpi-card"><div class="kpi-label">Total Stories</div><div class="kpi-value" id="ke-stories">-</div></div>
-            <div class="kpi-card"><div class="kpi-label">Category Distribution</div><div class="kpi-value" id="ke-catdist" style="font-size:14px;">-</div></div>
-            <div class="kpi-card"><div class="kpi-label">Avg Mismatch Rate</div><div class="kpi-value" id="ke-mismatch">-</div></div>
-        </div>
-
         <div class="list-search">
             <input type="text" id="epic-search" placeholder="Search epics..." oninput="filterPills('epic-search', '#epic-selector')">
             <button class="clear-btn" onclick="clearSearch('epic-search', '#epic-selector')">&times;</button>
         </div>
         <div class="selector-row" id="epic-selector"></div>
+
+        <!-- Insights: KPI + charts, hidden by default -->
+        <div id="epic-insights-wrap" style="display:none;">
+            <button class="insights-toggle" id="epic-insights-btn" onclick="toggleInsights('epic')">&#128200; Show Insights</button>
+            <div class="insights-section" id="epic-insights">
+                <div class="kpi-row" id="kpi-epic">
+                    <div class="kpi-card"><div class="kpi-label">Teams on this Epic</div><div class="kpi-value" id="ke-teams">-</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Total Stories</div><div class="kpi-value" id="ke-stories">-</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Category Distribution</div><div class="kpi-value" id="ke-catdist" style="font-size:14px;">-</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Avg Mismatch Rate</div><div class="kpi-value" id="ke-mismatch">-</div></div>
+                </div>
+            </div>
+        </div>
 
         <div id="epic-detail-area">
             <div class="empty-state" id="epic-empty">
@@ -452,6 +720,35 @@ let epicsList = null;
 let selectedTeam = null;
 let selectedEpic = null;
 let allCategories = [];
+let currentUploadId = '';
+
+// ── Job selector ───────────────────────────────────────────
+async function loadJobOptions() {
+    try {
+        const res = await fetch('/api/history/uploads');
+        const data = await res.json();
+        const sel = document.getElementById('job-select');
+        const saved = (data.uploads || []).filter(u => u.saved_count > 0);
+        saved.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.id;
+            const d = new Date(u.created_at).toLocaleDateString();
+            opt.textContent = `${u.filename} — ${u.saved_count} stories (${d})`;
+            sel.appendChild(opt);
+        });
+    } catch (e) { /* silent */ }
+}
+
+function onJobChange() {
+    currentUploadId = document.getElementById('job-select').value;
+    selectedTeam = null;
+    selectedEpic = null;
+    loadTeamsData();
+}
+
+function uploadParam() {
+    return currentUploadId ? `&upload_id=${encodeURIComponent(currentUploadId)}` : '';
+}
 
 // ── Tabs ───────────────────────────────────────────────────
 function switchTab(tab) {
@@ -460,12 +757,26 @@ function switchTab(tab) {
     document.getElementById('tab-' + tab).classList.add('active');
 }
 
+// ── Insights toggle ────────────────────────────────────────
+function toggleInsights(type) {
+    const btn = document.getElementById(type + '-insights-btn');
+    const section = document.getElementById(type + '-insights');
+    const open = section.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    btn.innerHTML = open ? '&#128200; Hide Insights' : '&#128200; Show Insights';
+    // Render charts when first opened (they need visible container)
+    if (open && type === 'team' && window._teamData) {
+        renderTeamCharts(window._teamData);
+    }
+}
+
 // ── Load Data ──────────────────────────────────────────────
-async function init() {
+async function loadTeamsData() {
     try {
+        const uid = uploadParam();
         const [sumRes, epicsRes] = await Promise.all([
-            fetch('/api/teams/summary'),
-            fetch('/api/teams/epics-list')
+            fetch('/api/teams/summary?' + uid),
+            fetch('/api/teams/epics-list?' + uid)
         ]);
         summaryData = await sumRes.json();
         epicsList = await epicsRes.json();
@@ -477,6 +788,12 @@ async function init() {
 
         renderTeamPills();
         renderEpicPills();
+
+        // Reset detail areas
+        document.getElementById('team-detail-area').innerHTML = '<div class="empty-state"><div class="icon">&#128101;</div><h3>Select a team above</h3><p>Choose a team to view its story breakdown</p></div>';
+        document.getElementById('epic-detail-area').innerHTML = '<div class="empty-state"><div class="icon">&#128209;</div><h3>Select an epic above</h3><p>Choose an epic to see which teams contribute to it</p></div>';
+        document.getElementById('team-insights-wrap').style.display = 'none';
+        document.getElementById('epic-insights-wrap').style.display = 'none';
     } catch (err) {
         console.error('Failed to load data:', err);
     }
@@ -496,7 +813,6 @@ function renderTeamPills() {
 
 async function selectTeam(name) {
     selectedTeam = name;
-    // Highlight pill
     document.querySelectorAll('#team-selector .selector-pill').forEach(p => {
         p.classList.toggle('active', p.textContent.startsWith(name));
     });
@@ -504,8 +820,17 @@ async function selectTeam(name) {
     const area = document.getElementById('team-detail-area');
     area.innerHTML = '<div class="loading-spinner">Loading team data...</div>';
 
+    // Show insights wrap, reset to collapsed
+    const wrap = document.getElementById('team-insights-wrap');
+    wrap.style.display = 'block';
+    const insSection = document.getElementById('team-insights');
+    const insBtn = document.getElementById('team-insights-btn');
+    insSection.classList.remove('open');
+    insBtn.classList.remove('open');
+    insBtn.innerHTML = '&#128200; Show Insights';
+
     try {
-        const res = await fetch('/api/teams/detail?team=' + encodeURIComponent(name));
+        const res = await fetch('/api/teams/detail?team=' + encodeURIComponent(name) + uploadParam());
         const data = await res.json();
         renderTeamKPIs(data);
         renderTeamTree(data, area);
@@ -526,76 +851,190 @@ function renderTeamTree(data, container) {
         container.innerHTML = '<div class="empty-state"><h3>No stories for this team</h3></div>';
         return;
     }
+    window._teamData = data;
 
-    let html = '<div class="detail-charts" id="team-charts-area"></div>';
-    html += '<div class="list-search"><input type="text" id="tree-search" placeholder="Search stories..." oninput="filterTree(\'tree-search\')"><button class="clear-btn" onclick="clearTreeSearch(\'tree-search\')">&times;</button></div>';
-    html += '<div class="tree-root">';
+    // ── Left: Epic/Feature tree nav ──
+    let treeHtml = `<div class="tree-panel-label">Epics & Features</div>
+    <div class="list-search" style="margin-bottom:8px;">
+        <input type="text" id="tree-nav-search" placeholder="Filter..." oninput="filterTreeNav()">
+        <button class="clear-btn" onclick="clearTreeNav()">&times;</button>
+    </div>
+    <div id="team-tree-nav">`;
 
     data.epics.forEach((epic, ei) => {
-        const epicId = 'epic-' + ei;
-        const mismatchBadge = epic.mismatches > 0
-            ? `<span class="tree-stat mismatch">${epic.mismatches} mismatch${epic.mismatches > 1 ? 'es' : ''}</span>`
-            : '';
-        html += `
-        <div class="tree-node">
-            <div class="tree-epic" onclick="toggleTree('${epicId}')">
-                <span class="tree-toggle" id="toggle-${epicId}">\u25B8</span>
-                ${escapeHtml(epic.name)}
-                <span class="tree-stat">${epic.story_count} stories</span>
-                ${mismatchBadge}
+        const ek = 'tnav-e' + ei;
+        treeHtml += `
+        <div class="tree-nav-item" id="${ek}-item">
+            <div class="nav-epic" id="${ek}">
+                <span class="nav-toggle" id="${ek}-tog" onclick="event.stopPropagation(); toggleNavEpic('${ek}')">&#9658;</span>
+                <span class="nav-name" title="${escapeAttr(epic.name)}" onclick="teamSelectEpic(${ei}, '${ek}')">${escapeHtml(epic.name)}</span>
+                <span class="tree-stat">${epic.story_count}</span>
             </div>
-            <div class="tree-children collapsed" id="${epicId}">`;
-
+            <div class="nav-features" id="${ek}-feats">`;
         epic.features.forEach((feat, fi) => {
-            const featId = epicId + '-f' + fi;
-            html += `
-                <div class="tree-node">
-                    <div class="tree-feature" onclick="toggleTree('${featId}')">
-                        <span class="tree-toggle" id="toggle-${featId}">\u25B8</span>
-                        ${escapeHtml(feat.name)}
-                        <span class="tree-stat">${feat.story_count} stories</span>
-                    </div>
-                    <div class="tree-children collapsed" id="${featId}">`;
-
-            feat.stories.forEach(s => {
-                const confClass = (s.confidence || '').toUpperCase() === 'HIGH' ? 'badge-high' :
-                                  (s.confidence || '').toUpperCase() === 'MEDIUM' ? 'badge-medium' : 'badge-low';
-                const catColor = getCatColor(s.waf_category, allCategories);
-                const colorHex = WAF_COLOR_MAP[(s.waf_color || '').toUpperCase()] || '#888';
-                html += `
-                        <div class="tree-story">
-                            <span class="color-dot" style="background:${colorHex}" title="${escapeAttr(s.waf_color)}"></span>
-                            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeAttr(s.title)}">${escapeHtml(s.title)}</span>
-                            <span class="badge badge-cat" style="background:${catColor}22;color:${catColor}">${escapeHtml(s.waf_category)}</span>
-                            <span class="badge ${confClass}">${escapeHtml(s.confidence)}</span>
-                            ${s.was_mismatch ? '<span class="badge badge-mismatch">Mismatch</span>' : '<span class="badge badge-ok">Match</span>'}
-                        </div>`;
-            });
-
-            html += `</div></div>`;
+            treeHtml += `<div class="nav-feature" id="${ek}-f${fi}" onclick="teamSelectFeature(${ei}, ${fi}, '${ek}-f${fi}')">
+                <span class="nav-name" title="${escapeAttr(feat.name)}">${escapeHtml(feat.name)}</span>
+                <span class="tree-stat">${feat.story_count}</span>
+            </div>`;
         });
-
-        html += `</div></div>`;
+        treeHtml += `</div></div>`;
     });
+    treeHtml += '</div>';
 
-    html += '</div>';
-    container.innerHTML = html;
+    // ── Right: Story table ──
+    const rightHtml = `
+    <div class="story-panel-header">
+        <span class="story-panel-title" id="story-panel-title">All Stories</span>
+        <span class="story-panel-count" id="story-panel-count">${data.total_stories} stories</span>
+    </div>
+    <div class="list-search" style="margin-bottom:12px;">
+        <input type="text" id="story-search" placeholder="Search stories..." oninput="filterStoryTable()">
+        <button class="clear-btn" onclick="clearStorySearch()">&times;</button>
+    </div>
+    <table class="story-table" id="team-story-table">
+    <thead><tr>
+        <th onclick="sortStoryTable('title')">Story <span class="sa"></span></th>
+        <th onclick="sortStoryTable('waf_category')">Category <span class="sa"></span></th>
+        <th onclick="sortStoryTable('waf_color')">Color <span class="sa"></span></th>
+        <th onclick="sortStoryTable('confidence')">Confidence <span class="sa"></span></th>
+        <th onclick="sortStoryTable('is_mismatch')">Status <span class="sa"></span></th>
+    </tr></thead>
+    <tbody id="story-tbody"></tbody>
+    </table>`;
 
-    // Render charts
-    renderTeamCharts(data);
+    container.innerHTML = `<div class="two-panel"><div class="tree-panel">${treeHtml}</div><div class="story-panel">${rightHtml}</div></div>`;
+
+    showTeamStories(collectAllStories(data), 'All Stories');
 }
 
-function toggleTree(id) {
-    const el = document.getElementById(id);
-    const toggle = document.getElementById('toggle-' + id);
-    if (!el) return;
-    const isCollapsed = el.classList.contains('collapsed');
-    el.classList.toggle('collapsed');
-    if (toggle) toggle.textContent = isCollapsed ? '\u25BE' : '\u25B8';
+function collectAllStories(data) {
+    const out = [];
+    data.epics.forEach(ep => ep.features.forEach(ft => ft.stories.forEach(s => out.push(s))));
+    return out;
+}
+
+function teamSelectEpic(ei, nodeId) {
+    const data = window._teamData;
+    if (!data) return;
+    setNavSelected(nodeId);
+    toggleNavEpic(nodeId, true);
+    const stories = [];
+    data.epics[ei].features.forEach(f => f.stories.forEach(s => stories.push(s)));
+    showTeamStories(stories, data.epics[ei].name);
+}
+
+function teamSelectFeature(ei, fi, nodeId) {
+    const data = window._teamData;
+    if (!data) return;
+    setNavSelected(nodeId);
+    const feat = data.epics[ei].features[fi];
+    showTeamStories(feat.stories, feat.name);
+}
+
+function setNavSelected(nodeId) {
+    document.querySelectorAll('.nav-epic, .nav-feature').forEach(el => el.classList.remove('selected'));
+    const el = document.getElementById(nodeId);
+    if (el) el.classList.add('selected');
+}
+
+function toggleNavEpic(ek, forceOpen) {
+    const feats = document.getElementById(ek + '-feats');
+    const tog = document.getElementById(ek + '-tog');
+    if (!feats) return;
+    const open = feats.classList.contains('open');
+    const shouldOpen = forceOpen === true ? true : !open;
+    feats.classList.toggle('open', shouldOpen);
+    if (tog) tog.innerHTML = shouldOpen ? '&#9660;' : '&#9658;';
+}
+
+function showTeamStories(stories, title) {
+    document.getElementById('story-panel-title').textContent = title;
+    window._currentStories = stories;
+    renderStoryRows(stories);
+}
+
+function renderStoryRows(stories) {
+    const tbody = document.getElementById('story-tbody');
+    if (!tbody) return;
+    if (!stories.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">No stories</td></tr>';
+        document.getElementById('story-panel-count').textContent = '0 stories';
+        return;
+    }
+    document.getElementById('story-panel-count').textContent = stories.length + ' stories';
+    tbody.innerHTML = stories.map(s => {
+        const confClass = (s.confidence || '').toUpperCase() === 'HIGH' ? 'badge-high' :
+                          (s.confidence || '').toUpperCase() === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+        const catColor = getCatColor(s.waf_category, allCategories);
+        const colorHex = WAF_COLOR_MAP[(s.waf_color || '').toUpperCase()] || '#888';
+        const idTag = s.story_id ? `<span style="font-size:10px;color:var(--text-muted);margin-left:4px;">${escapeHtml(s.story_id)}</span>` : '';
+        return `<tr>
+            <td><span class="color-dot" style="background:${colorHex};display:inline-block;margin-right:6px;flex-shrink:0;"></span><span class="story-title" title="${escapeAttr(s.title)}">${escapeHtml(s.title)}</span>${idTag}</td>
+            <td><span class="badge badge-cat" style="background:${catColor}22;color:${catColor}">${escapeHtml(s.waf_category)}</span></td>
+            <td>${escapeHtml(s.waf_color || '-')}</td>
+            <td><span class="badge ${confClass}">${escapeHtml(s.confidence)}</span></td>
+            <td>${s.was_mismatch ? '<span class="badge badge-mismatch">Mismatch</span>' : '<span class="badge badge-ok">Match</span>'}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Story table sort ───────────────────────────────────────
+let _storySortCol = null;
+let _storySortDir = 'asc';
+
+function sortStoryTable(col) {
+    if (_storySortCol === col) {
+        _storySortDir = _storySortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        _storySortCol = col;
+        _storySortDir = 'asc';
+    }
+    // Update header classes
+    document.querySelectorAll('#team-story-table th').forEach(th => th.classList.remove('asc', 'desc'));
+    const idx = ['title','waf_category','waf_color','confidence','is_mismatch'].indexOf(col);
+    const ths = document.querySelectorAll('#team-story-table th');
+    if (ths[idx]) ths[idx].classList.add(_storySortDir);
+
+    const sorted = [...(window._currentStories || [])].sort((a, b) => {
+        let av = a[col] || '', bv = b[col] || '';
+        if (typeof av === 'boolean') { av = av ? 1 : 0; bv = bv ? 1 : 0; }
+        const cmp = String(av).toLowerCase() < String(bv).toLowerCase() ? -1 : String(av).toLowerCase() > String(bv).toLowerCase() ? 1 : 0;
+        return _storySortDir === 'asc' ? cmp : -cmp;
+    });
+    renderStoryRows(sorted);
+}
+
+function filterTreeNav() {
+    const q = document.getElementById('tree-nav-search').value.toLowerCase().trim();
+    const clearBtn = document.getElementById('tree-nav-search').parentNode.querySelector('.clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
+    document.querySelectorAll('.tree-nav-item').forEach(item => {
+        item.style.display = !q || item.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+function clearTreeNav() {
+    const i = document.getElementById('tree-nav-search');
+    if (i) { i.value = ''; filterTreeNav(); i.focus(); }
+}
+
+function filterStoryTable() {
+    const q = document.getElementById('story-search').value.toLowerCase().trim();
+    const clearBtn = document.getElementById('story-search').parentNode.querySelector('.clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
+    const filtered = !q ? window._currentStories
+        : (window._currentStories || []).filter(s =>
+            (s.title || '').toLowerCase().includes(q) ||
+            (s.waf_category || '').toLowerCase().includes(q) ||
+            (s.waf_color || '').toLowerCase().includes(q));
+    renderStoryRows(filtered);
+}
+function clearStorySearch() {
+    const i = document.getElementById('story-search');
+    if (i) { i.value = ''; filterStoryTable(); i.focus(); }
 }
 
 function renderTeamCharts(data) {
-    const area = document.getElementById('team-charts-area');
+    const area = document.getElementById('team-charts-area-placeholder');
     if (!area) return;
 
     // Aggregate categories and colors from all stories
@@ -675,8 +1114,17 @@ async function selectEpic(name) {
     const area = document.getElementById('epic-detail-area');
     area.innerHTML = '<div class="loading-spinner">Loading epic data...</div>';
 
+    // Show insights wrap, reset to collapsed
+    const wrap = document.getElementById('epic-insights-wrap');
+    wrap.style.display = 'block';
+    const insSection = document.getElementById('epic-insights');
+    const insBtn = document.getElementById('epic-insights-btn');
+    insSection.classList.remove('open');
+    insBtn.classList.remove('open');
+    insBtn.innerHTML = '&#128200; Show Insights';
+
     try {
-        const res = await fetch('/api/teams/by-epic?epic=' + encodeURIComponent(name));
+        const res = await fetch('/api/teams/by-epic?epic=' + encodeURIComponent(name) + uploadParam());
         const data = await res.json();
         renderEpicKPIs(data);
         renderEpicTeams(data, area);
@@ -709,62 +1157,127 @@ function renderEpicTeams(data, container) {
         container.innerHTML = '<div class="empty-state"><h3>No teams on this epic</h3></div>';
         return;
     }
+    window._epicData = data;
 
-    let html = '<div class="list-search"><input type="text" id="epic-team-search" placeholder="Search teams..." oninput="filterEpicTeamCards(\'epic-team-search\')"><button class="clear-btn" onclick="clearEpicTeamSearch(\'epic-team-search\')">&times;</button></div>';
+    // Collect all stories across teams
+    const allStories = [];
+    data.teams.forEach(t => (t.stories || []).forEach(s => allStories.push({...s, _team: t.name})));
+
+    // ── Left: Team list ──
+    let leftHtml = `<div class="tree-panel-label">Teams</div>
+    <div class="list-search" style="margin-bottom:8px;">
+        <input type="text" id="epic-team-nav-search" placeholder="Filter..." oninput="filterEpicTeamNav()">
+        <button class="clear-btn" onclick="clearEpicTeamNav()">&times;</button>
+    </div>
+    <div id="epic-team-nav">
+    <div class="nav-all selected" id="epic-nav-all" onclick="epicSelectAll()">
+        <span>All Teams</span><span class="tree-stat">${allStories.length}</span>
+    </div>`;
+
     data.teams.forEach((team, ti) => {
-        const teamId = 'eteam-' + ti;
-        // Build stacked bar
-        const total = team.story_count;
-        const segments = allCategories
-            .filter(c => team.categories[c])
-            .map(c => {
-                const pct = (team.categories[c] / total * 100).toFixed(1);
-                const clr = getCatColor(c, allCategories);
-                return `<div class="segment" style="width:${pct}%;background:${clr}" title="${c}: ${team.categories[c]} (${pct}%)"></div>`;
-            }).join('');
-
-        html += `
-        <div class="epic-team-card">
-            <div class="epic-team-header" onclick="toggleEpicTeam('${teamId}')">
-                <h3>${escapeHtml(team.name)}</h3>
-                <span class="tree-toggle" id="toggle-${teamId}" style="font-size:14px;">\u25B8</span>
-            </div>
-            <div class="epic-team-meta">
-                <div class="meta-item"><strong>${team.story_count}</strong> stories</div>
-                <div class="meta-item"><strong>${team.mismatch_rate}%</strong> mismatch</div>
-                <div class="meta-item"><strong>${team.mismatches}</strong> mismatches</div>
-            </div>
-            <div class="stacked-bar">${segments}</div>
-            <div class="epic-team-stories" id="${teamId}">`;
-
-        team.stories.forEach(s => {
-            const confClass = (s.confidence || '').toUpperCase() === 'HIGH' ? 'badge-high' :
-                              (s.confidence || '').toUpperCase() === 'MEDIUM' ? 'badge-medium' : 'badge-low';
-            const catColor = getCatColor(s.waf_category, allCategories);
-            const colorHex = WAF_COLOR_MAP[(s.waf_color || '').toUpperCase()] || '#888';
-            html += `
-                <div class="tree-story">
-                    <span class="color-dot" style="background:${colorHex}" title="${escapeAttr(s.waf_color)}"></span>
-                    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeAttr(s.title)}">${escapeHtml(s.title)}</span>
-                    <span class="badge badge-cat" style="background:${catColor}22;color:${catColor}">${escapeHtml(s.waf_category)}</span>
-                    <span class="badge ${confClass}">${escapeHtml(s.confidence)}</span>
-                    ${s.was_mismatch ? '<span class="badge badge-mismatch">Mismatch</span>' : '<span class="badge badge-ok">Match</span>'}
-                </div>`;
-        });
-
-        html += `</div></div>`;
+        leftHtml += `<div class="nav-team" id="epic-nav-t${ti}" onclick="epicSelectTeam(${ti})">
+            <span class="nav-name" title="${escapeAttr(team.name)}">${escapeHtml(team.name)}</span>
+            <span class="tree-stat">${team.story_count}</span>
+        </div>`;
     });
+    leftHtml += '</div>';
 
-    container.innerHTML = html;
+    // ── Right: Story table ──
+    const rightHtml = `
+    <div class="story-panel-header">
+        <span class="story-panel-title" id="epic-story-title">All Teams</span>
+        <span class="story-panel-count" id="epic-story-count">${allStories.length} stories</span>
+    </div>
+    <div class="list-search" style="margin-bottom:12px;">
+        <input type="text" id="epic-story-search" placeholder="Search stories..." oninput="filterEpicStoryTable()">
+        <button class="clear-btn" onclick="clearEpicStorySearch()">&times;</button>
+    </div>
+    <table class="story-table">
+    <thead><tr>
+        <th>Story</th><th>Team</th><th>Category</th><th>Color</th><th>Confidence</th><th>Status</th>
+    </tr></thead>
+    <tbody id="epic-story-tbody"></tbody>
+    </table>`;
+
+    container.innerHTML = `<div class="two-panel"><div class="tree-panel">${leftHtml}</div><div class="story-panel">${rightHtml}</div></div>`;
+
+    window._epicAllStories = allStories;
+    window._epicCurrentStories = allStories;
+    renderEpicStoryRows(allStories);
 }
 
-function toggleEpicTeam(id) {
-    const el = document.getElementById(id);
-    const toggle = document.getElementById('toggle-' + id);
-    if (!el) return;
-    const isOpen = el.classList.contains('open');
-    el.classList.toggle('open');
-    if (toggle) toggle.textContent = isOpen ? '\u25B8' : '\u25BE';
+function epicSelectAll() {
+    document.querySelectorAll('#epic-team-nav .nav-team, #epic-nav-all').forEach(el => el.classList.remove('selected'));
+    document.getElementById('epic-nav-all').classList.add('selected');
+    window._epicCurrentStories = window._epicAllStories;
+    document.getElementById('epic-story-title').textContent = 'All Teams';
+    renderEpicStoryRows(window._epicAllStories);
+    document.getElementById('epic-story-search').value = '';
+}
+
+function epicSelectTeam(ti) {
+    const data = window._epicData;
+    const team = data.teams[ti];
+    document.querySelectorAll('#epic-team-nav .nav-team, #epic-nav-all').forEach(el => el.classList.remove('selected'));
+    document.getElementById('epic-nav-t' + ti).classList.add('selected');
+    const stories = (team.stories || []).map(s => ({...s, _team: team.name}));
+    window._epicCurrentStories = stories;
+    document.getElementById('epic-story-title').textContent = team.name;
+    renderEpicStoryRows(stories);
+    document.getElementById('epic-story-search').value = '';
+}
+
+function renderEpicStoryRows(stories) {
+    const tbody = document.getElementById('epic-story-tbody');
+    if (!tbody) return;
+    document.getElementById('epic-story-count').textContent = stories.length + ' stories';
+    if (!stories.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">No stories</td></tr>';
+        return;
+    }
+    tbody.innerHTML = stories.map(s => {
+        const confClass = (s.confidence || '').toUpperCase() === 'HIGH' ? 'badge-high' :
+                          (s.confidence || '').toUpperCase() === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+        const catColor = getCatColor(s.waf_category, allCategories);
+        const colorHex = WAF_COLOR_MAP[(s.waf_color || '').toUpperCase()] || '#888';
+        return `<tr>
+            <td><span class="color-dot" style="background:${colorHex};display:inline-block;margin-right:6px;"></span><span class="story-title" title="${escapeAttr(s.title)}">${escapeHtml(s.title)}</span></td>
+            <td style="color:var(--text-secondary);white-space:nowrap;">${escapeHtml(s._team || '')}</td>
+            <td><span class="badge badge-cat" style="background:${catColor}22;color:${catColor}">${escapeHtml(s.waf_category)}</span></td>
+            <td>${escapeHtml(s.waf_color || '-')}</td>
+            <td><span class="badge ${confClass}">${escapeHtml(s.confidence)}</span></td>
+            <td>${s.was_mismatch ? '<span class="badge badge-mismatch">Mismatch</span>' : '<span class="badge badge-ok">Match</span>'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function filterEpicTeamNav() {
+    const q = document.getElementById('epic-team-nav-search').value.toLowerCase().trim();
+    const clearBtn = document.getElementById('epic-team-nav-search').parentNode.querySelector('.clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
+    document.querySelectorAll('#epic-team-nav .nav-team').forEach(el => {
+        el.style.display = !q || el.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+function clearEpicTeamNav() {
+    const i = document.getElementById('epic-team-nav-search');
+    if (i) { i.value = ''; filterEpicTeamNav(); i.focus(); }
+}
+
+function filterEpicStoryTable() {
+    const q = document.getElementById('epic-story-search').value.toLowerCase().trim();
+    const clearBtn = document.getElementById('epic-story-search').parentNode.querySelector('.clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
+    const filtered = !q ? window._epicCurrentStories
+        : (window._epicCurrentStories || []).filter(s =>
+            (s.title || '').toLowerCase().includes(q) ||
+            (s.waf_category || '').toLowerCase().includes(q) ||
+            (s._team || '').toLowerCase().includes(q));
+    renderEpicStoryRows(filtered);
+}
+function clearEpicStorySearch() {
+    const i = document.getElementById('epic-story-search');
+    if (i) { i.value = ''; filterEpicStoryTable(); i.focus(); }
 }
 
 // ── Helpers ────────────────────────────────────────────────
@@ -795,82 +1308,11 @@ function clearSearch(inputId, containerSelector) {
     input.focus();
 }
 
-function filterTree(inputId) {
-    const q = document.getElementById(inputId).value.toLowerCase().trim();
-    const clearBtn = document.getElementById(inputId).parentNode.querySelector('.clear-btn');
-    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
-
-    const root = document.querySelector('.tree-root');
-    if (!root) return;
-
-    // Iterate each epic node
-    root.querySelectorAll(':scope > .tree-node').forEach(epicNode => {
-        let epicHasMatch = false;
-        const epicChildren = epicNode.querySelector('.tree-children');
-        if (!epicChildren) return;
-
-        // Iterate each feature node inside epic
-        epicChildren.querySelectorAll(':scope > .tree-node').forEach(featNode => {
-            let featHasMatch = false;
-            const featChildren = featNode.querySelector('.tree-children');
-            if (!featChildren) return;
-
-            // Iterate stories
-            featChildren.querySelectorAll('.tree-story').forEach(story => {
-                const text = story.textContent.toLowerCase();
-                const match = !q || text.includes(q);
-                story.style.display = match ? '' : 'none';
-                if (match) featHasMatch = true;
-            });
-
-            featNode.style.display = featHasMatch || !q ? '' : 'none';
-            if (featHasMatch && q) {
-                // Auto-expand feature
-                featChildren.classList.remove('collapsed');
-                const toggle = featNode.querySelector('.tree-toggle');
-                if (toggle) toggle.textContent = '\u25BE';
-            }
-        });
-
-        epicHasMatch = epicChildren.querySelectorAll(':scope > .tree-node').length === 0 ||
-            [...epicChildren.querySelectorAll(':scope > .tree-node')].some(n => n.style.display !== 'none');
-
-        epicNode.style.display = epicHasMatch || !q ? '' : 'none';
-        if (epicHasMatch && q) {
-            // Auto-expand epic
-            epicChildren.classList.remove('collapsed');
-            const toggle = epicNode.querySelector('.tree-toggle');
-            if (toggle) toggle.textContent = '\u25BE';
-        }
-    });
-}
-
-function clearTreeSearch(inputId) {
-    const input = document.getElementById(inputId);
-    input.value = '';
-    filterTree(inputId);
-    input.focus();
-}
-
-function filterEpicTeamCards(inputId) {
-    const q = document.getElementById(inputId).value.toLowerCase().trim();
-    const clearBtn = document.getElementById(inputId).parentNode.querySelector('.clear-btn');
-    if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
-
-    document.querySelectorAll('#epic-detail-area .epic-team-card').forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(q) || !q ? '' : 'none';
-    });
-}
-
-function clearEpicTeamSearch(inputId) {
-    const input = document.getElementById(inputId);
-    input.value = '';
-    filterEpicTeamCards(inputId);
-    input.focus();
-}
-
 // ── Init ───────────────────────────────────────────────────
+async function init() {
+    await loadJobOptions();
+    await loadTeamsData();
+}
 init();
 </script>
 </body>

@@ -121,6 +121,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "title": s["title"], "description": s["description"][:200],
                 "missing_description": missing_desc,
                 "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
+                "story_id": s.get("story_id", ""), "feature_id": s.get("feature_id", ""), "epic_id": s.get("epic_id", ""),
                 "timestamp": s["timestamp"], "file_category": s["file_category"],
                 "file_category_normalized": norm_cat if was_normalized else "",
                 "was_normalized": was_normalized,
@@ -139,6 +140,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "index": batch_offset + j,
                 "title": s["title"], "description": s["description"][:200],
                 "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
+                "story_id": s.get("story_id", ""), "feature_id": s.get("feature_id", ""), "epic_id": s.get("epic_id", ""),
                 "timestamp": s["timestamp"], "file_category": s["file_category"],
                 "file_color": s["file_color"], "file_run_change": s["file_run_change"],
                 "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
@@ -271,6 +273,9 @@ def bulk_verify_preview():
             {"key": "epic", "label": "Epic", "required": False, "keywords": ["epic", "initiative", "program"]},
             {"key": "parent_feature", "label": "Parent Feature", "required": False, "keywords": ["feature", "parent feature", "parent_feature", "capability"]},
             {"key": "timestamp", "label": "Timestamp", "required": False, "keywords": ["timestamp", "date", "created", "created_at"]},
+            {"key": "story_id", "label": "Story ID", "required": False, "keywords": ["issue key", "story id", "story_id", "issue_key", "ticket", "key", "jira id", "item id"]},
+            {"key": "feature_id", "label": "Feature ID", "required": False, "keywords": ["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"]},
+            {"key": "epic_id", "label": "Epic ID", "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"]},
         ]
         for field in target_fields:
             matched = find_col(field["keywords"])
@@ -340,6 +345,9 @@ def bulk_verify():
         epic_col = mappings.get("epic", "") or None
         feature_col = mappings.get("parent_feature", "") or None
         ts_col = mappings.get("timestamp", "") or None
+        story_id_col = mappings.get("story_id", "") or None
+        feature_id_col = mappings.get("feature_id", "") or None
+        epic_id_col = mappings.get("epic_id", "") or None
 
         if not title_col:
             return jsonify({"error": "Title column mapping is required"}), 400
@@ -386,6 +394,9 @@ def bulk_verify():
         epic_col = find_col(["epic", "initiative", "program"])
         feature_col = find_col(["feature", "parent feature", "parent_feature", "capability"])
         ts_col = find_col(["timestamp", "date", "created", "created_at"])
+        story_id_col = find_col(["issue key", "story id", "story_id", "issue_key", "ticket", "key", "jira id", "item id"])
+        feature_id_col = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"])
+        epic_id_col = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
 
         if not title_col:
             return jsonify({"error": "File must have a 'Story Title' or 'Summary' column"}), 400
@@ -414,6 +425,9 @@ def bulk_verify():
                 "epic": str(row.get(epic_col, "")).strip() if epic_col else "",
                 "parent_feature": str(row.get(feature_col, "")).strip() if feature_col else "",
                 "timestamp": ts,
+                "story_id": str(row.get(story_id_col, "")).strip() if story_id_col else "",
+                "feature_id": str(row.get(feature_id_col, "")).strip() if feature_id_col else "",
+                "epic_id": str(row.get(epic_id_col, "")).strip() if epic_id_col else "",
             })
 
         if not stories:
@@ -522,8 +536,9 @@ def bulk_verify_save():
             """INSERT INTO classifications
                (timestamp, story_title, story_description, waf_category,
                 waf_subcategory, waf_color, run_change, confidence,
-                was_mismatch, original_tag, approved, team, epic, parent_feature, upload_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)""",
+                was_mismatch, original_tag, approved, team, epic, parent_feature,
+                story_id, feature_id, epic_id, upload_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (ts,
              row.get("title", ""),
              row.get("description", ""),
@@ -534,9 +549,13 @@ def bulk_verify_save():
              confidence,
              1 if row.get("is_match") is False else 0,
              row.get("file_category", ""),
+             1 if row.get("is_match") is False else 0,  # approved — only mismatches are reviewed/approved
              row.get("team", "default"),
              row.get("epic", ""),
              row.get("parent_feature", ""),
+             row.get("story_id", ""),
+             row.get("feature_id", ""),
+             row.get("epic_id", ""),
              upload_id)
         )
         saved += 1

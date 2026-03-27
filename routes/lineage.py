@@ -58,7 +58,8 @@ def epic_summary():
     rows = db.execute(
         f"""SELECT id, timestamp, story_title, story_description, waf_category,
                    waf_subcategory, waf_color, run_change, confidence,
-                   was_mismatch, original_tag, approved, team, epic, parent_feature
+                   was_mismatch, original_tag, approved, team, epic, parent_feature,
+                   story_id, feature_id, epic_id
             FROM classifications WHERE {where} ORDER BY epic, timestamp DESC""",
         params
     ).fetchall()
@@ -101,6 +102,9 @@ def epic_summary():
                 "mismatch": bool(s["was_mismatch"]),
                 "approved": bool(s["approved"]),
                 "team": s["team"],
+                "story_id": s["story_id"] or "",
+                "feature_id": s["feature_id"] or "",
+                "epic_id": s["epic_id"] or "",
             })
 
         # Build tree: epic -> features -> stories

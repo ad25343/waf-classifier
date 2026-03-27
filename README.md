@@ -11,11 +11,15 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 | Feature | Description |
 |---------|-------------|
 | **Classify** | Live chat or batch classification for new stories during grooming |
-| **Analytics** | Upload JIRA data → map columns → AI reviews every row → flag mismatches → approve & save → summary insights |
-| **Epic Lineage** | Health scores, mismatch flags, story tree drill-down with Table and Graph views |
+| **Analytics** | Upload JIRA data → map columns → AI reviews every row → flag mismatches → save → summary insights |
+| **Teams** | Two-panel team analytics: left tree nav (Team › Epic › Feature) + right sortable story table. Cross-team epic matrix. Data Source filter per upload. |
+| **Epic Lineage** | Health scores, mismatch flags, story tree drill-down with collapsible feature sections and sort controls |
+| **Global Search** | FTS5 full-text search across all classifications with context-rich results (breadcrumb, badges, upload source) |
 | **WAF Reference** | Browse all 8 WAF categories — definitions, decision rules, color codes, and examples |
 | **Settings** | Manage WAF definitions, ground truth (view/edit/add/delete), baseline snapshots (save/restore), and batch size configuration |
-| **Ground Truth Loop** | Approve correct classifications to continuously improve AI accuracy |
+| **Dark/Light Mode** | Toggle in the nav bar; preference saved in localStorage |
+| **Story/Feature/Epic IDs** | Optional ID fields imported from CSV/Excel, displayed in Teams and Lineage views |
+| **Ground Truth Loop** | Approve correct mismatch classifications to continuously improve AI accuracy |
 
 ## WAF Categories
 
@@ -58,22 +62,35 @@ The app auto-loads WAF definitions and ground truth from `sample-data/` on start
 |-------|------|---------|
 | `/` | Home | Landing page with navigation cards and system status |
 | `/classify` | Classifier | Chat-based AI classification with epic tagging |
-| `/history` | Analytics | Upload → Map Columns → AI verify → Summary → Epic Lineage → History (4 tabs) |
+| `/history` | Analytics | Upload → Map Columns → AI verify → Review → Summary → Lineage → History |
+| `/teams` | Teams | Two-panel team analytics with cross-team epic matrix |
+| `/lineage` | Epic Lineage | Epic health scores, WAF breakdowns, and story tree |
+| `/dashboard` | Dashboard | Real-time KPI cards and distribution charts |
 | `/waf-reference` | WAF Reference | Browse all 8 WAF categories with definitions and decision rules |
 | `/settings` | Settings | WAF definitions, ground truth, baselines, and processing configuration |
-| `/teams` | Teams | Team-level WAF analytics, cross-team epic matrix, and drill-down reporting |
 
 ## Analytics Workflow
 
 1. **Upload Data** — Select a CSV or Excel file with JIRA stories
-2. **Map Columns** — Confirm or adjust auto-detected column mappings (Title and Description required)
+2. **Map Columns** — Confirm or adjust auto-detected column mappings. Title and Description are required. Optional: Team, Epic, Parent Feature, Story ID, Feature ID, Epic ID.
 3. **AI Review** — Claude classifies every row against the WAF framework. All files process asynchronously with a live progress bar.
-4. **Review & Approve** — Sortable table shows file tags vs AI recommendations with match/mismatch status. Click any row for full story details. All rows pre-selected; save to history.
-5. **Summary** — Portfolio-level charts with percentages: category distribution, color breakdown, Run vs Change, confidence levels, mismatch rate. Click any KPI card to drill down into matching stories.
-6. **Epic Lineage** — Health dashboard with scores (0–100), flagged epics needing review, per-epic drill-down in Table or Graph view. KPI cards are clickable to filter by correct/mismatch.
-7. **History** — View, reload, or delete previous uploads from the dedicated History tab.
+4. **Review & Save** — Sortable table shows file tags vs AI recommendations. Mismatch rows are pre-selected. Click any row for full story details. Save selected rows to history.
+5. **Summary** — Portfolio-level charts: category distribution, color breakdown, Run vs Change, confidence levels, mismatch rate. Click any KPI card to drill down.
+6. **Epic Lineage** — Per-epic WAF breakdown with health score, mismatch flags, and collapsible story tree.
+7. **History** — View, reload, or delete previous uploads.
 
-Each upload gets a unique ID. Use the Data Source filter to view analytics for a specific upload or all uploads combined.
+Each upload gets a unique ID. Use the Data Source selector to filter analytics to a specific upload or view all uploads combined.
+
+## Teams Workflow
+
+1. Navigate to `/teams`
+2. Select a **Data Source** (upload) or leave as "All Uploads"
+3. **Team tab**: Left panel shows Team › Epic › Feature tree. Click any node to load stories in the right panel. Sort by any column. Click **Show Insights** for KPI cards and charts.
+4. **By Epic tab**: Shows all teams contributing to each epic, with story tables per team.
+
+## Approval Behavior
+
+The `approved` flag is only set to `true` for **mismatch rows** — stories where the file's WAF tag differed from the AI recommendation. Match rows are saved without the approved flag. This ensures the "Approved" count represents stories that were actively reviewed and corrected, not just everything that passed through.
 
 ## Epic Health Scoring
 
@@ -88,22 +105,20 @@ Epics are flagged as "mixed" if they have 3+ WAF colors or the dominant color is
 
 ## Security
 
-This application includes the following security controls:
-
 - **Debug mode disabled** in production
-- **XSS prevention** — all user-controlled data is HTML-escaped before rendering
-- **Safe error responses** — generic messages to client, details logged server-side
+- **XSS prevention** — all user-controlled data HTML-escaped before rendering
+- **Safe error responses** — generic messages to client; details logged server-side only
 - **Pagination cap** — maximum 500 results per page
-- **Rate limiting** — bulk upload endpoint allows 5 requests per IP per minute (HTTP 429 on excess)
+- **Rate limiting** — bulk upload allows 5 requests per IP per minute (HTTP 429 on excess)
 - **Secure filenames** — uploaded files processed with `werkzeug.utils.secure_filename`
-- **No authentication required** — designed for trusted internal networks only. Do not expose to the public internet.
+- **No authentication** — designed for trusted internal networks only; do not expose to the public internet
 
 ## Tech Stack
 
-- **Backend:** Python Flask
-- **AI:** Anthropic Claude API (`claude-sonnet-4-5-20250929`)
+- **Backend:** Python Flask with Blueprint-based modular architecture
+- **AI:** Anthropic Claude API (`claude-sonnet-4-6`) or AWS Bedrock fallback
 - **Frontend:** HTML/CSS/JS + Chart.js 4.4.1 + chartjs-plugin-datalabels
-- **Database:** SQLite (`waf_history.db`)
+- **Database:** SQLite with FTS5 full-text search
 - **Data:** pandas, openpyxl for CSV/Excel processing
 
 ## Project Structure
@@ -112,14 +127,14 @@ This application includes the following security controls:
 waf-classifier/
 ├── app.py                          # Flask init, blueprint registration, startup
 ├── config.py                       # Constants, AI backend detection, paths
-├── database.py                     # SQLite schema, queries, settings cache
+├── database.py                     # SQLite schema, queries, FTS5 index, settings cache
 ├── state.py                        # Shared in-memory stores
 ├── waf_core.py                     # WAF categories, normalization, AI client, prompts
 ├── routes/
 │   ├── pages.py                    # Page-serving routes
 │   ├── classify.py                 # Classification API endpoints
 │   ├── settings_api.py             # Settings, ground truth, baselines API
-│   ├── analytics.py                # Dashboard, history, export API
+│   ├── analytics.py                # Dashboard, history, export, search API
 │   ├── verify.py                   # Bulk verify API + worker threads
 │   ├── lineage.py                  # Epic lineage API
 │   └── teams.py                    # Team report API
@@ -130,8 +145,10 @@ waf-classifier/
 ├── static/
 │   ├── home.html                   # Home landing page
 │   ├── index.html                  # Classifier chat UI
-│   ├── history.html                # Analytics (4 tabs: Upload Data, Summary, Epic Lineage, History)
-│   ├── teams.html                  # Team report with cross-team analytics
+│   ├── history.html                # Analytics (Upload, Summary, Lineage, History tabs)
+│   ├── teams.html                  # Team report with two-panel layout and cross-team matrix
+│   ├── lineage.html                # Epic Lineage with story tree and sort controls
+│   ├── dashboard.html              # Real-time dashboard
 │   ├── settings.html               # Admin settings (WAF defs, ground truth, baselines, config)
 │   └── waf-reference.html          # WAF framework reference guide
 ├── sample-data/
@@ -142,29 +159,22 @@ waf-classifier/
 │   ├── synthetic-5000-stories.csv  # 5000-record full test set
 │   └── synthetic-5000-answer-key.csv # 5000-record answer key
 └── docs/
-    ├── PRD_WAF_Classifier.docx     # Product Requirements Document
-    ├── User_Guide.docx             # User Guide
     ├── API_Reference.md            # API endpoint reference
     ├── Release_Notes.md            # Version changelog
-    ├── Quick_Start.md              # Getting started guide
-    └── architecture.mermaid        # System architecture diagram
+    └── Quick_Start.md              # Getting started guide
 ```
 
 ## Sample Data
 
-Two test datasets are included in `sample-data/`:
-
 | File | Records | Purpose |
 |------|---------|---------|
-| `synthetic-100-stories.csv` | 100 | Quick testing — covers all 28 epics, 8 categories, 6 colors, 15 teams, ~15% mismatches |
+| `synthetic-100-stories.csv` | 100 | Quick testing — 28 epics, 8 categories, 6 colors, 15 teams, ~15% mismatches |
 | `synthetic-5000-stories.csv` | 5,000 | Full testing — same distribution at scale |
 
-The `-answer-key.csv` variants include answer key columns (Correct WAF Category, Correct WAF Color, Correct Run/Change, Is Mismatch).
+The `-answer-key.csv` variants include correct WAF Category, Color, Run/Change, and Is Mismatch columns.
 
 ## Documentation
 
-- **[PRD](docs/PRD_WAF_Classifier.docx)** — Full product requirements
-- **[User Guide](docs/User_Guide.docx)** — Step-by-step usage instructions
 - **[API Reference](docs/API_Reference.md)** — All endpoints with request/response specs
 - **[Release Notes](docs/Release_Notes.md)** — Version history and changelog
 - **[Quick Start](docs/Quick_Start.md)** — 5-minute setup guide

@@ -31,48 +31,78 @@ python app.py
 
 Open **http://localhost:8080** in your browser. You should see the home page with green status indicators for API, WAF, and Ground Truth.
 
+---
+
 ## Your First Classification
 
 1. Click **Classify Stories** from the home page
-2. The sidebar shows the current status (API, WAF definitions, ground truth). WAF definitions and ground truth are auto-loaded from sample data on first run. To manage them, go to **Settings**.
-3. Type a story in the chat box, for example:
+2. Type a story in the chat box, for example:
 
    > Classify this story: "Fix production database connection pool exhaustion causing 504 errors on loan lookup service during peak hours"
 
-4. The AI returns a recommendation with category, color, confidence, and reasoning
-5. If it's correct, click **Approve** to save it as ground truth
+3. The AI returns a recommendation with category, color, confidence, and reasoning
+4. To flag a mismatch, include the current tag in your message:
 
-## Try Mismatch Detection
+   > This story is currently tagged as "New Feature": Remediate audit finding on insufficient access control logging for admin actions
 
-Include the current WAF tag to see if it's correct:
+5. If you see a mismatch and the AI recommendation is correct, click **Approve & Save to Ground Truth**
 
-> This story is currently tagged as "New Feature": Remediate audit finding on insufficient access control logging for admin actions
-
-The AI will flag this as a mismatch and explain why.
-
-## Explore the Dashboard
-
-Click **Analytics** to see real-time KPIs and charts. The Summary tab shows classification volume, approval rates, mismatch counts, and category distributions. Click any KPI card to drill down into the individual stories behind it.
+---
 
 ## Analyze Historical JIRA Data
 
-1. Click **Analytics** from the home page — the Upload Data tab is the default entry point
-2. Upload a CSV or Excel file with story data
-3. **Map your columns** — the system auto-detects column mappings but lets you confirm or adjust. Title and Description are required.
-4. Click **Continue to AI Classification** — a progress bar tracks each batch as the AI classifies every story
-5. Review the side-by-side comparison: file tag vs AI recommendation, with mismatches highlighted. Stories with no description are flagged as LOW confidence.
+1. Click **Analytics** from the home page
+2. **Upload Data tab** (default) — Upload a CSV or Excel file with story data
+3. **Map Columns** — Auto-detected column mappings shown for confirmation. Adjust if needed. Title and Description are required. Optional: Team, Epic, Parent Feature, Story ID, Feature ID, Epic ID.
+4. Click **Continue to AI Classification** — live progress bar tracks each batch
+5. **Review & Approve** — side-by-side table shows file tag vs AI recommendation. Mismatches are highlighted and pre-selected. Match rows are included but not pre-selected.
 6. Click any row to see full story details in a modal
-7. Select the rows you want to keep and click **Save Selected**
-8. After saving, you're taken to the Summary tab to see insights
-9. Use the **History tab** to view, reload, or delete previous uploads
+7. Click **Save Selected** to persist to the database
+8. After saving, you're taken to the **Summary** tab to explore insights
+
+**History tab** — view, reload, or delete previous uploads at any time.
+
+---
+
+## Explore the Teams Page
+
+1. Click **Teams** in the nav bar
+2. Select a **Data Source** at the top to filter to a specific upload (or leave as "All Uploads")
+3. The left panel shows a tree: Team › Epic › Feature — click any node to load stories on the right
+4. The right panel shows a flat, sortable story table. Sort by Title, Category, Color, Confidence, or Status
+5. Click **Show Insights** to reveal KPI cards and WAF distribution charts for the selected team
+6. Switch to the **By Epic** tab to see which teams share the same epics
+
+---
 
 ## Track Epic Lineage
 
-1. When classifying stories, enter the **Epic** and **Parent Feature** in the fields above the chat input
-2. Go to **Epic Lineage** to see how stories roll up through features to epics
-3. Click any epic to see its WAF breakdown with charts and a story detail view
-4. Use **Table View** for a sortable data grid, or **Graph View** for an expandable tree (Epic → Feature → Story)
-5. Click the KPI cards (Stories / Correct / Mismatches) to filter the story list
+1. Go to **Epic Lineage** from the nav
+2. Select a **Data Source** to filter by upload, or view all uploads combined
+3. Click any epic in the left panel to see its WAF breakdown — KPI cards, category chart, Run/Change chart
+4. The **Story Lineage** section shows stories grouped by feature with expand/collapse
+5. Use the **Sort** buttons (Title, Category, Color, Confidence, Status) to reorder stories within each feature section
+6. Use the **Search** box to filter stories by title, category, or confidence
+
+---
+
+## Search Across All Classifications
+
+Use the **search bar in the nav** (on Home, Classify, Dashboard, Settings, and WAF Reference pages) to find any story across all uploads. Results show:
+- Highlighted matching title
+- Breadcrumb: team › epic › feature
+- WAF category, color, confidence, and mismatch/match status
+- Source upload filename and date
+
+Click any result to navigate to that team's detail view.
+
+---
+
+## Dark / Light Mode
+
+Click the **moon/sun icon** in the top-right nav bar to toggle between dark and light mode. Your preference is saved across page navigation and browser sessions.
+
+---
 
 ## Tips for Best Results
 
@@ -80,29 +110,55 @@ Click **Analytics** to see real-time KPIs and charts. The Summary tab shows clas
 - **Include full context.** Paste story titles AND descriptions, not just titles.
 - **Always include current tags.** Mismatch detection is the most valuable feature for catching errors.
 - **Use bulk verify quarterly.** Upload your JIRA sprint backlog exports to catch misclassifications across the portfolio.
-- **Reload previous uploads.** Previously uploaded files appear in the History tab — click any entry to reload without re-uploading.
-- **Save baselines.** Go to Settings > Baselines to save a snapshot of your WAF definitions and ground truth. Restore anytime if you accidentally delete something.
-- **Configure batch size.** Go to Settings > Configuration to adjust how many stories are sent per AI request.
+- **Include ID columns.** Add `Issue key`, `Epic Link`, or `Feature ID` columns to your CSV/Excel file to track story IDs through the app.
+- **Use the Teams page for portfolio reviews.** Filter to a specific upload, then drill into each team's story table to review classifications before sharing.
+- **Save baselines.** Go to **Settings > Baselines** to snapshot your WAF definitions and ground truth. Restore anytime.
 
-## File Formats for Upload
+---
 
-Any of these work for WAF definitions, ground truth, or bulk imports:
+## File Formats
 
-| Format | Extensions |
-|--------|-----------|
-| CSV | .csv |
-| Excel | .xlsx |
-| JSON | .json (WAF definitions only) |
-| Text | .txt (WAF definitions only) |
+| Format | Extensions | Use for |
+|--------|-----------|---------|
+| CSV | .csv | All imports and exports |
+| Excel | .xlsx | All imports; formatted export (3 sheets) |
+| JSON | .json | WAF definitions only |
+| Text | .txt | WAF definitions only |
 
-For bulk imports, include columns named: `title` (or `story_title`), `description`, `waf_tag` (or `category`). Optional columns: `epic`, `parent_feature` (or `feature`).
+**Column names recognized during bulk import:**
+
+| Field | Recognized headers |
+|-------|-------------------|
+| Title | title, summary, story name, story title, name |
+| Description | desc, description, detail, acceptance, body |
+| WAF Category | category, waf cat, waf category |
+| Team | team, squad, group |
+| Epic | epic, initiative, program |
+| Parent Feature | feature, parent feature, capability |
+| Story ID | issue key, story id, key, ticket, jira id |
+| Feature ID | feature id, feature key, parent id |
+| Epic ID | epic id, epic key, epic link, initiative id |
+
+---
+
+## AWS Bedrock (Alternative AI Backend)
+
+If you don't have an Anthropic API key, the app automatically falls back to AWS Bedrock:
+
+```
+# No ANTHROPIC_API_KEY needed — uses ~/.aws/credentials or environment variables
+BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-6-v1  # optional override
+```
+
+---
 
 ## Rate Limits
 
-The bulk upload endpoint allows 5 uploads per IP address per minute. For large-scale testing, space out your uploads or contact your administrator.
+The bulk upload endpoint allows 5 uploads per IP address per minute. For large-scale testing, space out your uploads or adjust the limit in **Settings > Configuration**.
+
+---
 
 ## Need Help?
 
-- **[User Guide](User_Guide.docx)** — Full step-by-step documentation
-- **[API Reference](API_Reference.md)** — All endpoint specs
+- **[API Reference](API_Reference.md)** — All endpoint specs with request/response examples
 - **[Release Notes](Release_Notes.md)** — What's new in each version

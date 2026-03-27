@@ -44,7 +44,10 @@ def init_db():
             user_name TEXT,
             epic TEXT DEFAULT '',
             parent_feature TEXT DEFAULT '',
-            upload_id INTEGER DEFAULT NULL
+            upload_id INTEGER DEFAULT NULL,
+            story_id TEXT DEFAULT '',
+            feature_id TEXT DEFAULT '',
+            epic_id TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -84,6 +87,63 @@ def init_db():
         conn.execute("ALTER TABLE upload_history ADD COLUMN results_json TEXT DEFAULT NULL")
     except sqlite3.OperationalError:
         pass  # Column already exists
+    try:
+        conn.execute("ALTER TABLE classifications ADD COLUMN story_id TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE classifications ADD COLUMN feature_id TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE classifications ADD COLUMN epic_id TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+
+    # FTS5 full-text search index
+    conn.executescript("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS classifications_fts USING fts5(
+            story_title,
+            story_description,
+            waf_category,
+            waf_color,
+            team,
+            epic,
+            parent_feature,
+            confidence,
+            content='classifications',
+            content_rowid='id'
+        );
+
+        CREATE TRIGGER IF NOT EXISTS classifications_fts_ai
+        AFTER INSERT ON classifications BEGIN
+            INSERT INTO classifications_fts(
+                rowid, story_title, story_description, waf_category,
+                waf_color, team, epic, parent_feature, confidence
+            ) VALUES (
+                new.id, new.story_title, new.story_description, new.waf_category,
+                new.waf_color, new.team, new.epic, new.parent_feature, new.confidence
+            );
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS classifications_fts_ad
+        AFTER DELETE ON classifications BEGIN
+            INSERT INTO classifications_fts(
+                classifications_fts, rowid, story_title, story_description,
+                waf_category, waf_color, team, epic, parent_feature, confidence
+            ) VALUES (
+                'delete', old.id, old.story_title, old.story_description,
+                old.waf_category, old.waf_color, old.team, old.epic,
+                old.parent_feature, old.confidence
+            );
+        END;
+    """)
+
+    # Rebuild FTS index from existing classifications (idempotent)
+    try:
+        conn.execute("INSERT INTO classifications_fts(classifications_fts) VALUES('rebuild')")
+    except Exception:
+        pass
 
     # Settings table
     conn.execute("""
@@ -139,19 +199,21 @@ def _refresh_settings_cache():
 def save_classification(title, description, category, subcategory, color,
                         run_change, confidence, was_mismatch=False,
                         original_tag="", approved=False, team="default",
-                        epic="", parent_feature=""):
+                        epic="", parent_feature="",
+                        story_id="", feature_id="", epic_id=""):
     """Save a classification to the database."""
     db = get_db()
     db.execute(
         """INSERT INTO classifications
            (timestamp, story_title, story_description, waf_category,
             waf_subcategory, waf_color, run_change, confidence,
-            was_mismatch, original_tag, approved, team, epic, parent_feature)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            was_mismatch, original_tag, approved, team, epic, parent_feature,
+            story_id, feature_id, epic_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (datetime.now().isoformat(), title, description, category,
          subcategory, color, run_change, confidence,
          1 if was_mismatch else 0, original_tag, 1 if approved else 0, team,
-         epic, parent_feature)
+         epic, parent_feature, story_id, feature_id, epic_id)
     )
     db.commit()
     return db.execute("SELECT last_insert_rowid()").fetchone()[0]

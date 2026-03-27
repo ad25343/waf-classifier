@@ -68,7 +68,7 @@
             padding: 16px 32px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
         }
 
         .header-left { display: flex; align-items: center; gap: 12px; }
@@ -174,6 +174,7 @@
         .empty-state p { font-size: 14px; }
 
         .top-nav {
+            justify-content: flex-end;
             display: flex;
             gap: 4px;
             padding: 8px 24px;
@@ -205,6 +206,119 @@
             .kpi-row { grid-template-columns: repeat(2, 1fr); }
             .chart-grid { grid-template-columns: 1fr; }
         }
+
+        /* ── Global search ───────────────────────────────────── */
+        .global-search-wrap {
+            position: relative;
+                        margin-right: 12px;
+        }
+        .global-search-input {
+            width: 220px;
+            padding: 5px 32px 5px 30px;
+            font-size: 13px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-primary);
+            outline: none;
+            transition: width 0.2s, border-color 0.2s;
+        }
+        .global-search-input:focus {
+            width: 300px;
+            border-color: var(--accent);
+        }
+        .global-search-input::placeholder { color: var(--text-muted); }
+        .global-search-icon {
+            position: absolute;
+            left: 10px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .global-search-results {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 520px;
+            max-height: 480px;
+            overflow-y: auto;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius, 12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            z-index: 9999;
+            display: none;
+        }
+        .global-search-results.visible { display: block; }
+        .search-results-header {
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .search-result-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+        .search-result-item:hover { background: var(--bg-tertiary); }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .search-result-title mark {
+            background: rgba(232,148,74,0.3);
+            color: var(--accent);
+            border-radius: 2px;
+            padding: 0 2px;
+            font-style: normal;
+        }
+        .search-result-breadcrumb {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .search-result-breadcrumb span { color: var(--text-secondary); }
+        .search-result-badges {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .search-result-source {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .search-empty {
+            padding: 24px 16px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .search-loading {
+            padding: 16px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -218,9 +332,6 @@
         </div>
     </a>
     <div style="display:flex;gap:8px;align-items:center;">
-        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
-            <span class="theme-icon"></span>
-        </button>
     </div>
 </div>
 
@@ -232,6 +343,22 @@
     <a href="/teams" class="top-nav-link">Teams</a>
     <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
     <a href="/settings" class="top-nav-link">Settings</a>
+        <div class="global-search-wrap" id="global-search-wrap">
+        <span class="global-search-icon">&#128269;</span>
+        <input
+            type="text"
+            class="global-search-input"
+            id="global-search-input"
+            placeholder="Search stories..."
+            autocomplete="off"
+            oninput="onGlobalSearchInput()"
+            onfocus="onGlobalSearchFocus()"
+        >
+        <div class="global-search-results" id="global-search-results"></div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" style="margin-left:8px;">
+        <span class="theme-icon"></span>
+    </button>
 </nav>
 
 <div class="dashboard" id="dashboard">

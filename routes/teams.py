@@ -125,16 +125,19 @@ def teams_detail():
     if not team:
         return jsonify({"error": "team parameter is required"}), 400
 
+    upload_id = request.args.get("upload_id")
     db = get_db()
-    rows = db.execute(
-        """SELECT id, story_title, story_description, waf_category, waf_color,
+    query = """SELECT id, story_title, story_description, waf_category, waf_color,
                   run_change, confidence, was_mismatch, epic, parent_feature,
-                  timestamp
+                  timestamp, story_id, feature_id, epic_id
            FROM classifications
-           WHERE team = ?
-           ORDER BY epic, parent_feature, timestamp DESC""",
-        (team,),
-    ).fetchall()
+           WHERE team = ?"""
+    params = [team]
+    if upload_id:
+        query += " AND upload_id = ?"
+        params.append(upload_id)
+    query += " ORDER BY epic, parent_feature, timestamp DESC"
+    rows = db.execute(query, params).fetchall()
 
     # Group stories by epic -> feature
     epic_map = defaultdict(lambda: {
@@ -165,6 +168,9 @@ def teams_detail():
             "epic": r["epic"] or "",
             "parent_feature": r["parent_feature"] or "",
             "timestamp": r["timestamp"],
+            "story_id": r["story_id"] or "",
+            "feature_id": r["feature_id"] or "",
+            "epic_id": r["epic_id"] or "",
         }
 
         ft["stories"].append(story)
@@ -219,16 +225,19 @@ def teams_by_epic():
     if not epic:
         return jsonify({"error": "epic parameter is required"}), 400
 
+    upload_id = request.args.get("upload_id")
     db = get_db()
-    rows = db.execute(
-        """SELECT id, story_title, story_description, waf_category, waf_color,
+    query = """SELECT id, story_title, story_description, waf_category, waf_color,
                   run_change, confidence, was_mismatch, team, parent_feature,
                   timestamp
            FROM classifications
-           WHERE epic = ?
-           ORDER BY team, timestamp DESC""",
-        (epic,),
-    ).fetchall()
+           WHERE epic = ?"""
+    params = [epic]
+    if upload_id:
+        query += " AND upload_id = ?"
+        params.append(upload_id)
+    query += " ORDER BY team, timestamp DESC"
+    rows = db.execute(query, params).fetchall()
 
     team_map = defaultdict(lambda: {
         "stories": [],
@@ -294,13 +303,17 @@ def teams_by_epic():
 @teams_bp.route("/api/teams/epics-list")
 def epics_list():
     """Return list of all epics with team and story counts."""
+    upload_id = request.args.get("upload_id")
     db = get_db()
-    rows = db.execute(
-        """SELECT epic, team, COUNT(*) as cnt
+    query = """SELECT epic, team, COUNT(*) as cnt
            FROM classifications
-           WHERE epic != '' AND team != '' AND team != 'default'
-           GROUP BY epic, team"""
-    ).fetchall()
+           WHERE epic != '' AND team != '' AND team != 'default'"""
+    params = []
+    if upload_id:
+        query += " AND upload_id = ?"
+        params.append(upload_id)
+    query += " GROUP BY epic, team"
+    rows = db.execute(query, params).fetchall()
 
     epic_map = defaultdict(lambda: {"teams": set(), "story_count": 0})
     for r in rows:
