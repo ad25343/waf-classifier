@@ -2,6 +2,24 @@
 
 ---
 
+## v3.2.2 — March 2026
+
+Auto-load WAF/GT on startup, status bar on all pages, upload screen UX fixes, Story ID hint fix.
+
+### Bug Fixes
+
+- **WAF and GT reset on server restart** — Both were stored in memory only. Server restart wiped them. Now the active file path is persisted to the `settings` table on upload and auto-reloaded on every startup. No manual re-upload needed after restart.
+- **Auto-load pointed at deleted `sample-data/` folder** — `auto_load_sample_data()` in `app.py` referenced `sample-data/` which was removed when files were consolidated into `test-data/`. Updated to check DB for user-uploaded paths first, fall back to `test-data/`.
+- **Story ID hint showed incorrect example** — Hint incorrectly suggested `12345` (numeric) as a valid Story ID format. Story ID follows the same `PROJ-123` alphanumeric format as Issue Key. Fixed hint to `e.g. Story ID, Issue Key, Ticket (e.g. PROJ-123)`.
+- **"Continue to AI Classification" and "Re-upload" buttons buried** — These action buttons appeared below the column mapping grid and sample preview, requiring users to scroll. Moved to the top-right of the mapping step header, always visible.
+
+### New Features
+
+- **Status bar on all pages** — System health pills (API Connected, WAF, GT, History record count) previously only appeared on the Home page. Now shown on all pages below the nav bar. Each pill is a clickable link — WAF and GT link to Settings, History links to Analytics.
+- **`set_setting()` added to `database.py`** — Companion to `get_setting()`. Writes a key/value to the `settings` table and updates the in-memory cache.
+
+---
+
 ## v3.2.1 — March 2026
 
 Bug fixes, upload filter reliability, and test data expansion.

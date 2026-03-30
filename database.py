@@ -189,6 +189,20 @@ def get_setting(key: str, default: str = "") -> str:
     return _settings_cache.get(key, default)
 
 
+def set_setting(key: str, value: str):
+    """Write a setting to DB and update cache."""
+    global _settings_cache
+    from datetime import datetime as _dt
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)",
+        (key, value, _dt.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    _settings_cache[key] = value
+
+
 def _refresh_settings_cache():
     """Force-reload settings from DB."""
     global _settings_cache, _settings_cache_loaded

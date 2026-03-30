@@ -291,7 +291,35 @@
             color: var(--text-muted);
             font-size: 13px;
         }
-    </style>
+    
+        /* ── Status bar ── */
+        .status-bar {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 8px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .status-pills { display: flex; gap: 12px; }
+        .status-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-muted);
+            transition: background 0.15s, color 0.15s;
+        }
+        .status-pill:hover { background: var(--border); color: var(--text-primary); cursor: pointer; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.green { background: var(--success); }
+        .status-dot.yellow { background: var(--warning); }
+        .status-dot.red { background: var(--error); }
+
+        </style>
 </head>
 <body>
 <div class="header">
@@ -325,6 +353,27 @@
         <span class="theme-icon"></span>
     </button>
 </nav>
+<div class="status-bar">
+    <div class="status-pills">
+        <a class="status-pill" href="/settings" title="API Configuration">
+            <div class="status-dot" id="api-dot"></div>
+            <span id="api-status">Checking...</span>
+        </a>
+        <a class="status-pill" href="/settings" title="Manage WAF Definitions">
+            <div class="status-dot" id="waf-dot"></div>
+            <span id="waf-status">WAF Definitions</span>
+        </a>
+        <a class="status-pill" href="/settings" title="Manage Ground Truth">
+            <div class="status-dot" id="gt-dot"></div>
+            <span id="gt-status">Ground Truth</span>
+        </a>
+        <a class="status-pill" href="/history" title="View Upload History">
+            <div class="status-dot" id="db-dot"></div>
+            <span id="db-status">History DB</span>
+        </a>
+    </div>
+    <div id="version-info">v3.2.1</div>
+</div>
 
 <div class="main">
     <h1 class="page-title">Settings</h1>
@@ -519,5 +568,36 @@ function filterBaselineList() {
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGTModal();if(_openPanel)closePanel(_openPanel);}});
 loadWafDefs();loadGT();loadBaselines();loadSettings();
 </script>
+
+<script>
+async function checkStatus() {
+    try {
+        const [statusRes, dashRes] = await Promise.all([
+            fetch('/api/status'),
+            fetch('/api/dashboard/summary')
+        ]);
+        const status = await statusRes.json();
+        const dash = await dashRes.json();
+        const apiDot = document.getElementById('api-dot');
+        const apiText = document.getElementById('api-status');
+        if (status.api_key_configured) { apiDot.className = 'status-dot green'; apiText.textContent = 'API Connected'; }
+        else { apiDot.className = 'status-dot red'; apiText.textContent = 'API Key Missing'; }
+        const wafDot = document.getElementById('waf-dot');
+        const wafText = document.getElementById('waf-status');
+        if (status.waf_loaded) { wafDot.className = 'status-dot green'; wafText.textContent = 'WAF: ' + status.waf_categories.length + ' categories'; }
+        else { wafDot.className = 'status-dot yellow'; wafText.textContent = 'WAF: Not loaded'; }
+        const gtDot = document.getElementById('gt-dot');
+        const gtText = document.getElementById('gt-status');
+        if (status.ground_truth_loaded) { gtDot.className = 'status-dot green'; gtText.textContent = 'GT: ' + status.ground_truth_count + ' examples'; }
+        else { gtDot.className = 'status-dot yellow'; gtText.textContent = 'GT: Not loaded'; }
+        const dbDot = document.getElementById('db-dot');
+        const dbText = document.getElementById('db-status');
+        dbDot.className = 'status-dot green';
+        dbText.textContent = 'History: ' + dash.total_classifications + ' records';
+    } catch (e) { /* silent */ }
+}
+checkStatus();
+</script>
+
 </body>
 </html>

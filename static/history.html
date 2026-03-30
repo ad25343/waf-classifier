@@ -445,7 +445,35 @@
             color: var(--text-muted);
             font-size: 13px;
         }
-    </style>
+    
+        /* ── Status bar ── */
+        .status-bar {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 8px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .status-pills { display: flex; gap: 12px; }
+        .status-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-muted);
+            transition: background 0.15s, color 0.15s;
+        }
+        .status-pill:hover { background: var(--border); color: var(--text-primary); cursor: pointer; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.green { background: var(--success); }
+        .status-dot.yellow { background: var(--warning); }
+        .status-dot.red { background: var(--error); }
+
+        </style>
 </head>
 <body>
 
@@ -471,6 +499,27 @@
         <span class="theme-icon"></span>
     </button>
 </nav>
+<div class="status-bar">
+    <div class="status-pills">
+        <a class="status-pill" href="/settings" title="API Configuration">
+            <div class="status-dot" id="api-dot"></div>
+            <span id="api-status">Checking...</span>
+        </a>
+        <a class="status-pill" href="/settings" title="Manage WAF Definitions">
+            <div class="status-dot" id="waf-dot"></div>
+            <span id="waf-status">WAF Definitions</span>
+        </a>
+        <a class="status-pill" href="/settings" title="Manage Ground Truth">
+            <div class="status-dot" id="gt-dot"></div>
+            <span id="gt-status">Ground Truth</span>
+        </a>
+        <a class="status-pill" href="/history" title="View Upload History">
+            <div class="status-dot" id="db-dot"></div>
+            <span id="db-status">History DB</span>
+        </a>
+    </div>
+    <div id="version-info">v3.2.1</div>
+</div>
 
 <div class="content">
     <div style="margin-bottom:20px;">
@@ -787,10 +836,17 @@
                     <span>Map Columns</span>
                     <span style="font-size:12px;color:var(--text-muted);font-weight:400;">Step 1.5 — Confirm field mappings</span>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <span id="mapping-filename" style="color:var(--accent);font-weight:600;"></span>
-                    <span id="mapping-rowcount" style="color:var(--text-muted);font-size:13px;margin-left:8px;"></span>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <div>
+                        <span id="mapping-filename" style="color:var(--accent);font-weight:600;"></span>
+                        <span id="mapping-rowcount" style="color:var(--text-muted);font-size:13px;margin-left:8px;"></span>
+                    </div>
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <button class="btn btn-primary" onclick="confirmMapping()">Continue to AI Classification</button>
+                        <button class="btn btn-outline" onclick="cancelMapping()">Re-upload</button>
+                    </div>
                 </div>
+                <div id="mapping-status" style="margin-bottom:8px;font-size:13px;"></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;" id="mapping-fields"></div>
                 <div style="margin-bottom:16px;">
                     <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">Sample Data Preview</div>
@@ -801,11 +857,6 @@
                         </table>
                     </div>
                 </div>
-                <div style="display:flex;gap:12px;align-items:center;">
-                    <button class="btn btn-primary" onclick="confirmMapping()">Continue to AI Classification</button>
-                    <button class="btn btn-outline" onclick="cancelMapping()">Re-upload</button>
-                </div>
-                <div id="mapping-status" style="margin-top:8px;font-size:13px;"></div>
             </div>
         </div>
 
@@ -1463,6 +1514,22 @@ function showMappingStep(data) {
     document.getElementById('mapping-filename').textContent = data.filename;
     document.getElementById('mapping-rowcount').textContent = `(${data.total_rows} rows)`;
 
+    const fieldHints = {
+        title:          'e.g. Summary, Story Title, Name',
+        description:    'e.g. Description, Details, Body',
+        waf_category:   'e.g. WAF Category, Category',
+        waf_color:      'e.g. WAF Color, Color',
+        run_change:     'e.g. Run/Change',
+        subcategory:    'e.g. Sub-Category, WAF Sub',
+        confidence:     'e.g. Confidence',
+        team:           'e.g. Team, Squad, Group',
+        epic:           'e.g. Epic, Initiative',
+        parent_feature: 'e.g. Parent Feature, Feature, Capability',
+        timestamp:      'e.g. Created, Date, Timestamp',
+        story_id:       'e.g. Story ID, Issue Key (e.g. PROJ-123)',
+        feature_id:     'e.g. Feature ID, Feature Key (e.g. PROJ-456)',
+        epic_id:        'e.g. Epic ID, Epic Key, Epic Link (e.g. PROJ-789)',
+    };
     const fieldsEl = document.getElementById('mapping-fields');
     fieldsEl.innerHTML = data.target_fields.map(f => {
         const options = ['<option value="">(none)</option>'].concat(
@@ -1472,9 +1539,11 @@ function showMappingStep(data) {
             })
         ).join('');
         const star = f.required ? '<span class="required-star">*</span>' : '';
+        const hint = fieldHints[f.key] ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${fieldHints[f.key]}</div>` : '';
         return `<div class="mapping-group">
             <label>${esc(f.label)} ${star}</label>
             <select id="map-${f.key}" onchange="updateMappingPreview()">${options}</select>
+            ${hint}
         </div>`;
     }).join('');
 
@@ -2387,5 +2456,36 @@ function filterUploadDropdown(searchId, selectId) {
     });
 }
 </script>
+
+<script>
+async function checkStatus() {
+    try {
+        const [statusRes, dashRes] = await Promise.all([
+            fetch('/api/status'),
+            fetch('/api/dashboard/summary')
+        ]);
+        const status = await statusRes.json();
+        const dash = await dashRes.json();
+        const apiDot = document.getElementById('api-dot');
+        const apiText = document.getElementById('api-status');
+        if (status.api_key_configured) { apiDot.className = 'status-dot green'; apiText.textContent = 'API Connected'; }
+        else { apiDot.className = 'status-dot red'; apiText.textContent = 'API Key Missing'; }
+        const wafDot = document.getElementById('waf-dot');
+        const wafText = document.getElementById('waf-status');
+        if (status.waf_loaded) { wafDot.className = 'status-dot green'; wafText.textContent = 'WAF: ' + status.waf_categories.length + ' categories'; }
+        else { wafDot.className = 'status-dot yellow'; wafText.textContent = 'WAF: Not loaded'; }
+        const gtDot = document.getElementById('gt-dot');
+        const gtText = document.getElementById('gt-status');
+        if (status.ground_truth_loaded) { gtDot.className = 'status-dot green'; gtText.textContent = 'GT: ' + status.ground_truth_count + ' examples'; }
+        else { gtDot.className = 'status-dot yellow'; gtText.textContent = 'GT: Not loaded'; }
+        const dbDot = document.getElementById('db-dot');
+        const dbText = document.getElementById('db-status');
+        dbDot.className = 'status-dot green';
+        dbText.textContent = 'History: ' + dash.total_classifications + ' records';
+    } catch (e) { /* silent */ }
+}
+checkStatus();
+</script>
+
 </body>
 </html>

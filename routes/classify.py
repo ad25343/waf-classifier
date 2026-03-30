@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 
 from state import waf_store, ground_truth_store, chat_history
 from config import AI_MODEL, UPLOAD_FOLDER
-from database import get_db, save_classification
+from database import get_db, save_classification, get_setting, set_setting
 from waf_core import parse_waf_file, parse_ground_truth, get_client, build_system_prompt
 
 logger = logging.getLogger(__name__)
@@ -37,10 +37,11 @@ def upload_waf():
 
     try:
         text, categories, df = parse_waf_file(filepath, filename)
-        waf_store["definitions"] = df  # Store DataFrame for /api/waf-definitions
+        waf_store["definitions"] = df
         waf_store["raw_text"] = text
         waf_store["filename"] = filename
         waf_store["categories"] = categories
+        set_setting("active_waf_path", filepath)
 
         return jsonify({
             "success": True,
@@ -75,9 +76,8 @@ def upload_ground_truth():
         ground_truth_store["examples"] = examples
         ground_truth_store["example_count"] = len(examples)
         ground_truth_store["stats"] = stats
-
-        # Build a readable text version for the raw store
         ground_truth_store["raw_text"] = f"{len(examples)} examples across {len(stats)} categories"
+        set_setting("active_gt_path", filepath)
 
         return jsonify({
             "success": True,

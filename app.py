@@ -54,43 +54,52 @@ except ImportError:
 
 # ── Startup ──────────────────────────────────────────────────────
 def auto_load_sample_data():
-    """Auto-load WAF definitions and ground truth from sample-data/ on startup."""
-    sample_dir = os.path.join(os.path.dirname(__file__), "sample-data")
+    """Auto-load WAF definitions and ground truth on startup.
+    Priority: 1) last user-uploaded file (from DB), 2) test-data/ defaults.
+    """
+    from database import get_setting
+    test_dir = os.path.join(os.path.dirname(__file__), "test-data")
 
-    # Load WAF definitions
-    waf_file = os.path.join(sample_dir, "waf-definitions.csv")
+    # ── WAF Definitions ──────────────────────────────────────────────
+    waf_file = get_setting("active_waf_path") or os.path.join(test_dir, "waf-definitions.csv")
     if os.path.exists(waf_file):
         try:
-            text, categories, df = parse_waf_file(waf_file, "waf-definitions.csv")
+            filename = os.path.basename(waf_file)
+            text, categories, df = parse_waf_file(waf_file, filename)
             waf_store["definitions"] = df
             waf_store["raw_text"] = text
-            waf_store["filename"] = "waf-definitions.csv"
+            waf_store["filename"] = filename
             waf_store["categories"] = categories
-            print(f"  Auto-loaded WAF definitions: {len(categories)} categories")
+            print(f"  Auto-loaded WAF definitions ({filename}): {len(categories)} categories")
         except Exception as e:
             print(f"  Warning: Failed to auto-load WAF definitions: {e}")
+    else:
+        print("  WAF definitions not found — upload via Settings.")
 
-    # Load ground truth
-    gt_file = os.path.join(sample_dir, "sample-ground-truth.csv")
+    # ── Ground Truth ─────────────────────────────────────────────────
+    gt_file = get_setting("active_gt_path") or os.path.join(test_dir, "sample-ground-truth.csv")
     if os.path.exists(gt_file):
         try:
-            examples, stats, col_map = parse_ground_truth(gt_file, "sample-ground-truth.csv")
+            filename = os.path.basename(gt_file)
+            examples, stats, col_map = parse_ground_truth(gt_file, filename)
             ground_truth_store["loaded"] = True
-            ground_truth_store["filename"] = "sample-ground-truth.csv"
+            ground_truth_store["filename"] = filename
             ground_truth_store["examples"] = examples
             ground_truth_store["example_count"] = len(examples)
             ground_truth_store["stats"] = stats
             ground_truth_store["raw_text"] = f"{len(examples)} examples across {len(stats)} categories"
-            print(f"  Auto-loaded ground truth: {len(examples)} examples across {len(stats)} categories")
+            print(f"  Auto-loaded ground truth ({filename}): {len(examples)} examples")
         except Exception as e:
             print(f"  Warning: Failed to auto-load ground truth: {e}")
+    else:
+        print("  Ground truth not found — upload via Settings.")
 
     # Save a "default" baseline if it doesn't exist yet
     default_waf = os.path.join(BASELINE_DIR, "waf-definitions_baseline_default.csv")
     default_gt = os.path.join(BASELINE_DIR, "ground-truth_baseline_default.csv")
     if not os.path.exists(default_waf) or not os.path.exists(default_gt):
-        waf_src = os.path.join(sample_dir, "waf-definitions.csv")
-        gt_src = os.path.join(sample_dir, "sample-ground-truth.csv")
+        waf_src = os.path.join(test_dir, "waf-definitions.csv")
+        gt_src = os.path.join(test_dir, "sample-ground-truth.csv")
         if os.path.exists(waf_src) and not os.path.exists(default_waf):
             shutil.copy2(waf_src, default_waf)
         if os.path.exists(gt_src) and not os.path.exists(default_gt):
