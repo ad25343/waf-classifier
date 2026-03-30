@@ -51,6 +51,9 @@ try:
 except ImportError:
     pass  # teams.py not yet created
 
+from routes.merge import merge_bp
+app.register_blueprint(merge_bp)
+
 
 # ── Startup ──────────────────────────────────────────────────────
 def auto_load_sample_data():

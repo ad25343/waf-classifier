@@ -65,6 +65,24 @@ Open **http://localhost:8080** in your browser. You should see the home page wit
 
 ---
 
+## Merge JIRA Export Files
+
+If your JIRA data comes as separate Epic, Feature, and Story export files:
+
+1. Go to **File Merger** from the nav or home page
+2. Upload your three files:
+   - **Epic Attributes** — must contain Epic ID (e.g. `Jira SaaS Epic#`) and Summary
+   - **Feature Attributes** — must contain Feature ID, Feature Summary, and Parent Epic Number
+   - **Story Attributes** — must contain Story #, Story Name, and Parent Feature
+3. Enter a **Job Name** (auto-filled with today's date — edit to something meaningful like `SOX Compliance PI-3`)
+4. Click **Process Files** — the app joins the three files and shows a stats summary and 20-row preview
+5. Click **Submit for Analysis** to send the merged file directly to the AI classifier — you'll land on the column mapping step automatically
+6. Alternatively click **Download Merged CSV** to save locally and upload manually later
+
+Sample files for testing are in `test-data/merge-samples/`.
+
+---
+
 ## Explore the Teams Page
 
 1. Click **Teams** in the nav bar
@@ -146,19 +164,26 @@ Re-generate or modify test datasets using `test-data/generate_test_data.py`.
 | JSON | .json | WAF definitions only |
 | Text | .txt | WAF definitions only |
 
+**Recommended column order** (matches test data files):
+
+```
+Epic ID · Feature ID · Story ID · Epic · Parent Feature · Story Title · Story Description · Team · WAF Category · WAF Color · Sub-Category · Confidence · Run/Change · Timestamp · Issue Key
+```
+
 **Column names recognized during bulk import:**
 
-| Field | Recognized headers |
-|-------|-------------------|
-| Title | title, summary, story name, story title, name |
-| Description | desc, description, detail, acceptance, body |
-| WAF Category | category, waf cat, waf category |
-| Team | team, squad, group |
-| Epic | epic, initiative, program |
-| Parent Feature | feature, parent feature, capability |
-| Story ID | issue key, story id, key, ticket, jira id |
-| Feature ID | feature id, feature key, parent id |
-| Epic ID | epic id, epic key, epic link, initiative id |
+| Field | Recognized headers | Notes |
+|-------|--------------------|-------|
+| Epic ID | epic id, epic key, epic link, initiative id | e.g. EP-C001 |
+| Feature ID | feature id, feature key, parent id | e.g. F-C001 |
+| Story ID | **Story ID** (priority), issue key, key, ticket, jira id | `Story ID` wins when both present |
+| Epic | epic, initiative, program | Epic name |
+| Parent Feature | feature, parent feature, capability | Feature name |
+| Story Title | **Story Title** (priority), title, summary, story, name | **Required** |
+| Story Description | **Story Description** (priority), description, desc, detail, body, acceptance | |
+| Team | team, squad, group | |
+| WAF Category | category, waf cat, waf category | |
+| Issue Key | — (fallback for Story ID only) | e.g. PROJ-123 |
 
 ---
 

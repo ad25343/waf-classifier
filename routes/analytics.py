@@ -892,6 +892,7 @@ def search_classifications():
             SELECT c.id, c.story_title, c.waf_category, c.waf_color,
                    c.confidence, c.was_mismatch, c.team, c.epic,
                    c.parent_feature, c.upload_id, c.timestamp,
+                   c.story_id, c.feature_id, c.epic_id,
                    u.filename, u.uploaded_at,
                    rank
             FROM classifications c
@@ -925,6 +926,9 @@ def search_classifications():
             "upload_id": r["upload_id"],
             "filename": r["filename"] or "Unknown source",
             "date": (r["uploaded_at"] or r["timestamp"] or "")[:10],
+            "story_id": r["story_id"] or "",
+            "feature_id": r["feature_id"] or "",
+            "epic_id": r["epic_id"] or "",
         })
 
     return jsonify({"results": results, "total": len(results), "query": q})

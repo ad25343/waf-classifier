@@ -21,7 +21,7 @@ DEFAULT_WAF_CATEGORIES = [
     "Regulatory Mandated Change",
     "Enterprise Strategic Priority",
     "Top Divisional Priority",
-    "Other Blocked Priority",
+    "Other Block Priority",
 ]
 
 WAF_ALIASES = {
@@ -46,9 +46,9 @@ WAF_ALIASES = {
     "top divisional": "Top Divisional Priority",
     "tdp": "Top Divisional Priority",
     "divisional priority": "Top Divisional Priority",
-    "other blocked": "Other Blocked Priority",
-    "obp": "Other Blocked Priority",
-    "blocked priority": "Other Blocked Priority",
+    "other blocked": "Other Block Priority",
+    "obp": "Other Block Priority",
+    "blocked priority": "Other Block Priority",
 }
 
 # In-memory store for ground truth examples

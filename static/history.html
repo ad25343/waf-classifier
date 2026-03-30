@@ -493,6 +493,7 @@
     <a href="/history" class="top-nav-link active">Analytics</a>
     <a href="/lineage" class="top-nav-link">Epic Lineage</a>
     <a href="/teams" class="top-nav-link">Teams</a>
+    <a href="/merge" class="top-nav-link">File Merger</a>
     <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
     <a href="/settings" class="top-nav-link">Settings</a>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" style="margin-left:8px;">
@@ -518,7 +519,7 @@
             <span id="db-status">History DB</span>
         </a>
     </div>
-    <div id="version-info">v3.2.1</div>
+    <div id="version-info">v3.2.3</div>
 </div>
 
 <div class="content">
@@ -798,18 +799,26 @@
                 <table style="font-size:13px;">
                     <thead><tr><th>Column</th><th>Required</th><th>Description</th></tr></thead>
                     <tbody>
-                        <tr><td style="color:var(--text-primary)">Story Title / Summary</td><td><span class="badge high">Required</span></td><td>JIRA story title</td></tr>
-                        <tr><td style="color:var(--text-primary)">Description</td><td><span class="badge medium">Optional</span></td><td>Helps AI classify more accurately</td></tr>
+                        <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Hierarchy IDs —</td></tr>
+                        <tr><td style="color:var(--text-primary)">Epic ID</td><td><span class="badge medium">Optional</span></td><td>Parent epic identifier (e.g. EP-C001, Epic Link in JIRA)</td></tr>
+                        <tr><td style="color:var(--text-primary)">Feature ID</td><td><span class="badge medium">Optional</span></td><td>Parent feature identifier (e.g. F-C001)</td></tr>
+                        <tr><td style="color:var(--text-primary)">Story ID</td><td><span class="badge medium">Optional</span></td><td>Alphanumeric story identifier (e.g. STR-10001)</td></tr>
+                        <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Hierarchy Names —</td></tr>
+                        <tr><td style="color:var(--text-primary)">Epic</td><td><span class="badge medium">Optional</span></td><td>Parent epic name for lineage tracking</td></tr>
+                        <tr><td style="color:var(--text-primary)">Parent Feature</td><td><span class="badge medium">Optional</span></td><td>Feature grouping under the epic</td></tr>
+                        <tr><td style="color:var(--text-primary)">Story Title</td><td><span class="badge high">Required</span></td><td>JIRA story title or summary</td></tr>
+                        <tr><td style="color:var(--text-primary)">Story Description</td><td><span class="badge medium">Optional</span></td><td>Helps AI classify more accurately</td></tr>
+                        <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Organisation —</td></tr>
+                        <tr><td style="color:var(--text-primary)">Team</td><td><span class="badge medium">Optional</span></td><td>Team or squad name</td></tr>
+                        <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— WAF Classification —</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Category</td><td><span class="badge medium">Optional</span></td><td>Existing tag — AI will verify against this</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Color</td><td><span class="badge medium">Optional</span></td><td>GRAY, BLACK, RED, ORANGE, YELLOW, GREEN</td></tr>
-                        <tr><td style="color:var(--text-primary)">Epic</td><td><span class="badge medium">Optional</span></td><td>Parent epic for lineage tracking</td></tr>
-                        <tr><td style="color:var(--text-primary)">Parent Feature</td><td><span class="badge medium">Optional</span></td><td>Feature grouping under the epic</td></tr>
-                        <tr><td style="color:var(--text-primary)">Team</td><td><span class="badge medium">Optional</span></td><td>Team or squad name</td></tr>
-                        <tr><td style="color:var(--text-primary)">Timestamp</td><td><span class="badge medium">Optional</span></td><td>Date for trend analysis (ISO format preferred)</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Sub-Category</td><td><span class="badge medium">Optional</span></td><td>Sub-category within the WAF category</td></tr>
-                        <tr><td style="color:var(--text-primary)">Story ID / Issue Key</td><td><span class="badge medium">Optional</span></td><td>JIRA issue key or ADO ID (e.g. PROJ-123)</td></tr>
-                        <tr><td style="color:var(--text-primary)">Feature ID</td><td><span class="badge medium">Optional</span></td><td>Parent feature or capability identifier</td></tr>
-                        <tr><td style="color:var(--text-primary)">Epic ID</td><td><span class="badge medium">Optional</span></td><td>Parent epic identifier (e.g. Epic Link in JIRA)</td></tr>
+                        <tr><td style="color:var(--text-primary)">Confidence</td><td><span class="badge medium">Optional</span></td><td>HIGH, MEDIUM, or LOW</td></tr>
+                        <tr><td style="color:var(--text-primary)">Run/Change</td><td><span class="badge medium">Optional</span></td><td>RUN (BAU) or CHANGE (project work)</td></tr>
+                        <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Metadata —</td></tr>
+                        <tr><td style="color:var(--text-primary)">Timestamp</td><td><span class="badge medium">Optional</span></td><td>Date for trend analysis (ISO format preferred)</td></tr>
+                        <tr><td style="color:var(--text-primary)">Issue Key</td><td><span class="badge medium">Optional</span></td><td>JIRA issue key / ADO ID (e.g. PROJ-123) — fallback for Story ID</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -933,6 +942,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const theme = document.documentElement.getAttribute('data-theme') || 'dark';
     const icon = document.querySelector('.theme-icon');
     if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+
+    // Auto-trigger mapping step if redirected from File Merger
+    const pending = sessionStorage.getItem('waf_pending_preview');
+    if (pending) {
+        sessionStorage.removeItem('waf_pending_preview');
+        try {
+            const data = JSON.parse(pending);
+            if (data && data.success && data.preview_id) {
+                // Switch to Upload tab first
+                const uploadTab = document.querySelector('.tab[data-tab="upload"]');
+                if (uploadTab) uploadTab.click();
+                // Small delay to let tab render, then show mapping step
+                setTimeout(() => {
+                    _previewData = data;
+                    showMappingStep(data);
+                    const statusEl = document.getElementById('import-status');
+                    if (statusEl) statusEl.innerHTML =
+                        '<span style="color:var(--success)">&#10003; Merged file ready — confirm column mappings below</span>';
+                }, 100);
+            }
+        } catch(e) { /* corrupt sessionStorage — ignore */ }
+    }
 });
 
 const WAF_COLORS_MAP = {
@@ -1515,8 +1546,8 @@ function showMappingStep(data) {
     document.getElementById('mapping-rowcount').textContent = `(${data.total_rows} rows)`;
 
     const fieldHints = {
-        title:          'e.g. Summary, Story Title, Name',
-        description:    'e.g. Description, Details, Body',
+        title:          'e.g. Story Title, Summary, Name',
+        description:    'e.g. Story Description, Description, Details, Body',
         waf_category:   'e.g. WAF Category, Category',
         waf_color:      'e.g. WAF Color, Color',
         run_change:     'e.g. Run/Change',
@@ -1526,9 +1557,9 @@ function showMappingStep(data) {
         epic:           'e.g. Epic, Initiative',
         parent_feature: 'e.g. Parent Feature, Feature, Capability',
         timestamp:      'e.g. Created, Date, Timestamp',
-        story_id:       'e.g. Story ID, Issue Key (e.g. PROJ-123)',
-        feature_id:     'e.g. Feature ID, Feature Key (e.g. PROJ-456)',
-        epic_id:        'e.g. Epic ID, Epic Key, Epic Link (e.g. PROJ-789)',
+        story_id:       'e.g. Story ID (STR-10001) or Issue Key (PROJ-123) — either maps here',
+        feature_id:     'e.g. Feature ID (F-C001) or Feature Key',
+        epic_id:        'e.g. Epic ID (EP-C001), Epic Key, or Epic Link',
     };
     const fieldsEl = document.getElementById('mapping-fields');
     fieldsEl.innerHTML = data.target_fields.map(f => {
@@ -2486,6 +2517,76 @@ async function checkStatus() {
 }
 checkStatus();
 </script>
-
+<script>
+/* ── Global Search ──────────────────────────────────────── */
+(function() {
+    let _timer = null;
+    const inp = document.getElementById('global-search-input');
+    const box = document.getElementById('global-search-results');
+    if (!inp || !box) return;
+    inp.addEventListener('input', function() {
+        clearTimeout(_timer);
+        const q = this.value.trim();
+        if (q.length < 2) { box.classList.remove('visible'); return; }
+        _timer = setTimeout(() => _doSearch(q), 250);
+    });
+    inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { box.classList.remove('visible'); inp.blur(); }
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#global-search-wrap')) box.classList.remove('visible');
+    });
+    async function _doSearch(q) {
+        box.innerHTML = '<div class="search-loading">Searching…</div>';
+        box.classList.add('visible');
+        try {
+            const res = await fetch('/api/search?q=' + encodeURIComponent(q) + '&limit=15');
+            const data = await res.json();
+            _render(data, q);
+        } catch(e) { box.innerHTML = '<div class="search-empty">Search error</div>'; }
+    }
+    function _esc(s) {
+        return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function _highlight(t, q) {
+        let o = t;
+        q.split(/\s+/).filter(Boolean).forEach(w => {
+            o = o.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark>$1</mark>');
+        });
+        return o;
+    }
+    function _render(data, q) {
+        if (!data.results || data.results.length === 0) {
+            box.innerHTML = '<div class="search-empty">No results for &ldquo;' + _esc(q) + '&rdquo;</div>';
+            return;
+        }
+        const CM = {GRAY:'#6b7280',GREEN:'#16a34a',BLUE:'#2563eb',YELLOW:'#d97706',ORANGE:'#ea580c',RED:'#dc2626',PURPLE:'#9333ea',TEAL:'#0d9488'};
+        let html = '<div class="search-results-header">' + data.results.length + ' result' + (data.results.length!==1?'s':'') + ' for &ldquo;' + _esc(q) + '&rdquo;</div>';
+        data.results.forEach(r => {
+            const c = CM[r.color] || '#6b7280';
+            const ids = [r.story_id, r.feature_id, r.epic_id].filter(Boolean)
+                .map(id => '<span style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:monospace;">' + _esc(id) + '</span>')
+                .join(' ');
+            const badge = r.color ? '<span style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '44;border-radius:4px;padding:1px 6px;font-size:10px;">' + _esc(r.color) + '</span>' : '';
+            const mismatch = r.is_mismatch ? '<span style="color:var(--warning);font-size:10px;margin-left:4px;">⚠ Mismatch</span>' : '';
+            const crumbs = [];
+            if (r.epic_id || r.epic) crumbs.push(_esc(((r.epic_id ? r.epic_id + ' ' : '') + (r.epic||'')).trim()));
+            if (r.feature_id || r.feature) crumbs.push(_esc(((r.feature_id ? r.feature_id + ' ' : '') + (r.feature||'')).trim()));
+            if (r.story_id) crumbs.push(_esc(r.story_id));
+            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=\'/history\';">';
+            html += '<div class="search-result-title">' + _highlight(_esc(r.title), q) + '</div>';
+            if (crumbs.length) html += '<div class="search-result-breadcrumb">' + crumbs.join('<span> &rsaquo; </span>') + '</div>';
+            html += '<div class="search-result-badges">';
+            if (r.category) html += '<span style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px;">' + _esc(r.category) + '</span> ';
+            html += badge + mismatch;
+            if (ids) html += '<span style="margin-left:6px;">' + ids + '</span>';
+            html += '</div>';
+            html += '<div class="search-result-source">' + _esc(r.filename) + (r.date ? ' · ' + r.date : '') + (r.team ? ' · ' + _esc(r.team) : '') + '</div>';
+            html += '</div>';
+        });
+        box.innerHTML = html;
+    }
+})();
+</script>
 </body>
 </html>

@@ -2,6 +2,67 @@
 
 ---
 
+## v3.3.0 — March 2026
+
+File Merger, global search wired, column ordering, Story Title / Story Description rename, WAF category rename.
+
+### New Features
+
+- **File Merger page (`/merge`)** — New screen that accepts three JIRA export files (Epic Attributes, Feature Attributes, Story Attributes) and merges them into the canonical WAF import format. Auto-detects columns by keyword priority. Joins Story → Feature → Epic to populate the full hierarchy. WAF and Team resolved from Story first, falling back to Feature then Epic. Job Name field (auto-filled with today's date, editable) used as the filename in Analytics upload history.
+- **Submit for Analysis** — "Submit for Analysis" button on the Merge page sends the merged file directly into the Analytics upload pipeline without requiring a manual re-upload. Redirects to `/history` and auto-triggers the column mapping step via `sessionStorage`.
+- **Sample merge files** — Three sample JIRA export files added to `test-data/merge-samples/`: `sample-epic-attributes.csv`, `sample-feature-attributes.csv`, `sample-story-attributes.csv`. 5 epics · 10 features · 24 stories, all hierarchy links verified clean.
+- **Global search wired** — Search bar was UI-only in previous releases. Now fully functional: debounced fetch to `/api/search`, results card with highlighted matches, breadcrumb (Epic ID → Feature ID → Story ID), WAF badges, mismatch indicator, and upload source. Present on all pages.
+- **IDs in search results** — `/api/search` now returns and displays `story_id`, `feature_id`, `epic_id` in results.
+
+### Column & Field Changes
+
+- **Column order standardised** — All three new test CSVs and the Expected File Format table now follow: `Epic ID · Feature ID · Story ID · Epic · Parent Feature · Story Title · Story Description · Team · WAF Category · WAF Color · Sub-Category · Confidence · Run/Change · Timestamp · Issue Key`
+- **"Title" → "Story Title", "Description" → "Story Description"** — Renamed in all test CSV headers, `generate_test_data.py`, column mapping labels (`verify.py`), `find_col` keyword lists, `history.html` Expected File Format table and field hints, and docs.
+- **"Other Blocked Priority" → "Other Block Priority"** — Renamed across WAF definitions, all test CSVs, ground truth, baselines, `state.py`, generator script, settings page, and README.
+
+### UX
+
+- **Expected File Format table** — Reordered with section dividers (Hierarchy IDs / Hierarchy Names / Organisation / WAF Classification / Metadata). Added Confidence and Run/Change rows that were previously missing.
+- **Story ID and Issue Key as separate rows** — Previously shown as one combined row; now documented separately with individual examples and descriptions.
+- **File Merger nav link** — Added to all 9 pages and Home menu grid (🔀, "Data Prep" badge).
+
+### API Changes
+
+- `POST /api/merge/process` — Merge three JIRA export files into WAF import format
+- `GET /api/merge/download/<token>` — Download merged CSV
+- `POST /api/merge/send-to-classifier/<token>` — Send merged file directly to classify pipeline; returns full preview JSON for seamless handoff to `/history`
+- `GET /api/search` — Now returns `story_id`, `feature_id`, `epic_id` in results
+
+### Docs
+
+- API Reference — File Merger section added
+- Quick Start — Recommended column order added, recognition table updated for `Story Title` / `Story Description` priority
+- All docs updated for `Other Block Priority` rename
+
+---
+
+## v3.2.3 — March 2026
+
+Global search wired up, IDs in search results, dual Story ID / Issue Key column support documented.
+
+### New Features
+
+- **Global search now functional** — The search bar in the nav was previously UI-only. Now wired up with debounced fetch to `/api/search`, results card with highlighted matches, breadcrumb trail (Epic ID → Feature ID → Story ID), WAF category/color badges, mismatch indicator, and upload source. Present on all pages.
+- **IDs in search results** — Search results now display Story ID, Feature ID, and Epic ID tags inline. All three ID fields are also returned by the `/api/search` endpoint.
+- **Dual Story ID / Issue Key columns** — Both `Story ID` (e.g. STR-10001) and `Issue Key` (e.g. COMP-001) are retained in all test data files and supported in uploads. `Story ID` takes priority when both are present; `Issue Key` is the fallback. Documented in Expected File Format, API Reference, and Quick Start.
+
+### Bug Fixes
+
+- **`/api/search` missing ID fields** — `story_id`, `feature_id`, `epic_id` were not included in the SELECT or response JSON. Added to both.
+
+### Docs
+
+- **Expected File Format** — Split `Story ID / Issue Key` row into two separate rows: `Story ID` and `Issue Key`, each with correct description and example format.
+- **API Reference** — Updated `story_id` column recognition table to note `Story ID` has priority over `Issue Key`.
+- **Quick Start** — Column auto-detection table updated to reflect `Story ID` priority.
+
+---
+
 ## v3.2.2 — March 2026
 
 Auto-load WAF/GT on startup, status bar on all pages, upload screen UX fixes, Story ID hint fix.
@@ -70,7 +131,7 @@ UX overhaul, global search, team analytics redesign, and data model improvements
 - **Approval scoped to mismatches** — `approved` flag is now only set to `true` for mismatch rows when saving from the bulk verify table. Match rows are saved without the approved flag. Verify table pre-selects only mismatch rows by default.
 - **Lineage story sort** — Sort controls (Title, Category, Color, Confidence, Status) added to the Story Lineage tree. Sort preserves the open/closed state of feature sections — clicking sort does not collapse the tree.
 - **Upload dropdown search removed** — Data Source dropdowns on Analytics and Lineage pages now show the dropdown directly. The "Search uploads..." input above the dropdown was removed.
-- **Global search scoped** — Global search bar not shown on History, Teams, or Lineage pages, which have their own per-table filters.
+- **Global search scoped** — Global search bar not shown on History, Teams, or Lineage pages, which have their own per-table filters. *(Planned — currently shown on all pages, pending removal from those three pages.)*
 
 ### API Changes
 

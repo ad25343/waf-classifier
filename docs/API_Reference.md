@@ -381,7 +381,7 @@ Upload a file and return column info for field mapping without starting AI class
     "description": "description",
     "story_id": "issue key"
   },
-  "target_fields": [{"key": "title", "label": "Title", "required": true}],
+  "target_fields": [{"key": "title", "label": "Story Title", "required": true}],
   "sample_rows": [{"story title": "Fix bug", "description": "..."}],
   "total_rows": 100,
   "preview_id": "uuid"
@@ -390,11 +390,11 @@ Upload a file and return column info for field mapping without starting AI class
 
 **Recognized column names for ID fields:**
 
-| Field | Recognized headers |
-|-------|-------------------|
-| `story_id` | Issue key, Story ID, Key, Ticket, JIRA ID, Item ID |
-| `feature_id` | Feature ID, Feature key, Parent ID, Parent key |
-| `epic_id` | Epic ID, Epic key, Epic link, Initiative ID |
+| Field | Recognized headers | Notes |
+|-------|-------------------|----|
+| `story_id` | **Story ID** (priority), Issue Key, Key, Ticket, JIRA ID, Item ID | Both `Story ID` (e.g. STR-10001) and `Issue Key` (e.g. COMP-001) are accepted; `Story ID` takes priority when both are present |
+| `feature_id` | Feature ID, Feature key, Parent ID, Parent key | e.g. F-C001 |
+| `epic_id` | Epic ID, Epic key, Epic link, Initiative ID | e.g. EP-C001 |
 
 ### POST /api/bulk-verify
 
@@ -715,3 +715,76 @@ Restore WAF definitions and ground truth from a baseline.
 ```json
 { "timestamp": "default" }
 ```
+
+---
+
+## File Merger
+
+### POST /api/merge/process
+
+Accept three JIRA export files and merge them into the canonical WAF import format.
+
+**Request:** `multipart/form-data`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `epic_file` | file | Epic Attributes CSV or XLSX |
+| `feature_file` | file | Feature Attributes CSV or XLSX |
+| `story_file` | file | Story Attributes CSV or XLSX |
+
+**Auto-detected columns:**
+
+| File | Field | Recognized headers |
+|------|-------|--------------------|
+| Epic | Epic ID | Jira SaaS Epic#, Epic#, Epic Key, Epic ID |
+| Epic | Epic Name | Summary, Epic Summary, Epic Name |
+| Epic | WAF | Work Alignment Framework, Work Alignment, WAF |
+| Feature | Feature ID | Jira SaaS Feature Key, Feature Key, Feature ID |
+| Feature | Feature Name | Feature Summary, Feature Name, Summary |
+| Feature | Parent Epic | Parent Epic Number, Parent Epic, Epic# |
+| Feature | Team | Team, Team of Teams |
+| Feature | WAF | Work Alignment, WAF Derived, Work Category |
+| Story | Story ID | Story #, Story#, Issue Key, Key |
+| Story | Story Title | Story Name, Summary, Title |
+| Story | Parent Feature | Parent Feature, Feature Key |
+| Story | Team | Team, Teams |
+| Story | WAF | WAF Derived, Work Alignment |
+| Story | Timestamp | Resolved Date, Created, Date |
+
+**Join logic:** Story → Feature (via Parent Feature = Feature ID) → Epic (via Parent Epic = Epic ID). WAF priority: Story > Feature > Epic. Team priority: Story > Team.
+
+**Response:**
+```json
+{
+  "token": "a3f2c1b4",
+  "stats": {
+    "epics": 5,
+    "features": 10,
+    "stories": 24,
+    "matched": 22,
+    "unmatched_features": 0,
+    "unmatched_epics": 0
+  },
+  "preview": [ { "Epic ID": "EP-C001", "Story Title": "...", "..." : "..." } ],
+  "columns": ["Epic ID", "Feature ID", "Story ID", "Epic", "Parent Feature", "Story Title", "Story Description", "Team", "WAF Category", "WAF Color", "Sub-Category", "Confidence", "Run/Change", "Timestamp", "Issue Key"],
+  "column_map": { "epic": { "id_col": "Jira SaaS Epic#", "..." : "..." } }
+}
+```
+
+### GET /api/merge/download/\<token\>
+
+Download the merged CSV file. Token is 8-char hex from `/api/merge/process`.
+
+Returns `text/csv` as attachment named `waf_merged_<token>.csv` or the job name if provided.
+
+### POST /api/merge/send-to-classifier/\<token\>
+
+Copy the merged file into the upload pipeline and return full preview data, ready for the column mapping step in Analytics.
+
+**Request:** `multipart/form-data`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_name` | string | Optional. Shown as filename in upload history. Defaults to `waf_merged_<token>`. |
+
+**Response:** Same shape as `POST /api/bulk-verify/preview` — includes `preview_id`, `suggested_mappings`, `target_fields`, `sample_rows`, `total_rows`. Frontend stores in `sessionStorage` and redirects to `/history`, which auto-triggers the column mapping step.

@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Classifier | File Merger</title>
+    <style>
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
+            --bg-primary: #111318;
+            --bg-secondary: #1a1c25;
+            --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1;
+            --text-secondary: #9ca0b0;
+            --text-muted: #6c7086;
+            --accent: #e8944a;
+            --accent-hover: #d4832f;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --teal: #2dd4bf;
+            --purple: #c084fc;
+            --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8888a0;
+            --accent: #d4722a;
+            --accent-hover: #c0611e;
+            --success: #16a34a;
+            --warning: #d97706;
+            --error: #dc2626;
+            --teal: #0d9488;
+            --purple: #9333ea;
+            --radius: 12px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover { background: var(--border); }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* ── Header ──────────────────────────────────────────── */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .logo {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), #d4722a);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: white;
+        }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        /* ── Nav ─────────────────────────────────────────────── */
+        .top-nav {
+            justify-content: flex-end;
+            display: flex;
+            gap: 4px;
+            padding: 8px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .top-nav-link {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .top-nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .top-nav-link.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* ── Status bar ──────────────────────────────────────── */
+        .status-bar {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 6px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .status-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+        .status-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .status-pill:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-color: var(--accent);
+            cursor: pointer;
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--border); flex-shrink: 0;
+        }
+        .status-dot.green { background: var(--success); }
+        .status-dot.yellow { background: var(--warning); }
+        .status-dot.red { background: var(--error); }
+
+        /* ── Global search ───────────────────────────────────── */
+        .global-search-wrap {
+            position: relative;
+            margin-right: 12px;
+        }
+        .global-search-input {
+            width: 220px;
+            padding: 5px 32px 5px 30px;
+            font-size: 13px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-primary);
+            outline: none;
+            transition: width 0.2s, border-color 0.2s;
+        }
+        .global-search-input:focus {
+            width: 300px;
+            border-color: var(--accent);
+        }
+        .global-search-input::placeholder { color: var(--text-muted); }
+        .global-search-icon {
+            position: absolute;
+            left: 10px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .global-search-results {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 520px;
+            max-height: 480px;
+            overflow-y: auto;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius, 12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            z-index: 9999;
+            display: none;
+        }
+        .global-search-results.visible { display: block; }
+        .search-results-header {
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .search-result-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+        .search-result-item:hover { background: var(--bg-tertiary); }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-title {
+            font-size: 13px; font-weight: 500; color: var(--text-primary);
+            margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .search-result-title mark {
+            background: rgba(232,148,74,0.3); color: var(--accent);
+            border-radius: 2px; padding: 0 2px; font-style: normal;
+        }
+        .search-result-breadcrumb {
+            font-size: 11px; color: var(--text-muted); margin-bottom: 6px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .search-result-breadcrumb span { color: var(--text-secondary); }
+        .search-result-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .search-result-source { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .search-empty { padding: 24px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+        .search-loading { padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+        /* ── Main content ────────────────────────────────────── */
+        .main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+        .page-header { margin-bottom: 28px; }
+        .page-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+        .page-header p { font-size: 14px; color: var(--text-secondary); }
+
+        /* ── Step heading ────────────────────────────────────── */
+        .step-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .step-num {
+            width: 28px; height: 28px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+        .step-label { font-size: 16px; font-weight: 600; }
+
+        /* ── Upload cards ────────────────────────────────────── */
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 800px) {
+            .upload-grid { grid-template-columns: 1fr; }
+        }
+
+        .upload-card {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+        }
+        .upload-card:hover { border-color: var(--accent); background: var(--bg-tertiary); }
+        .upload-card.has-file {
+            border-style: solid;
+            border-color: var(--success);
+        }
+
+        .upload-card-title {
+            font-size: 14px; font-weight: 600; margin-bottom: 4px;
+        }
+        .upload-card-subtitle {
+            font-size: 12px; color: var(--text-muted); margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .upload-zone {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .upload-zone-icon { font-size: 28px; }
+        .upload-zone-text { font-size: 13px; color: var(--text-secondary); text-align: center; }
+        .upload-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+
+        .file-badge {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        .file-badge.visible { display: flex; }
+        .file-badge-name {
+            flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            color: var(--text-primary);
+        }
+        .file-badge-rows {
+            background: rgba(45,212,191,0.15);
+            color: var(--teal);
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 11px; font-weight: 600;
+            flex-shrink: 0;
+        }
+        .file-badge-icon { font-size: 16px; }
+
+        /* ── Process button ──────────────────────────────────── */
+        .process-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 24px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px; font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, opacity 0.15s;
+        }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .btn-secondary {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 24px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px; font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .btn-secondary:hover { background: var(--border); border-color: var(--accent); }
+
+        .spinner {
+            display: none;
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        .spinner.visible { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .process-error {
+            font-size: 13px;
+            color: var(--error);
+            display: none;
+        }
+        .process-error.visible { display: block; }
+
+        /* ── Section card ────────────────────────────────────── */
+        .section-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            display: none;
+        }
+        .section-card.visible { display: block; }
+
+        /* ── Column detection grid ───────────────────────────── */
+        .detection-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        @media (max-width: 900px) {
+            .detection-grid { grid-template-columns: 1fr; }
+        }
+
+        .detection-group h4 {
+            font-size: 13px; font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detection-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+        .detection-row:last-child { border-bottom: none; }
+        .detection-label {
+            width: 100px; flex-shrink: 0;
+            color: var(--text-muted);
+        }
+        .detection-arrow { color: var(--text-muted); flex-shrink: 0; }
+        .detection-value {
+            font-family: monospace; font-size: 11px;
+            background: var(--bg-tertiary);
+            padding: 2px 6px; border-radius: 4px;
+            max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .detection-missing {
+            font-size: 11px; color: var(--warning);
+            display: flex; align-items: center; gap: 4px;
+        }
+
+        /* ── Stats row ───────────────────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 700px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            display: none;
+        }
+        .stat-card.visible { display: block; }
+        .stat-card.warning { border-color: var(--warning); }
+
+        .stat-label {
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--text-muted); margin-bottom: 6px;
+        }
+        .stat-value {
+            font-size: 28px; font-weight: 700;
+            color: var(--text-primary);
+        }
+        .stat-card.warning .stat-value { color: var(--warning); }
+
+        /* ── Preview table ───────────────────────────────────── */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%; border-collapse: collapse;
+            font-size: 12px;
+        }
+        thead th {
+            background: var(--bg-tertiary);
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0;
+        }
+        tbody tr:nth-child(odd) { background: var(--bg-secondary); }
+        tbody tr:nth-child(even) { background: var(--bg-primary); }
+        tbody tr:hover { background: var(--bg-tertiary); }
+        tbody td {
+            padding: 8px 12px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+            max-width: 200px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .waf-color-badge {
+            display: inline-block;
+            padding: 2px 8px; border-radius: 10px;
+            font-size: 10px; font-weight: 600;
+            border: 1px solid transparent;
+        }
+
+        /* ── Action buttons ──────────────────────────────────── */
+        .action-row {
+            display: flex; gap: 12px; flex-wrap: wrap;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/" class="header-left">
+        <div class="logo">W</div>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Work Alignment Framework — Classify, Analyze, Align</p>
+        </div>
+    </a>
+</div>
+
+<nav class="top-nav">
+    <a href="/" class="top-nav-link">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <a href="/history" class="top-nav-link">Analytics</a>
+    <a href="/lineage" class="top-nav-link">Epic Lineage</a>
+    <a href="/teams" class="top-nav-link">Teams</a>
+    <a href="/merge" class="top-nav-link active">File Merger</a>
+    <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
+    <a href="/settings" class="top-nav-link">Settings</a>
+    <div class="global-search-wrap" id="global-search-wrap">
+        <span class="global-search-icon">&#128269;</span>
+        <input
+            type="text"
+            class="global-search-input"
+            id="global-search-input"
+            placeholder="Search stories..."
+            autocomplete="off"
+        >
+        <div class="global-search-results" id="global-search-results"></div>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" style="margin-left:8px;">
+        <span class="theme-icon"></span>
+    </button>
+</nav>
+
+<div class="status-bar">
+    <div class="status-pills">
+        <a class="status-pill" href="/settings" title="API Configuration">
+            <div class="status-dot" id="api-dot"></div>
+            <span id="api-status">Checking...</span>
+        </a>
+        <a class="status-pill" href="/settings" title="Manage WAF Definitions">
+            <div class="status-dot" id="waf-dot"></div>
+            <span id="waf-status">WAF Definitions</span>
+        </a>
+        <a class="status-pill" href="/settings" title="Manage Ground Truth">
+            <div class="status-dot" id="gt-dot"></div>
+            <span id="gt-status">Ground Truth</span>
+        </a>
+        <a class="status-pill" href="/history" id="db-pill" title="View Upload History">
+            <div class="status-dot" id="db-dot"></div>
+            <span id="db-status">History DB</span>
+        </a>
+    </div>
+    <div id="version-info">v3.2.3</div>
+</div>
+
+<div class="main">
+
+    <div class="page-header">
+        <h2>&#x1F500; File Merger</h2>
+        <p>Combine Epic, Feature, and Story export files from JIRA into the unified WAF import format ready for AI classification.</p>
+    </div>
+
+    <!-- ── Step 1: Upload ──────────────────────────────────────── -->
+    <div class="step-heading">
+        <div class="step-num">1</div>
+        <span class="step-label">Upload Source Files</span>
+    </div>
+
+    <div class="upload-grid">
+        <!-- Epic -->
+        <div class="upload-card" id="card-epic">
+            <div class="upload-card-title">Epic Attributes File</div>
+            <div class="upload-card-subtitle">Jira SaaS Epic#, Summary, Work Alignment Framework</div>
+            <div class="upload-zone">
+                <div class="upload-zone-icon">&#128196;</div>
+                <div class="upload-zone-text">Click to select CSV or XLSX</div>
+                <input type="file" id="epic-file" accept=".csv,.xlsx,.xls" onchange="onFileSelected('epic', this)">
+            </div>
+            <div class="file-badge" id="badge-epic">
+                <span class="file-badge-icon">&#10003;</span>
+                <span class="file-badge-name" id="badge-epic-name"></span>
+                <span class="file-badge-rows" id="badge-epic-rows"></span>
+            </div>
+        </div>
+
+        <!-- Feature -->
+        <div class="upload-card" id="card-feature">
+            <div class="upload-card-title">Feature Attributes File</div>
+            <div class="upload-card-subtitle">Feature Key, Feature Summary, Parent Epic Number, Team</div>
+            <div class="upload-zone">
+                <div class="upload-zone-icon">&#128196;</div>
+                <div class="upload-zone-text">Click to select CSV or XLSX</div>
+                <input type="file" id="feature-file" accept=".csv,.xlsx,.xls" onchange="onFileSelected('feature', this)">
+            </div>
+            <div class="file-badge" id="badge-feature">
+                <span class="file-badge-icon">&#10003;</span>
+                <span class="file-badge-name" id="badge-feature-name"></span>
+                <span class="file-badge-rows" id="badge-feature-rows"></span>
+            </div>
+        </div>
+
+        <!-- Story -->
+        <div class="upload-card" id="card-story">
+            <div class="upload-card-title">Story Attributes File</div>
+            <div class="upload-card-subtitle">Story #, Story Name, Parent Feature, WAF Derived, Team</div>
+            <div class="upload-zone">
+                <div class="upload-zone-icon">&#128196;</div>
+                <div class="upload-zone-text">Click to select CSV or XLSX</div>
+                <input type="file" id="story-file" accept=".csv,.xlsx,.xls" onchange="onFileSelected('story', this)">
+            </div>
+            <div class="file-badge" id="badge-story">
+                <span class="file-badge-icon">&#10003;</span>
+                <span class="file-badge-name" id="badge-story-name"></span>
+                <span class="file-badge-rows" id="badge-story-rows"></span>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin:20px 0 8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <label for="job-name-input" style="font-size:13px;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Job Name</label>
+        <input type="text" id="job-name-input"
+            style="flex:1;min-width:240px;max-width:460px;background:var(--bg-tertiary);border:1px solid var(--border);
+                   border-radius:6px;padding:8px 12px;color:var(--text-primary);font-size:13px;outline:none;"
+            onfocus="this.style.borderColor='var(--accent)'"
+            onblur="this.style.borderColor='var(--border)'"
+        />
+        <span style="font-size:11px;color:var(--text-muted);">Shown in Analytics upload history — edit or keep the default</span>
+    </div>
+
+    <div class="process-row">
+        <button class="btn-primary" id="btn-process" onclick="processFiles()" disabled>
+            <span class="spinner" id="spinner"></span>
+            <span id="btn-process-label">Process Files</span>
+        </button>
+        <span class="process-error" id="process-error"></span>
+    </div>
+
+    <!-- ── Step 2: Column Detection ───────────────────────────── -->
+    <div id="section-detection" class="section-card">
+        <div class="step-heading" style="margin-bottom:20px;">
+            <div class="step-num">2</div>
+            <span class="step-label">Column Detection</span>
+        </div>
+        <div class="detection-grid" id="detection-grid"></div>
+    </div>
+
+    <!-- ── Step 3: Results ────────────────────────────────────── -->
+    <div id="section-results" class="section-card">
+        <div class="step-heading" style="margin-bottom:20px;">
+            <div class="step-num">3</div>
+            <span class="step-label">Merge Results</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card" id="stat-epics">
+                <div class="stat-label">Epics Loaded</div>
+                <div class="stat-value" id="stat-epics-val">—</div>
+            </div>
+            <div class="stat-card" id="stat-features">
+                <div class="stat-label">Features Loaded</div>
+                <div class="stat-value" id="stat-features-val">—</div>
+            </div>
+            <div class="stat-card" id="stat-stories">
+                <div class="stat-label">Stories Merged</div>
+                <div class="stat-value" id="stat-stories-val">—</div>
+            </div>
+            <div class="stat-card warning" id="stat-unmatched">
+                <div class="stat-label">Unmatched</div>
+                <div class="stat-value" id="stat-unmatched-val">—</div>
+            </div>
+        </div>
+
+        <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text-secondary);">
+            Preview — first 20 rows
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead id="preview-thead"></thead>
+                <tbody id="preview-tbody"></tbody>
+            </table>
+        </div>
+
+        <div class="action-row">
+            <button class="btn-primary" id="btn-download" onclick="downloadMerged()">
+                &#11015; Download Merged CSV
+            </button>
+            <button class="btn-secondary" id="btn-classify" onclick="sendToClassifier()">
+                &#9654; Submit for Analysis
+            </button>
+        </div>
+        <div id="classify-status" style="margin-top:10px;font-size:13px;color:var(--text-muted);display:none;"></div>
+    </div>
+
+</div><!-- .main -->
+
+<script>
+// ── Theme ─────────────────────────────────────────────────────────────
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('waf-theme', next);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = next === 'dark' ? '\u263E' : '\u2600';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+
+    // Auto-fill job name with today's date
+    const inp = document.getElementById('job-name-input');
+    if (inp && !inp.value) {
+        const d = new Date();
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        inp.value = 'Merged Import - ' + dateStr;
+    }
+});
+
+// ── Status bar ────────────────────────────────────────────────────────
+async function checkStatus() {
+    try {
+        const [statusRes, dashRes] = await Promise.all([
+            fetch('/api/status'),
+            fetch('/api/dashboard/summary')
+        ]);
+        const status = await statusRes.json();
+        const dash   = await dashRes.json();
+
+        const apiDot  = document.getElementById('api-dot');
+        const apiText = document.getElementById('api-status');
+        if (status.api_key_configured) {
+            apiDot.className = 'status-dot green';
+            apiText.textContent = 'API Connected';
+        } else {
+            apiDot.className = 'status-dot red';
+            apiText.textContent = 'API Key Missing';
+        }
+
+        const wafDot  = document.getElementById('waf-dot');
+        const wafText = document.getElementById('waf-status');
+        if (status.waf_loaded) {
+            wafDot.className = 'status-dot green';
+            wafText.textContent = 'WAF: ' + status.waf_categories.length + ' categories';
+        } else {
+            wafDot.className = 'status-dot yellow';
+            wafText.textContent = 'WAF: Not loaded';
+        }
+
+        const gtDot  = document.getElementById('gt-dot');
+        const gtText = document.getElementById('gt-status');
+        if (status.ground_truth_loaded) {
+            gtDot.className = 'status-dot green';
+            gtText.textContent = 'GT: ' + status.ground_truth_count + ' examples';
+        } else {
+            gtDot.className = 'status-dot yellow';
+            gtText.textContent = 'GT: Not loaded';
+        }
+
+        const dbDot  = document.getElementById('db-dot');
+        const dbText = document.getElementById('db-status');
+        dbDot.className = 'status-dot green';
+        dbText.textContent = 'History: ' + dash.total_classifications + ' records';
+
+    } catch (err) {
+        console.error('Status check failed:', err);
+    }
+}
+checkStatus();
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function esc(s) {
+    return (s == null ? '' : String(s))
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Track selected files and their row-count estimates
+const _files = { epic: null, feature: null, story: null };
+
+function onFileSelected(type, input) {
+    const file = input.files[0];
+    if (!file) return;
+    _files[type] = file;
+
+    const card  = document.getElementById('card-' + type);
+    const badge = document.getElementById('badge-' + type);
+    const nameEl = document.getElementById('badge-' + type + '-name');
+    const rowsEl = document.getElementById('badge-' + type + '-rows');
+
+    card.classList.add('has-file');
+    badge.classList.add('visible');
+    nameEl.textContent = file.name;
+
+    // Estimate rows for CSV by counting newlines; for xlsx just show file size
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'csv') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const lines = (e.target.result.match(/\n/g) || []).length;
+            rowsEl.textContent = Math.max(0, lines - 1) + ' rows';
+        };
+        reader.readAsText(file.slice(0, 200000)); // read up to 200KB for counting
+    } else {
+        rowsEl.textContent = (file.size / 1024).toFixed(0) + ' KB';
+    }
+
+    updateProcessButton();
+}
+
+function updateProcessButton() {
+    const btn = document.getElementById('btn-process');
+    btn.disabled = !(_files.epic && _files.feature && _files.story);
+}
+
+// ── Process ───────────────────────────────────────────────────────────
+let _currentToken = null;
+
+async function processFiles() {
+    const btn    = document.getElementById('btn-process');
+    const spinner = document.getElementById('spinner');
+    const label  = document.getElementById('btn-process-label');
+    const errEl  = document.getElementById('process-error');
+
+    btn.disabled = true;
+    spinner.classList.add('visible');
+    label.textContent = 'Processing…';
+    errEl.classList.remove('visible');
+    errEl.textContent = '';
+
+    const fd = new FormData();
+    fd.append('epic_file',    _files.epic);
+    fd.append('feature_file', _files.feature);
+    fd.append('story_file',   _files.story);
+
+    try {
+        const res  = await fetch('/api/merge/process', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || 'Server error ' + res.status);
+        }
+
+        _currentToken = data.token;
+        renderDetection(data.column_map);
+        renderStats(data.stats);
+        renderPreview(data.preview, data.columns);
+
+        document.getElementById('section-detection').classList.add('visible');
+        document.getElementById('section-results').classList.add('visible');
+
+        // Scroll to results
+        document.getElementById('section-detection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+        errEl.textContent = 'Error: ' + err.message;
+        errEl.classList.add('visible');
+    } finally {
+        btn.disabled = false;
+        spinner.classList.remove('visible');
+        label.textContent = 'Process Files';
+    }
+}
+
+// ── Column detection render ───────────────────────────────────────────
+function renderDetection(colMap) {
+    const epicFields = [
+        { key: 'id_col',   label: 'Epic ID' },
+        { key: 'name_col', label: 'Epic Name' },
+        { key: 'waf_col',  label: 'WAF' },
+    ];
+    const featFields = [
+        { key: 'id_col',   label: 'Feature ID' },
+        { key: 'name_col', label: 'Feature Name' },
+        { key: 'epic_col', label: 'Parent Epic' },
+        { key: 'team_col', label: 'Team' },
+        { key: 'waf_col',  label: 'WAF' },
+    ];
+    const storyFields = [
+        { key: 'id_col',        label: 'Story ID' },
+        { key: 'title_col',     label: 'Story Title' },
+        { key: 'feature_col',   label: 'Parent Feature' },
+        { key: 'team_col',      label: 'Team' },
+        { key: 'waf_col',       label: 'WAF' },
+        { key: 'timestamp_col', label: 'Timestamp' },
+    ];
+
+    function groupHtml(title, fields, map) {
+        let rows = '';
+        fields.forEach(f => {
+            const val = map[f.key];
+            if (val) {
+                rows += `<div class="detection-row">
+                    <span class="detection-label">${esc(f.label)}</span>
+                    <span class="detection-arrow">&#8594;</span>
+                    <span class="detection-value" title="${esc(val)}">${esc(val)}</span>
+                </div>`;
+            } else {
+                rows += `<div class="detection-row">
+                    <span class="detection-label">${esc(f.label)}</span>
+                    <span class="detection-arrow">&#8594;</span>
+                    <span class="detection-missing">&#9888; Not found</span>
+                </div>`;
+            }
+        });
+        return `<div class="detection-group"><h4>${esc(title)}</h4>${rows}</div>`;
+    }
+
+    const grid = document.getElementById('detection-grid');
+    grid.innerHTML =
+        groupHtml('Epic File',    epicFields,  colMap.epic)  +
+        groupHtml('Feature File', featFields,  colMap.feature) +
+        groupHtml('Story File',   storyFields, colMap.story);
+}
+
+// ── Stats render ─────────────────────────────────────────────────────
+function renderStats(stats) {
+    const show = id => document.getElementById(id).classList.add('visible');
+    show('stat-epics'); show('stat-features'); show('stat-stories'); show('stat-unmatched');
+    document.getElementById('stat-epics-val').textContent     = stats.epics    != null ? stats.epics    : '—';
+    document.getElementById('stat-features-val').textContent  = stats.features != null ? stats.features : '—';
+    document.getElementById('stat-stories-val').textContent   = stats.stories  != null ? stats.stories  : '—';
+    document.getElementById('stat-unmatched-val').textContent =
+        (stats.unmatched_features || 0) + (stats.unmatched_epics || 0);
+}
+
+// ── Preview render ───────────────────────────────────────────────────
+const PREVIEW_COLS = [
+    'Epic ID', 'Feature ID', 'Story ID', 'Epic', 'Parent Feature',
+    'Story Title', 'Team', 'WAF Category', 'WAF Color', 'Timestamp'
+];
+
+const WAF_COLOR_CSS = {
+    GRAY:   { bg: 'rgba(107,114,128,0.2)',  fg: '#9ca3af' },
+    GREEN:  { bg: 'rgba(22,163,74,0.2)',    fg: '#4ade80' },
+    BLUE:   { bg: 'rgba(37,99,235,0.2)',    fg: '#60a5fa' },
+    YELLOW: { bg: 'rgba(217,119,6,0.2)',    fg: '#fbbf24' },
+    ORANGE: { bg: 'rgba(234,88,12,0.2)',    fg: '#fb923c' },
+    RED:    { bg: 'rgba(220,38,38,0.2)',    fg: '#f87171' },
+    PURPLE: { bg: 'rgba(147,51,234,0.2)',   fg: '#c084fc' },
+    TEAL:   { bg: 'rgba(13,148,136,0.2)',   fg: '#2dd4bf' },
+};
+
+function renderPreview(rows, allCols) {
+    const thead = document.getElementById('preview-thead');
+    const tbody = document.getElementById('preview-tbody');
+
+    let hHtml = '<tr>';
+    PREVIEW_COLS.forEach(c => { hHtml += `<th>${esc(c)}</th>`; });
+    hHtml += '</tr>';
+    thead.innerHTML = hHtml;
+
+    let bHtml = '';
+    rows.forEach(row => {
+        bHtml += '<tr>';
+        PREVIEW_COLS.forEach(col => {
+            const val = row[col] != null ? String(row[col]) : '';
+            if (col === 'WAF Color' && val) {
+                const style = WAF_COLOR_CSS[val] || { bg: 'rgba(107,114,128,0.2)', fg: '#9ca3af' };
+                bHtml += `<td><span class="waf-color-badge" style="background:${esc(style.bg)};color:${esc(style.fg)};border-color:${esc(style.fg)}33;">${esc(val)}</span></td>`;
+            } else {
+                bHtml += `<td title="${esc(val)}">${esc(val)}</td>`;
+            }
+        });
+        bHtml += '</tr>';
+    });
+    tbody.innerHTML = bHtml || '<tr><td colspan="' + PREVIEW_COLS.length + '" style="text-align:center;color:var(--text-muted);padding:24px;">No rows</td></tr>';
+}
+
+// ── Download ─────────────────────────────────────────────────────────
+function downloadMerged() {
+    if (!_currentToken) return;
+    window.location.href = '/api/merge/download/' + encodeURIComponent(_currentToken);
+}
+
+async function sendToClassifier() {
+    if (!_currentToken) return;
+    const btn = document.getElementById('btn-classify');
+    const status = document.getElementById('classify-status');
+    const rawName = (document.getElementById('job-name-input').value || '').trim();
+    const jobName = rawName || ('merged-' + _currentToken);
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    status.style.display = 'block';
+    status.style.color = 'var(--text-muted)';
+    status.textContent = 'Preparing file for AI classification…';
+    try {
+        const fd = new FormData();
+        fd.append('job_name', jobName);
+        const res = await fetch('/api/merge/send-to-classifier/' + _currentToken, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success && data.preview_id) {
+            // Store full preview data so history.html can auto-trigger the mapping step
+            sessionStorage.setItem('waf_pending_preview', JSON.stringify(data));
+            status.textContent = 'Ready! Redirecting to classifier (' + data.total_rows + ' rows)…';
+            setTimeout(() => { window.location.href = '/history'; }, 600);
+        } else {
+            status.style.color = 'var(--error)';
+            status.textContent = data.error || 'Failed to prepare file.';
+            btn.disabled = false;
+            btn.textContent = '▶ Submit for Analysis';
+        }
+    } catch (e) {
+        status.style.color = 'var(--error)';
+        status.textContent = 'Network error — try Download and re-upload manually.';
+        btn.disabled = false;
+        btn.textContent = '▶ Submit for Analysis';
+    }
+}
+</script>
+
+<script>
+/* ── Global Search ──────────────────────────────────────── */
+(function() {
+    let _timer = null;
+    const inp = document.getElementById('global-search-input');
+    const box = document.getElementById('global-search-results');
+    if (!inp || !box) return;
+    inp.addEventListener('input', function() {
+        clearTimeout(_timer);
+        const q = this.value.trim();
+        if (q.length < 2) { box.classList.remove('visible'); return; }
+        _timer = setTimeout(() => _doSearch(q), 250);
+    });
+    inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { box.classList.remove('visible'); inp.blur(); }
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#global-search-wrap')) box.classList.remove('visible');
+    });
+
+    async function _doSearch(q) {
+        box.innerHTML = '<div class="search-loading">Searching\u2026</div>';
+        box.classList.add('visible');
+        try {
+            const res  = await fetch('/api/search?q=' + encodeURIComponent(q) + '&limit=15');
+            const data = await res.json();
+            _render(data, q);
+        } catch(e) {
+            box.innerHTML = '<div class="search-empty">Search error</div>';
+        }
+    }
+
+    function _esc(s) {
+        return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function _highlight(text, q) {
+        let out = text;
+        q.split(/\s+/).filter(Boolean).forEach(w => {
+            out = out.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark>$1</mark>');
+        });
+        return out;
+    }
+
+    function _render(data, q) {
+        if (!data.results || data.results.length === 0) {
+            box.innerHTML = '<div class="search-empty">No results for &ldquo;' + _esc(q) + '&rdquo;</div>';
+            return;
+        }
+        const CM = {GRAY:'#6b7280',GREEN:'#16a34a',BLUE:'#2563eb',YELLOW:'#d97706',ORANGE:'#ea580c',RED:'#dc2626',PURPLE:'#9333ea',TEAL:'#0d9488'};
+        let html = '<div class="search-results-header">' + data.results.length + ' result' + (data.results.length!==1?'s':'') + ' for &ldquo;' + _esc(q) + '&rdquo;</div>';
+        data.results.forEach(r => {
+            const c = CM[r.color] || '#6b7280';
+            const ids = [r.story_id, r.feature_id, r.epic_id].filter(Boolean)
+                .map(id => '<span style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:monospace;">' + _esc(id) + '</span>')
+                .join(' ');
+            const badge = r.color ? '<span style="background:'+c+'22;color:'+c+';border:1px solid '+c+'44;border-radius:4px;padding:1px 6px;font-size:10px;">'+_esc(r.color)+'</span>' : '';
+            const mismatch = r.is_mismatch ? '<span style="color:var(--warning);font-size:10px;margin-left:4px;">&#9888; Mismatch</span>' : '';
+            const crumbs = [];
+            if (r.epic_id || r.epic) crumbs.push(_esc((r.epic_id ? r.epic_id + ' ' : '') + (r.epic||'')).trim());
+            if (r.feature_id || r.feature) crumbs.push(_esc((r.feature_id ? r.feature_id + ' ' : '') + (r.feature||'')).trim());
+            if (r.story_id) crumbs.push(_esc(r.story_id));
+            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=\'/history\';">';
+            html += '<div class="search-result-title">' + _highlight(_esc(r.title), q) + '</div>';
+            if (crumbs.length) html += '<div class="search-result-breadcrumb">' + crumbs.join('<span> \u203a </span>') + '</div>';
+            html += '<div class="search-result-badges">';
+            if (r.category) html += '<span style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px;">' + _esc(r.category) + '</span> ';
+            html += badge + mismatch;
+            if (ids) html += '<span style="margin-left:6px;">' + ids + '</span>';
+            html += '</div>';
+            html += '<div class="search-result-source">' + _esc(r.filename) + (r.date ? ' \u00b7 ' + r.date : '') + (r.team ? ' \u00b7 ' + _esc(r.team) : '') + '</div>';
+            html += '</div>';
+        });
+        box.innerHTML = html;
+    }
+})();
+</script>
+
+</body>
+</html>

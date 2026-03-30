@@ -369,6 +369,7 @@
     <a href="/history" class="top-nav-link active">Analytics</a>
     <a href="/lineage" class="top-nav-link">Epic Lineage</a>
     <a href="/teams" class="top-nav-link">Teams</a>
+    <a href="/merge" class="top-nav-link">File Merger</a>
     <a href="/waf-reference" class="top-nav-link">WAF Reference</a>
     <a href="/settings" class="top-nav-link">Settings</a>
         <div class="global-search-wrap" id="global-search-wrap">
@@ -407,7 +408,7 @@
             <span id="db-status">History DB</span>
         </a>
     </div>
-    <div id="version-info">v3.2.1</div>
+    <div id="version-info">v3.2.3</div>
 </div>
 
 <div class="dashboard" id="dashboard">
@@ -699,6 +700,76 @@ async function checkStatus() {
 }
 checkStatus();
 </script>
-
+<script>
+/* ── Global Search ──────────────────────────────────────── */
+(function() {
+    let _timer = null;
+    const inp = document.getElementById('global-search-input');
+    const box = document.getElementById('global-search-results');
+    if (!inp || !box) return;
+    inp.addEventListener('input', function() {
+        clearTimeout(_timer);
+        const q = this.value.trim();
+        if (q.length < 2) { box.classList.remove('visible'); return; }
+        _timer = setTimeout(() => _doSearch(q), 250);
+    });
+    inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { box.classList.remove('visible'); inp.blur(); }
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#global-search-wrap')) box.classList.remove('visible');
+    });
+    async function _doSearch(q) {
+        box.innerHTML = '<div class="search-loading">Searching…</div>';
+        box.classList.add('visible');
+        try {
+            const res = await fetch('/api/search?q=' + encodeURIComponent(q) + '&limit=15');
+            const data = await res.json();
+            _render(data, q);
+        } catch(e) { box.innerHTML = '<div class="search-empty">Search error</div>'; }
+    }
+    function _esc(s) {
+        return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function _highlight(t, q) {
+        let o = t;
+        q.split(/\s+/).filter(Boolean).forEach(w => {
+            o = o.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark>$1</mark>');
+        });
+        return o;
+    }
+    function _render(data, q) {
+        if (!data.results || data.results.length === 0) {
+            box.innerHTML = '<div class="search-empty">No results for &ldquo;' + _esc(q) + '&rdquo;</div>';
+            return;
+        }
+        const CM = {GRAY:'#6b7280',GREEN:'#16a34a',BLUE:'#2563eb',YELLOW:'#d97706',ORANGE:'#ea580c',RED:'#dc2626',PURPLE:'#9333ea',TEAL:'#0d9488'};
+        let html = '<div class="search-results-header">' + data.results.length + ' result' + (data.results.length!==1?'s':'') + ' for &ldquo;' + _esc(q) + '&rdquo;</div>';
+        data.results.forEach(r => {
+            const c = CM[r.color] || '#6b7280';
+            const ids = [r.story_id, r.feature_id, r.epic_id].filter(Boolean)
+                .map(id => '<span style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:monospace;">' + _esc(id) + '</span>')
+                .join(' ');
+            const badge = r.color ? '<span style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '44;border-radius:4px;padding:1px 6px;font-size:10px;">' + _esc(r.color) + '</span>' : '';
+            const mismatch = r.is_mismatch ? '<span style="color:var(--warning);font-size:10px;margin-left:4px;">⚠ Mismatch</span>' : '';
+            const crumbs = [];
+            if (r.epic_id || r.epic) crumbs.push(_esc(((r.epic_id ? r.epic_id + ' ' : '') + (r.epic||'')).trim()));
+            if (r.feature_id || r.feature) crumbs.push(_esc(((r.feature_id ? r.feature_id + ' ' : '') + (r.feature||'')).trim()));
+            if (r.story_id) crumbs.push(_esc(r.story_id));
+            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=\'/history\';">';
+            html += '<div class="search-result-title">' + _highlight(_esc(r.title), q) + '</div>';
+            if (crumbs.length) html += '<div class="search-result-breadcrumb">' + crumbs.join('<span> &rsaquo; </span>') + '</div>';
+            html += '<div class="search-result-badges">';
+            if (r.category) html += '<span style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px;">' + _esc(r.category) + '</span> ';
+            html += badge + mismatch;
+            if (ids) html += '<span style="margin-left:6px;">' + ids + '</span>';
+            html += '</div>';
+            html += '<div class="search-result-source">' + _esc(r.filename) + (r.date ? ' · ' + r.date : '') + (r.team ? ' · ' + _esc(r.team) : '') + '</div>';
+            html += '</div>';
+        });
+        box.innerHTML = html;
+    }
+})();
+</script>
 </body>
 </html>

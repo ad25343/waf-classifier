@@ -254,16 +254,18 @@ def bulk_verify_preview():
         df.columns = [c.strip().lower() for c in df.columns]
 
         def find_col(keywords):
-            for col in df.columns:
-                if any(kw in col for kw in keywords):
-                    return col
+            # Try keywords in priority order — first keyword match wins
+            for kw in keywords:
+                for col in df.columns:
+                    if kw in col:
+                        return col
             return None
 
         # Auto-detect suggested mappings
         suggested = {}
         target_fields = [
-            {"key": "title", "label": "Title", "required": True, "keywords": ["title", "summary", "story", "name"]},
-            {"key": "description", "label": "Description", "required": True, "keywords": ["desc", "detail", "body", "acceptance"]},
+            {"key": "title", "label": "Story Title", "required": True, "keywords": ["story title", "title", "summary", "story", "name"]},
+            {"key": "description", "label": "Story Description", "required": True, "keywords": ["story description", "description", "desc", "detail", "body", "acceptance"]},
             {"key": "waf_category", "label": "WAF Category", "required": False, "keywords": ["waf category", "waf_category", "category"]},
             {"key": "waf_color", "label": "WAF Color", "required": False, "keywords": ["waf color", "waf_color", "color"]},
             {"key": "run_change", "label": "Run/Change", "required": False, "keywords": ["run/change", "run_change", "run change"]},
@@ -273,7 +275,7 @@ def bulk_verify_preview():
             {"key": "epic", "label": "Epic", "required": False, "keywords": ["epic", "initiative", "program"]},
             {"key": "parent_feature", "label": "Parent Feature", "required": False, "keywords": ["feature", "parent feature", "parent_feature", "capability"]},
             {"key": "timestamp", "label": "Timestamp", "required": False, "keywords": ["timestamp", "date", "created", "created_at"]},
-            {"key": "story_id", "label": "Story ID", "required": False, "keywords": ["issue key", "story id", "story_id", "issue_key", "ticket", "key", "jira id", "item id"]},
+            {"key": "story_id", "label": "Story ID", "required": False, "keywords": ["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"]},
             {"key": "feature_id", "label": "Feature ID", "required": False, "keywords": ["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"]},
             {"key": "epic_id", "label": "Epic ID", "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"]},
         ]
@@ -378,13 +380,15 @@ def bulk_verify():
         df.columns = [c.strip().lower() for c in df.columns]
 
         def find_col(keywords):
-            for col in df.columns:
-                if any(kw in col for kw in keywords):
-                    return col
+            # Try keywords in priority order — first keyword match wins
+            for kw in keywords:
+                for col in df.columns:
+                    if kw in col:
+                        return col
             return None
 
-        title_col = find_col(["title", "summary", "story", "name"])
-        desc_col = find_col(["desc", "detail", "body", "acceptance"])
+        title_col = find_col(["story title", "title", "summary", "story", "name"])
+        desc_col = find_col(["story description", "description", "desc", "detail", "body", "acceptance"])
         cat_col = find_col(["waf category", "waf_category", "category"])
         color_col = find_col(["waf color", "waf_color", "color"])
         rc_col = find_col(["run/change", "run_change", "run change"])
@@ -394,7 +398,7 @@ def bulk_verify():
         epic_col = find_col(["epic", "initiative", "program"])
         feature_col = find_col(["feature", "parent feature", "parent_feature", "capability"])
         ts_col = find_col(["timestamp", "date", "created", "created_at"])
-        story_id_col = find_col(["issue key", "story id", "story_id", "issue_key", "ticket", "key", "jira id", "item id"])
+        story_id_col = find_col(["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"])
         feature_id_col = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"])
         epic_id_col = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
 

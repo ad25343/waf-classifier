@@ -1,0 +1,11 @@
+Type,Jira SaaS Feature Key,Work Alignment,WAF Derived,Work Category,Fix versions,ATP Link,Created,Parent Epic Number,Planning Interval,Status,Feature Summary,Team of Teams,Team,Assignee
+Feature,FEAT-C001,Regulatory Mandated,Regulatory Mandated,Compliance,PI-3,ATP-2001,2025-11-01,EP-C001,PI-3,In Progress,SOX Control Automation,Risk & Compliance ToT,Compliance Engineering,Sarah Chen
+Feature,FEAT-C002,Regulatory Mandated,Regulatory Mandated,Compliance,PI-3,ATP-2002,2025-11-01,EP-C001,PI-3,In Progress,SOX Audit Trail & Evidence,Risk & Compliance ToT,Audit Systems,David Park
+Feature,FEAT-C003,Regulatory Mandated,Regulatory Mandated,Compliance,PI-4,ATP-2003,2025-12-01,EP-C002,PI-4,Planning,GDPR Consent Management,Risk & Compliance ToT,Privacy Engineering,James Patel
+Feature,FEAT-C004,Regulatory Mandated,Regulatory Mandated,Compliance,PI-4,ATP-2004,2025-12-01,EP-C002,PI-4,Planning,GDPR Right to Erasure,Risk & Compliance ToT,Privacy Engineering,Lisa Wang
+Feature,FEAT-C005,New Capability,New Capability,Infrastructure,PI-3,ATP-2005,2025-10-15,EP-C003,PI-3,Active,AWS Landing Zone Setup,Platform ToT,Cloud Infrastructure,Maria Lopez
+Feature,FEAT-C006,New Capability,New Capability,Infrastructure,PI-3,ATP-2006,2025-10-15,EP-C003,PI-3,Active,CI/CD Pipeline Migration,Platform ToT,DevOps,Ryan Scott
+Feature,FEAT-P001,KTLO (Keep the Lights On),KTLO,Operations,PI-2,ATP-2007,2025-09-01,EP-P001,PI-2,Done,Grafana Dashboard Standardization,Platform ToT,SRE,Alex Kim
+Feature,FEAT-P002,KTLO (Keep the Lights On),KTLO,Operations,PI-3,ATP-2008,2025-10-01,EP-P001,PI-3,In Progress,Log Aggregation & Alerting,Platform ToT,SRE,Nina Torres
+Feature,FEAT-P003,Efficiency & Optimization,Efficiency & Optimization,Engineering,PI-4,ATP-2009,2025-12-01,EP-P002,PI-4,Planning,API Rate Limiting & Throttling,Platform ToT,API Platform,Tom Wright
+Feature,FEAT-P004,Efficiency & Optimization,Efficiency & Optimization,Engineering,PI-4,ATP-2010,2025-12-01,EP-P002,PI-4,Planning,Developer Portal & API Docs,,API Platform,Chen Li

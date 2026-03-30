@@ -47,3 +47,8 @@ def settings_page():
 @pages_bp.route("/teams")
 def teams_page():
     return send_from_directory("static", "teams.html")
+
+
+@pages_bp.route("/merge")
+def merge_page():
+    return send_from_directory("static", "merge.html")

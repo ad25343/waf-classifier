@@ -14,6 +14,6 @@ Build AI-powered document classification pipeline,"Enterprise initiative to auto
 Loan Quality Center real-time scoring integration,"Strategic transformation to enable real-time quality scoring at point of origination rather than post-close.",Change,ORANGE,Enterprise Strategic Priority,Loan Quality Center Transformation
 Implement Treasury position reconciliation dashboard,"Division priority to give Treasury real-time visibility into market risk positions. Requested by Treasury SVP.",Change,YELLOW,Top Divisional Priority,Treasury Market Risk
 Build self-service data catalog for CDO team,"CDO initiative to improve data discoverability. Divisional priority but not enterprise-wide.",Change,YELLOW,Top Divisional Priority,CDO Data & Services
-Prototype chatbot for internal HR FAQ,"Exploratory AI use case. Low priority but could reduce HR ticket volume. Can be paused without impact.",Change,GREEN,Other Blocked Priority,AI use-case exploration
-Add export-to-PDF feature on monthly reports,"Nice-to-have enhancement requested by several users. Not tied to any strategic initiative.",Change,GREEN,Other Blocked Priority,Incremental improvements
-Automate test environment provisioning with Terraform,"Would save ~2hrs per sprint in manual setup. Valuable but deferrable.",Change,GREEN,Other Blocked Priority,Automation pilots
+Prototype chatbot for internal HR FAQ,"Exploratory AI use case. Low priority but could reduce HR ticket volume. Can be paused without impact.",Change,GREEN,Other Block Priority,AI use-case exploration
+Add export-to-PDF feature on monthly reports,"Nice-to-have enhancement requested by several users. Not tied to any strategic initiative.",Change,GREEN,Other Block Priority,Incremental improvements
+Automate test environment provisioning with Terraform,"Would save ~2hrs per sprint in manual setup. Valuable but deferrable.",Change,GREEN,Other Block Priority,Automation pilots

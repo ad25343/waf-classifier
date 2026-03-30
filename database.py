@@ -100,7 +100,21 @@ def init_db():
     except sqlite3.OperationalError:
         pass
 
-    # FTS5 full-text search index
+    # FTS5 full-text search index — drop and recreate if schema is outdated
+    fts_cols = {r[0] for r in conn.execute(
+        "SELECT name FROM pragma_table_info('classifications_fts')"
+    ).fetchall()} if conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='classifications_fts'"
+    ).fetchone() else set()
+
+    if 'story_id' not in fts_cols:
+        # Drop old FTS table and triggers, recreate with full ID fields
+        conn.executescript("""
+            DROP TABLE IF EXISTS classifications_fts;
+            DROP TRIGGER IF EXISTS classifications_fts_ai;
+            DROP TRIGGER IF EXISTS classifications_fts_ad;
+        """)
+
     conn.executescript("""
         CREATE VIRTUAL TABLE IF NOT EXISTS classifications_fts USING fts5(
             story_title,
@@ -111,6 +125,9 @@ def init_db():
             epic,
             parent_feature,
             confidence,
+            story_id,
+            feature_id,
+            epic_id,
             content='classifications',
             content_rowid='id'
         );
@@ -119,10 +136,12 @@ def init_db():
         AFTER INSERT ON classifications BEGIN
             INSERT INTO classifications_fts(
                 rowid, story_title, story_description, waf_category,
-                waf_color, team, epic, parent_feature, confidence
+                waf_color, team, epic, parent_feature, confidence,
+                story_id, feature_id, epic_id
             ) VALUES (
                 new.id, new.story_title, new.story_description, new.waf_category,
-                new.waf_color, new.team, new.epic, new.parent_feature, new.confidence
+                new.waf_color, new.team, new.epic, new.parent_feature, new.confidence,
+                new.story_id, new.feature_id, new.epic_id
             );
         END;
 
@@ -130,11 +149,13 @@ def init_db():
         AFTER DELETE ON classifications BEGIN
             INSERT INTO classifications_fts(
                 classifications_fts, rowid, story_title, story_description,
-                waf_category, waf_color, team, epic, parent_feature, confidence
+                waf_category, waf_color, team, epic, parent_feature, confidence,
+                story_id, feature_id, epic_id
             ) VALUES (
                 'delete', old.id, old.story_title, old.story_description,
                 old.waf_category, old.waf_color, old.team, old.epic,
-                old.parent_feature, old.confidence
+                old.parent_feature, old.confidence,
+                old.story_id, old.feature_id, old.epic_id
             );
         END;
     """)

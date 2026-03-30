@@ -11,9 +11,18 @@ from pathlib import Path
 OUTPUT_DIR = Path("/Users/aravinddoma/WAFAllocation/waf-classifier/test-data")
 
 COLUMNS = [
-    "Issue Key", "Title", "Description", "Team", "Epic", "Epic ID",
-    "Parent Feature", "Feature ID", "WAF Category", "WAF Color",
-    "Sub-Category", "Confidence", "Run/Change", "Timestamp"
+    # Hierarchy IDs (top → bottom)
+    "Epic ID", "Feature ID", "Story ID",
+    # Hierarchy names + content
+    "Epic", "Parent Feature", "Story Title", "Story Description",
+    # Organisation
+    "Team",
+    # WAF Classification
+    "WAF Category", "WAF Color", "Sub-Category", "Confidence", "Run/Change",
+    # Metadata
+    "Timestamp",
+    # Alternate ID (fallback)
+    "Issue Key",
 ]
 
 WAF_COLOR_MAP = {
@@ -22,7 +31,7 @@ WAF_COLOR_MAP = {
     "Technical Maintenance": "BLACK",
     "Regulatory (Operational)": "RED",
     "Enterprise Strategic Priority": "ORANGE",
-    "Other Blocked Priority": "GREEN",
+    "Other Block Priority": "GREEN",
 }
 
 ALL_CATEGORIES = list(WAF_COLOR_MAP.keys())
@@ -67,14 +76,26 @@ def build_compliance_dataset() -> list[dict]:
 
     features = [f"F-C{str(i).zfill(3)}" for i in range(1, 21)]
     feature_names = [
-        "SOX Control Automation", "SOX Audit Trail", "GDPR Consent Management",
-        "GDPR Right to Erasure", "PCI Encryption Layer", "PCI Network Segmentation",
-        "Basel Capital Calculator", "Basel Reporting Dashboard", "AML Transaction Monitor",
-        "KYC Identity Verification", "Regulatory Change Management", "Compliance Reporting Engine",
-        "Data Lineage Tracking", "Audit Log Aggregation", "Risk Scoring Framework",
-        "Legal Hold Management", "Privacy Impact Assessment", "Sanctions Screening",
-        "Fraud Detection Alerts", "Regulatory Filing Automation"
+        # EP-C001 SOX (F-C001–F-C004)
+        "SOX Control Automation", "SOX Audit Trail", "SOX Evidence Collection", "SOX Reporting Dashboard",
+        # EP-C002 GDPR (F-C005–F-C008)
+        "GDPR Consent Management", "GDPR Right to Erasure", "GDPR Data Subject Requests", "GDPR Privacy Impact Assessment",
+        # EP-C003 PCI DSS (F-C009–F-C012)
+        "PCI Encryption Layer", "PCI Network Segmentation", "PCI Audit Log Centralization", "PCI Penetration Testing",
+        # EP-C004 Basel III (F-C013–F-C016)
+        "Basel Capital Calculator", "Basel Reporting Dashboard", "Basel Leverage Ratio Pipeline", "Basel Risk Data Aggregation",
+        # EP-C005 AML/KYC (F-C017–F-C020)
+        "AML Transaction Monitor", "KYC Identity Verification", "Sanctions Screening", "AML Regulatory Filing Automation",
     ]
+
+    # Map each epic index to its feature slice (4 features per epic)
+    features_per_epic = 4
+    # epic_feature_map[epic_index] = list of (feat_id, feat_name)
+    epic_feature_map = {
+        ei: [(features[ei * features_per_epic + fi], feature_names[ei * features_per_epic + fi])
+             for fi in range(features_per_epic)]
+        for ei in range(len(epics))
+    }
 
     # True category distribution: 40% Reg, 25% KTLO, 20% TechMaint, 15% EntStrat
     true_category_pool = (
@@ -169,13 +190,16 @@ def build_compliance_dataset() -> list[dict]:
 
     for i in range(60):
         issue_key = f"COMP-{str(i+1).zfill(3)}"
+        story_id = f"STR-{str(10000 + i + 1)}"
         true_cat = true_category_pool[i]
         confidence = confidence_pool[i]
         team = team_list[i]
 
-        epic, epic_id = epics[i % 5]
-        feat_id = features[i % 20]
-        feat_name = feature_names[i % 20]
+        epic_idx = i % 5
+        epic, epic_id = epics[epic_idx]
+        # Stories per epic = 60 / 5 = 12; distribute evenly across 4 features → 3 stories per feature
+        stories_per_epic = 60 // 5
+        feat_id, feat_name = epic_feature_map[epic_idx][(i // 5) % features_per_epic]
 
         tmpl_list = templates[true_cat]
         tmpl = tmpl_list[template_counters[true_cat] % len(tmpl_list)]
@@ -200,8 +224,9 @@ def build_compliance_dataset() -> list[dict]:
 
         rows.append({
             "Issue Key": issue_key,
-            "Title": title,
-            "Description": description,
+            "Story ID": story_id,
+            "Story Title": title,
+            "Story Description": description,
             "Team": team,
             "Epic": epic,
             "Epic ID": epic_id,
@@ -243,21 +268,32 @@ def build_platform_dataset() -> list[dict]:
 
     features = [f"F-P{str(i).zfill(3)}" for i in range(1, 26)]
     feature_names = [
-        "AWS Landing Zone", "VPC Architecture", "K8s Cluster Upgrade", "Helm Chart Library",
-        "GitLab CI Templates", "ArgoCD Deployment", "Grafana Dashboards", "Prometheus Stack",
-        "Jaeger Tracing", "Log Aggregation", "Zero Trust Gateway", "Identity Federation",
-        "Secret Management", "Policy Enforcement", "Cost Optimization", "Auto Scaling",
-        "Disaster Recovery", "Service Mesh", "API Gateway", "Container Registry",
-        "Artifact Management", "SLO Framework", "Incident Management", "Capacity Planning",
-        "Infrastructure as Code"
+        # EP-P001 Cloud Migration (F-P001–F-P005)
+        "AWS Landing Zone", "VPC Architecture", "Cloud Cost Optimization", "Disaster Recovery", "Infrastructure as Code",
+        # EP-P002 Kubernetes (F-P006–F-P010)
+        "K8s Cluster Upgrade", "Helm Chart Library", "Container Registry", "Service Mesh", "Auto Scaling",
+        # EP-P003 CI/CD (F-P011–F-P015)
+        "GitLab CI Templates", "ArgoCD Deployment", "Ephemeral Build Runners", "Artifact Management", "Pipeline Security Scanning",
+        # EP-P004 Observability (F-P016–F-P020)
+        "Grafana Dashboards", "Prometheus Stack", "Jaeger Tracing", "Log Aggregation", "SLO Framework",
+        # EP-P005 Zero Trust (F-P021–F-P025)
+        "Zero Trust Gateway", "Identity Federation", "Secret Management", "Policy Enforcement", "Incident Management",
     ]
+
+    # Map each epic index to its feature slice (5 features per epic)
+    features_per_epic = 5
+    epic_feature_map = {
+        ei: [(features[ei * features_per_epic + fi], feature_names[ei * features_per_epic + fi])
+             for fi in range(features_per_epic)]
+        for ei in range(len(epics))
+    }
 
     # True category distribution: 35% TechMaint, 30% KTLO, 20% EntStrat, 15% OtherBlocked
     true_category_pool = (
         ["Technical Maintenance"] * 28 +
         ["KTLO (Keep the Lights On)"] * 24 +
         ["Enterprise Strategic Priority"] * 16 +
-        ["Other Blocked Priority"] * 12
+        ["Other Block Priority"] * 12
     )
     random.shuffle(true_category_pool)
 
@@ -313,7 +349,7 @@ def build_platform_dataset() -> list[dict]:
             ("Establish Platform Engineering Center of Excellence and Standards Body",
              "Create cross-team platform engineering guild to define standards, approve architecture decisions, and drive platform adoption. Publish internal docs, run enablement sessions, and measure developer satisfaction."),
         ],
-        "Other Blocked Priority": [
+        "Other Block Priority": [
             ("Unblock Zero Trust Network Access Rollout Pending Security Architecture Review",
              "Platform team is blocked waiting for Security Architecture board approval for Zero Trust network topology. Work is scoped, resourced, and ready to execute pending sign-off from security governance."),
             ("Unblock Kubernetes Multi-Tenancy Rollout Awaiting FinOps Chargeback Model Approval",
@@ -338,10 +374,12 @@ def build_platform_dataset() -> list[dict]:
 
     for i in range(80):
         issue_key = f"PLAT-{str(i+1).zfill(3)}"
+        story_id = f"STR-{str(20000 + i + 1)}"
         true_cat = true_category_pool[i]
         confidence = confidence_pool[i]
 
-        epic, epic_id = epics[i % 5]
+        epic_idx = i % 5
+        epic, epic_id = epics[epic_idx]
 
         # For cross-team epics, randomize team; otherwise use pool
         if epic_id in cross_team_epics:
@@ -349,8 +387,8 @@ def build_platform_dataset() -> list[dict]:
         else:
             team = team_list[i]
 
-        feat_id = features[i % 25]
-        feat_name = feature_names[i % 25]
+        # 80 stories / 5 epics = 16 stories per epic; distribute across 5 features → 3-4 per feature
+        feat_id, feat_name = epic_feature_map[epic_idx][(i // 5) % features_per_epic]
 
         tmpl_list = templates[true_cat]
         tmpl = tmpl_list[template_counters[true_cat] % len(tmpl_list)]
@@ -374,8 +412,9 @@ def build_platform_dataset() -> list[dict]:
 
         rows.append({
             "Issue Key": issue_key,
-            "Title": title,
-            "Description": description,
+            "Story ID": story_id,
+            "Story Title": title,
+            "Story Description": description,
             "Team": team,
             "Epic": epic,
             "Epic ID": epic_id,
@@ -421,22 +460,38 @@ def build_product_dataset() -> list[dict]:
 
     features = [f"F-M{str(i).zfill(3)}" for i in range(1, 31)]
     feature_names = [
+        # EP-M001 Customer 360 (F-M001–F-M005)
         "Customer Profile Service", "Unified Customer View", "Recommendation Engine",
-        "Personalization Engine", "ML Model Pipeline", "Feature Store", "Model Registry",
+        "Personalization Engine", "Customer Data Aggregation API",
+        # EP-M002 AI Factory (F-M006–F-M010)
+        "ML Model Pipeline", "Feature Store", "Model Registry",
+        "AI Inference Service", "A/B Testing Framework",
+        # EP-M003 Mobile Banking (F-M011–F-M015)
         "Mobile Design System", "Biometric Authentication", "Push Notification Service",
+        "Mobile CI/CD Pipeline", "React Native Upgrade",
+        # EP-M004 API Gateway (F-M016–F-M020)
         "API Rate Limiting", "Developer Portal", "GraphQL Federation",
-        "API Analytics", "Data Product Framework", "Domain Data Ownership",
-        "Data Quality Engine", "Metadata Catalog", "CI/CD Templates",
-        "Testing Framework", "Local Dev Environment", "Documentation Platform",
-        "Architecture Decision Records", "Tech Radar", "Dependency Management",
-        "Security Scanning Pipeline", "Performance Testing Suite", "Chaos Engineering",
-        "SLO Dashboard", "Error Budget Tracking"
+        "API Analytics", "REST-to-GraphQL Adapter",
+        # EP-M005 Data Mesh (F-M021–F-M025)
+        "Data Product Framework", "Domain Data Ownership", "Data Quality Engine",
+        "Metadata Catalog", "Data Governance Policy",
+        # EP-M006 Developer Experience (F-M026–F-M030)
+        "CI/CD Templates", "Testing Framework", "Local Dev Environment",
+        "Documentation Platform", "Security Scanning Pipeline",
     ]
+
+    # Map each epic index to its feature slice (5 features per epic)
+    features_per_epic = 5
+    epic_feature_map = {
+        ei: [(features[ei * features_per_epic + fi], feature_names[ei * features_per_epic + fi])
+             for fi in range(features_per_epic)]
+        for ei in range(len(epics))
+    }
 
     # True category distribution: 30% EntStrat, 25% OtherBlocked, 20% TechMaint, 15% BizMaint, 10% KTLO
     true_category_pool = (
         ["Enterprise Strategic Priority"] * 36 +
-        ["Other Blocked Priority"] * 30 +
+        ["Other Block Priority"] * 30 +
         ["Technical Maintenance"] * 24 +
         ["Business Maintenance"] * 18 +
         ["KTLO (Keep the Lights On)"] * 12
@@ -470,7 +525,7 @@ def build_product_dataset() -> list[dict]:
             ("Implement Real-Time Fraud Prevention Using ML Behavioral Biometrics",
              "Deploy real-time behavioral biometrics model analyzing device and interaction patterns to detect account takeover. Target 70% reduction in fraud losses without increasing customer friction."),
         ],
-        "Other Blocked Priority": [
+        "Other Block Priority": [
             ("Customer 360 API Integration Blocked Pending Legal Data Sharing Agreement",
              "Customer data aggregation API is fully built and tested but blocked on Legal finalizing data sharing agreements with three subsidiary entities. Engineering team has been idle for 6 weeks."),
             ("Mobile Biometric Feature Blocked Awaiting Apple MDM Policy Exception",
@@ -538,17 +593,19 @@ def build_product_dataset() -> list[dict]:
 
     for i in range(120):
         issue_key = f"PROD-{str(i+1).zfill(3)}"
+        story_id = f"STR-{str(30000 + i + 1)}"
         true_cat = true_category_pool[i]
         confidence = confidence_pool[i]
 
-        epic, epic_id = epics[i % 6]
+        epic_idx = i % 6
+        epic, epic_id = epics[epic_idx]
 
         # Rotate teams per epic to ensure cross-team coverage
         epic_teams = epic_team_assignments[epic_id]
         team = epic_teams[i % len(epic_teams)]
 
-        feat_id = features[i % 30]
-        feat_name = feature_names[i % 30]
+        # 120 stories / 6 epics = 20 stories per epic; distribute across 5 features → 4 per feature
+        feat_id, feat_name = epic_feature_map[epic_idx][(i // 6) % features_per_epic]
 
         tmpl_list = templates[true_cat]
         tmpl = tmpl_list[template_counters[true_cat] % len(tmpl_list)]
@@ -571,14 +628,15 @@ def build_product_dataset() -> list[dict]:
         waf_color = WAF_COLOR_MAP[waf_category]
         sub_category = true_cat.split(" ")[0]
 
-        run_change = "Change" if true_cat in ["Enterprise Strategic Priority", "Other Blocked Priority"] else "Run"
+        run_change = "Change" if true_cat in ["Enterprise Strategic Priority", "Other Block Priority"] else "Run"
 
         ts = random_date(datetime(2025, 1, 1), datetime(2025, 6, 30))
 
         rows.append({
             "Issue Key": issue_key,
-            "Title": title,
-            "Description": description,
+            "Story ID": story_id,
+            "Story Title": title,
+            "Story Description": description,
             "Team": team,
             "Epic": epic,
             "Epic ID": epic_id,
@@ -663,10 +721,47 @@ if __name__ == "__main__":
     mismatch3 = set(random.sample(range(120), 24))
     path3 = OUTPUT_DIR / "multi-team-product-120.csv"
     write_csv(path3, rows3)
-    missing_desc_count = sum(1 for r in rows3 if not r["Description"])
+    missing_desc_count = sum(1 for r in rows3 if not r["Story Description"])
     print_summary("multi-team-product-120.csv", rows3, mismatch3, [])
     print(f"  Missing descriptions: {missing_desc_count}")
     print(f"  Saved to: {path3}")
+
+    # ---------------------------------------------------------------------------
+    # Verification: print epic → feature mapping and check parent-child integrity
+    # ---------------------------------------------------------------------------
+    def verify_hierarchy(name: str, rows: list[dict]) -> None:
+        print(f"\n{'='*60}")
+        print(f"  HIERARCHY VERIFICATION: {name}")
+        print(f"{'='*60}")
+
+        # Build actual epic → feature_ids mapping from the data
+        epic_to_features: dict = {}
+        for row in rows:
+            eid = row["Epic ID"]
+            fid = row["Feature ID"]
+            epic_to_features.setdefault(eid, set()).add(fid)
+
+        violations = 0
+        for eid in sorted(epic_to_features):
+            fids = sorted(epic_to_features[eid])
+            print(f"  {eid}: {', '.join(fids)}")
+
+        # Cross-check: every row's feature must belong to its epic's feature set
+        for i, row in enumerate(rows):
+            eid = row["Epic ID"]
+            fid = row["Feature ID"]
+            if fid not in epic_to_features[eid]:
+                print(f"  VIOLATION row {i}: Epic={eid} Feature={fid}")
+                violations += 1
+
+        if violations == 0:
+            print(f"  OK — all {len(rows)} stories have valid epic→feature hierarchy.")
+        else:
+            print(f"  FAILED — {violations} hierarchy violations found!")
+
+    verify_hierarchy("compliance-focus-60.csv", rows1)
+    verify_hierarchy("platform-engineering-80.csv", rows2)
+    verify_hierarchy("multi-team-product-120.csv", rows3)
 
     print(f"\n{'='*60}")
     print("  All 3 datasets generated successfully.")

@@ -32,7 +32,7 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 | Change | RED | Regulatory Mandated Change |
 | Change | ORANGE | Enterprise Strategic Priority |
 | Change | YELLOW | Top Divisional Priority |
-| Change | GREEN | Other Blocked Priority |
+| Change | GREEN | Other Block Priority |
 
 ## Quick Start
 
