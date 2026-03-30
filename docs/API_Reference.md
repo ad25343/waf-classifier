@@ -767,24 +767,41 @@ Accept three JIRA export files and merge them into the canonical WAF import form
   },
   "preview": [ { "Epic ID": "EP-C001", "Story Title": "...", "..." : "..." } ],
   "columns": ["Epic ID", "Feature ID", "Story ID", "Epic", "Parent Feature", "Story Title", "Story Description", "Team", "WAF Category", "WAF Color", "Sub-Category", "Confidence", "Run/Change", "Timestamp", "Issue Key"],
-  "column_map": { "epic": { "id_col": "Jira SaaS Epic#", "..." : "..." } }
+  "column_map": { "epic": { "id_col": "Jira SaaS Epic#", "..." : "..." } },
+  "issues": {
+    "orphan_stories":  [ { "story_id": "STR-001", "story_title": "...", "missing_feature": "F-X99" } ],
+    "orphan_features": [ { "feature_id": "F-X99", "feature_name": "...", "missing_epic": "EP-X99" } ],
+    "missing_waf":     [ { "story_id": "STR-002", "story_title": "..." } ],
+    "unknown_color":   [ { "story_id": "STR-003", "story_title": "...", "waf_category": "Custom Cat" } ],
+    "waf_divergence":  [ { "story_id": "STR-004", "story_title": "...", "story_waf": "KTLO", "feature_waf": "New Capability", "feature_id": "F-001" } ],
+    "total": 5,
+    "clean": false
+  }
 }
 ```
 
-### GET /api/merge/download/\<token\>
+### POST /api/merge/download/\<token\>
 
-Download the merged CSV file. Token is 8-char hex from `/api/merge/process`.
+Download the merged CSV, excluding any rejected story IDs. Token is 8-char hex from `/api/merge/process`.
 
-Returns `text/csv` as attachment named `waf_merged_<token>.csv` or the job name if provided.
+**Request:** `application/json`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `rejected_ids` | array | Story IDs to exclude from output (optional, default `[]`) |
+| `job_name` | string | Used to build the filename (optional) |
+
+Returns `text/csv` as attachment. Filename: `<job-name>_YYYYMMDD_HHmm.csv`.
 
 ### POST /api/merge/send-to-classifier/\<token\>
 
-Copy the merged file into the upload pipeline and return full preview data, ready for the column mapping step in Analytics.
+Copy the merged file (minus rejected rows) into the upload pipeline and return full preview data, ready for the column mapping step in Analytics.
 
 **Request:** `multipart/form-data`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `job_name` | string | Optional. Shown as filename in upload history. Defaults to `waf_merged_<token>`. |
+| `job_name` | string | Optional. Shown as filename in upload history. |
+| `rejected_ids` | string | JSON array of story IDs to exclude (optional, default `"[]"`). |
 
 **Response:** Same shape as `POST /api/bulk-verify/preview` — includes `preview_id`, `suggested_mappings`, `target_fields`, `sample_rows`, `total_rows`. Frontend stores in `sessionStorage` and redirects to `/history`, which auto-triggers the column mapping step.

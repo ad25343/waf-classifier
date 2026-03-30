@@ -2,6 +2,26 @@
 
 ---
 
+## v3.3.1 — March 2026
+
+File Merger validation panel, per-story reject, Start Over button, timestamp in filenames, Job Name with time.
+
+### New Features
+
+- **Data Quality panel (Step 3)** — Always shows all 5 check categories after processing, each with a count badge. Green "✓ None found" inside zero-count cards. Cards with issues auto-expand. Categories: Orphan Stories (red), Orphan Features (orange), Missing WAF Category (yellow), Unknown WAF Color (yellow), WAF Divergence (blue).
+- **Per-row reject** — Each issue card shows checkboxes per story plus "Reject All / Clear All". The preview table also has a Reject column so any story can be excluded without requiring an issue. Rejected rows are tracked in a shared set and excluded from both Download and Submit for Analysis.
+- **Rejection banner** — A yellow warning banner in Step 3 and a "−N rejected" badge in the action row show how many rows are currently marked for exclusion.
+- **← Start Over button** — Resets all file inputs, clears results sections, and scrolls back to the top. Available in the Step 4 action row.
+- **Timestamp in merged filenames** — All downloaded and submitted files now include `_YYYYMMDD_HHmm` (e.g. `SOX-Compliance-PI-3_20260330_1423.csv`).
+- **Job Name includes time** — Auto-filled default is now `Merged Import - Mar 30, 2026 14:23` (date + time) for uniqueness.
+
+### API Changes
+
+- `POST /api/merge/download/<token>` — Changed from GET to POST; accepts `rejected_ids` JSON array and `job_name` in request body.
+- `POST /api/merge/send-to-classifier/<token>` — Accepts `rejected_ids` as FormData field; excludes rejected rows before writing the file.
+
+---
+
 ## v3.3.0 — March 2026
 
 File Merger, global search wired, column ordering, Story Title / Story Description rename, WAF category rename.

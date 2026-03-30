@@ -509,9 +509,107 @@
 
         /* ── Action buttons ──────────────────────────────────── */
         .action-row {
-            display: flex; gap: 12px; flex-wrap: wrap;
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
             margin-top: 16px;
         }
+
+        /* ── Validation panel ────────────────────────────────── */
+        .validation-clean {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 20px;
+            background: rgba(74,222,128,0.07);
+            border: 1px solid rgba(74,222,128,0.3);
+            border-radius: 8px;
+        }
+        .validation-clean-icon { font-size: 22px; }
+        .validation-clean-text { font-size: 14px; font-weight: 600; color: var(--success); }
+
+        .issue-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .issue-card.severity-red    { border-color: rgba(248,113,113,0.4); }
+        .issue-card.severity-orange { border-color: rgba(251,146,60,0.4); }
+        .issue-card.severity-yellow { border-color: rgba(251,191,36,0.4); }
+        .issue-card.severity-blue   { border-color: rgba(96,165,250,0.4); }
+
+        .issue-card-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 16px;
+            cursor: pointer; user-select: none;
+            background: var(--bg-tertiary);
+        }
+        .issue-card.severity-red    .issue-card-header { background: rgba(248,113,113,0.07); }
+        .issue-card.severity-orange .issue-card-header { background: rgba(251,146,60,0.07); }
+        .issue-card.severity-yellow .issue-card-header { background: rgba(251,191,36,0.07); }
+        .issue-card.severity-blue   .issue-card-header { background: rgba(96,165,250,0.07); }
+
+        .issue-card-icon  { font-size: 16px; flex-shrink: 0; }
+        .issue-card-title { flex: 1; font-size: 13px; font-weight: 600; }
+        .issue-card-count {
+            font-size: 11px; font-weight: 700;
+            padding: 2px 9px; border-radius: 12px;
+            background: var(--bg-secondary);
+        }
+        .issue-card.severity-red    .issue-card-count { background: rgba(248,113,113,0.2); color: #f87171; }
+        .issue-card.severity-orange .issue-card-count { background: rgba(251,146,60,0.2);  color: #fb923c; }
+        .issue-card.severity-yellow .issue-card-count { background: rgba(251,191,36,0.2);  color: #fbbf24; }
+        .issue-card.severity-blue   .issue-card-count { background: rgba(96,165,250,0.2);  color: #60a5fa; }
+        .issue-card-chevron { font-size: 11px; color: var(--text-muted); transition: transform 0.2s; }
+        .issue-card.open .issue-card-chevron { transform: rotate(180deg); }
+
+        .issue-card-body {
+            display: none; padding: 0 16px 12px;
+            border-top: 1px solid var(--border);
+        }
+        .issue-card.open .issue-card-body { display: block; }
+
+        .issue-card-actions {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 0 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 6px;
+        }
+        .issue-card-info {
+            font-size: 12px; color: var(--text-muted);
+            padding: 10px 0 4px;
+        }
+
+        .btn-xs {
+            padding: 4px 10px; font-size: 11px; font-weight: 600;
+            border-radius: 5px; cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary); color: var(--text-secondary);
+            transition: background 0.15s;
+        }
+        .btn-xs:hover { background: var(--border); color: var(--text-primary); }
+        .btn-xs.reject-btn { border-color: rgba(248,113,113,0.4); color: #f87171; }
+        .btn-xs.reject-btn:hover { background: rgba(248,113,113,0.1); }
+
+        .issue-row {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+        .issue-row:last-child { border-bottom: none; }
+        .issue-row input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; cursor: pointer; accent-color: var(--accent); }
+        .issue-row-content { flex: 1; min-width: 0; }
+        .issue-row-title { font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .issue-row-meta  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+        .rejected-banner {
+            display: none; margin-top: 12px;
+            padding: 10px 16px;
+            background: rgba(251,191,36,0.08);
+            border: 1px solid rgba(251,191,36,0.3);
+            border-radius: 8px;
+            font-size: 13px; font-weight: 600;
+            color: var(--warning);
+        }
+        .rejected-banner.visible { display: block; }
     </style>
 </head>
 <body>
@@ -664,10 +762,20 @@
         <div class="detection-grid" id="detection-grid"></div>
     </div>
 
-    <!-- ── Step 3: Results ────────────────────────────────────── -->
+    <!-- ── Step 3: Data Quality ──────────────────────────────── -->
+    <div id="section-validation" class="section-card">
+        <div class="step-heading" style="margin-bottom:16px;">
+            <div class="step-num">3</div>
+            <span class="step-label">Data Quality</span>
+        </div>
+        <div id="validation-content"></div>
+        <div id="rejected-banner" class="rejected-banner"></div>
+    </div>
+
+    <!-- ── Step 4: Results ────────────────────────────────────── -->
     <div id="section-results" class="section-card">
         <div class="step-heading" style="margin-bottom:20px;">
-            <div class="step-num">3</div>
+            <div class="step-num">4</div>
             <span class="step-label">Merge Results</span>
         </div>
 
@@ -708,6 +816,10 @@
             <button class="btn-secondary" id="btn-classify" onclick="sendToClassifier()">
                 &#9654; Submit for Analysis
             </button>
+            <span id="rejected-count-badge" style="display:none;font-size:12px;font-weight:600;color:var(--warning);padding:4px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:6px;"></span>
+            <button class="btn-secondary" onclick="startOver()" style="margin-left:auto;" title="Clear results and upload new files">
+                &#8592; Start Over
+            </button>
         </div>
         <div id="classify-status" style="margin-top:10px;font-size:13px;color:var(--text-muted);display:none;"></div>
     </div>
@@ -738,7 +850,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (inp && !inp.value) {
         const d = new Date();
         const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        inp.value = 'Merged Import - ' + dateStr;
+        const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        inp.value = 'Merged Import - ' + dateStr + ' ' + timeStr;
     }
 });
 
@@ -840,6 +953,146 @@ function updateProcessButton() {
     btn.disabled = !(_files.epic && _files.feature && _files.story);
 }
 
+// ── Rejection tracking ────────────────────────────────────────────────
+let _rejectedIds = new Set();
+const _cardRejectableIds = {};
+
+function _updateRejectedState() {
+    const n = _rejectedIds.size;
+    const banner = document.getElementById('rejected-banner');
+    if (banner) {
+        if (n > 0) {
+            banner.textContent = '\u26A0 ' + n + ' stor' + (n === 1 ? 'y' : 'ies') + ' marked for rejection — will be excluded from download and AI analysis.';
+            banner.classList.add('visible');
+        } else {
+            banner.classList.remove('visible');
+        }
+    }
+    const badge = document.getElementById('rejected-count-badge');
+    if (badge) {
+        if (n > 0) {
+            badge.textContent = '\u2212' + n + ' rejected';
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function _toggleReject(storyId, checked) {
+    if (checked) { _rejectedIds.add(storyId); } else { _rejectedIds.delete(storyId); }
+    _updateRejectedState();
+}
+
+function _rejectAll(cardId) {
+    (_cardRejectableIds[cardId] || []).forEach(id => _rejectedIds.add(id));
+    document.querySelectorAll('#' + cardId + ' .reject-cb').forEach(cb => { cb.checked = true; });
+    _updateRejectedState();
+}
+
+function _clearAll(cardId) {
+    (_cardRejectableIds[cardId] || []).forEach(id => _rejectedIds.delete(id));
+    document.querySelectorAll('#' + cardId + ' .reject-cb').forEach(cb => { cb.checked = false; });
+    _updateRejectedState();
+}
+
+function renderValidation(issues) {
+    const container = document.getElementById('validation-content');
+    if (!container) return;
+    _rejectedIds = new Set();
+    _updateRejectedState();
+    container.innerHTML = '';
+
+    const data = issues || {};
+    const isClean = !issues || issues.clean;
+
+    // Banner
+    if (isClean) {
+        const total = data.total || 0;
+        const banner = document.createElement('div');
+        banner.className = 'validation-clean';
+        banner.style.marginBottom = '14px';
+        banner.innerHTML = '<span class="validation-clean-icon">&#10003;</span>' +
+            '<span class="validation-clean-text">All ' + total + ' issue checks passed &mdash; no data quality problems found.</span>';
+        container.appendChild(banner);
+    }
+
+    const CARD_DEFS = [
+        { id: 'issue-orphan-stories',  severity: 'red',    label: 'Orphan Stories',         sub: 'Parent feature not found',         hasReject: true,  items: (data.orphan_stories  || []).map(s => ({ id: s.story_id,   title: s.story_title   || s.story_id   || '?', meta: 'Parent feature: ' + (s.missing_feature || '—') })) },
+        { id: 'issue-orphan-features', severity: 'orange', label: 'Orphan Features',         sub: 'Parent epic not found',            hasReject: false, info: 'Stories under these features will have a blank Epic field.', items: (data.orphan_features || []).map(f => ({ id: null,           title: f.feature_name  || f.feature_id  || '?', meta: 'Feature: ' + (f.feature_id || '—') + ' · Missing epic: ' + (f.missing_epic || '—') })) },
+        { id: 'issue-missing-waf',     severity: 'yellow', label: 'Missing WAF Category',    sub: 'No category at any level',         hasReject: true,  items: (data.missing_waf     || []).map(s => ({ id: s.story_id,   title: s.story_title   || s.story_id   || '?', meta: 'No WAF category at story, feature, or epic level' })) },
+        { id: 'issue-unknown-color',   severity: 'yellow', label: 'Unknown WAF Color',       sub: 'Category has no color mapping',    hasReject: true,  items: (data.unknown_color   || []).map(s => ({ id: s.story_id,   title: s.story_title   || s.story_id   || '?', meta: 'Category "' + (s.waf_category || '') + '" has no color mapping' })) },
+        { id: 'issue-waf-divergence',  severity: 'blue',   label: 'WAF Divergence',          sub: 'Story vs feature category differ', hasReject: true,  items: (data.waf_divergence  || []).map(s => ({ id: s.story_id,   title: s.story_title   || s.story_id   || '?', meta: 'Story: ' + (s.story_waf || '—') + ' vs Feature (' + (s.feature_id || '') + '): ' + (s.feature_waf || '—') })) },
+    ];
+
+    CARD_DEFS.forEach(function(card) {
+        const rejectableIds = card.hasReject ? card.items.filter(function(i) { return i.id; }).map(function(i) { return i.id; }) : [];
+        _cardRejectableIds[card.id] = rejectableIds;
+        const n = card.items.length;
+        const hasIssues = n > 0;
+
+        // Card wrapper
+        const cardEl = document.createElement('div');
+        cardEl.className = 'issue-card severity-' + card.severity + (hasIssues ? ' has-issues' : '');
+        cardEl.id = card.id;
+
+        // Header
+        const headerEl = document.createElement('div');
+        headerEl.className = 'issue-card-header';
+        headerEl.innerHTML =
+            '<span class="issue-card-title">' + esc(card.label) +
+            ' <span style="font-size:11px;font-weight:400;color:var(--text-muted);">' + esc(card.sub) + '</span></span>' +
+            '<span class="issue-card-count">' + n + '</span>' +
+            '<span class="issue-card-chevron">&#9660;</span>';
+        headerEl.addEventListener('click', function() { cardEl.classList.toggle('open'); });
+        cardEl.appendChild(headerEl);
+
+        // Body
+        const bodyEl = document.createElement('div');
+        bodyEl.className = 'issue-card-body';
+
+        if (!hasIssues) {
+            bodyEl.innerHTML = '<div class="issue-card-info" style="color:var(--success);">&#10003; None found</div>';
+        } else {
+            if (card.hasReject && rejectableIds.length > 0) {
+                const actionsEl = document.createElement('div');
+                actionsEl.className = 'issue-card-actions';
+                actionsEl.innerHTML =
+                    '<button class="btn-xs reject-btn" onclick="_rejectAll(\'' + card.id + '\')">Reject All</button>' +
+                    '<button class="btn-xs" onclick="_clearAll(\'' + card.id + '\')">Clear All</button>' +
+                    '<span style="font-size:11px;color:var(--text-muted);">Check to exclude from output</span>';
+                bodyEl.appendChild(actionsEl);
+            } else if (card.info) {
+                const infoEl = document.createElement('div');
+                infoEl.className = 'issue-card-info';
+                infoEl.textContent = card.info;
+                bodyEl.appendChild(infoEl);
+            }
+            card.items.forEach(function(item) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'issue-row';
+                let rowInner = '';
+                if (card.hasReject && item.id) {
+                    rowInner = '<input type="checkbox" class="reject-cb" onchange="_toggleReject(\'' + esc(item.id) + '\',this.checked)">';
+                }
+                rowInner += '<div class="issue-row-content">' +
+                    '<div class="issue-row-title" title="' + esc(item.title) + '">' + esc(item.title) + '</div>' +
+                    '<div class="issue-row-meta">' + esc(item.meta) + '</div>' +
+                    '</div>';
+                rowEl.innerHTML = rowInner;
+                bodyEl.appendChild(rowEl);
+            });
+        }
+
+        cardEl.appendChild(bodyEl);
+        container.appendChild(cardEl);
+    });
+
+    // Auto-open first card that has issues
+    const firstWithIssues = container.querySelector('.issue-card.has-issues');
+    if (firstWithIssues) firstWithIssues.classList.add('open');
+}
+
 // ── Process ───────────────────────────────────────────────────────────
 let _currentToken = null;
 
@@ -872,11 +1125,13 @@ async function processFiles() {
         renderDetection(data.column_map);
         renderStats(data.stats);
         renderPreview(data.preview, data.columns);
+        renderValidation(data.issues);
 
         document.getElementById('section-detection').classList.add('visible');
+        document.getElementById('section-validation').classList.add('visible');
         document.getElementById('section-results').classList.add('visible');
 
-        // Scroll to results
+        // Scroll to validation section
         document.getElementById('section-detection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     } catch (err) {
@@ -972,14 +1227,17 @@ function renderPreview(rows, allCols) {
     const thead = document.getElementById('preview-thead');
     const tbody = document.getElementById('preview-tbody');
 
-    let hHtml = '<tr>';
+    let hHtml = '<tr><th style="width:48px;text-align:center;" title="Reject row from output">Reject</th>';
     PREVIEW_COLS.forEach(c => { hHtml += `<th>${esc(c)}</th>`; });
     hHtml += '</tr>';
     thead.innerHTML = hHtml;
 
     let bHtml = '';
     rows.forEach(row => {
+        const sid = esc(row['Story ID'] != null ? String(row['Story ID']) : '');
+        const cbId = 'prev-cb-' + sid.replace(/[^a-z0-9]/gi, '_');
         bHtml += '<tr>';
+        bHtml += `<td style="text-align:center;"><input type="checkbox" id="${cbId}" style="accent-color:var(--accent);cursor:pointer;" ${sid ? `onchange="_toggleReject('${sid}',this.checked)"` : 'disabled'}></td>`;
         PREVIEW_COLS.forEach(col => {
             const val = row[col] != null ? String(row[col]) : '';
             if (col === 'WAF Color' && val) {
@@ -991,13 +1249,55 @@ function renderPreview(rows, allCols) {
         });
         bHtml += '</tr>';
     });
-    tbody.innerHTML = bHtml || '<tr><td colspan="' + PREVIEW_COLS.length + '" style="text-align:center;color:var(--text-muted);padding:24px;">No rows</td></tr>';
+    tbody.innerHTML = bHtml || '<tr><td colspan="' + (PREVIEW_COLS.length + 1) + '" style="text-align:center;color:var(--text-muted);padding:24px;">No rows</td></tr>';
+}
+
+// ── Start Over ───────────────────────────────────────────────────────
+function startOver() {
+    // Hide result sections
+    document.getElementById('section-detection').classList.remove('visible');
+    document.getElementById('section-validation').classList.remove('visible');
+    document.getElementById('section-results').classList.remove('visible');
+    // Reset file inputs and badges
+    ['epic', 'feature', 'story'].forEach(type => {
+        document.getElementById(type + '-file').value = '';
+        document.getElementById('card-' + type).classList.remove('has-file');
+        document.getElementById('badge-' + type).classList.remove('visible');
+        _files[type] = null;
+    });
+    // Reset state
+    _currentToken = null;
+    _rejectedIds = new Set();
+    _updateRejectedState();
+    document.getElementById('btn-process').disabled = true;
+    document.getElementById('classify-status').style.display = 'none';
+    // Scroll back to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ── Download ─────────────────────────────────────────────────────────
-function downloadMerged() {
+async function downloadMerged() {
     if (!_currentToken) return;
-    window.location.href = '/api/merge/download/' + encodeURIComponent(_currentToken);
+    const rawName = (document.getElementById('job-name-input').value || '').trim();
+    const jobName = rawName || ('merged-' + _currentToken);
+    try {
+        const res = await fetch('/api/merge/download/' + encodeURIComponent(_currentToken), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rejected_ids: Array.from(_rejectedIds), job_name: jobName })
+        });
+        if (!res.ok) { alert('Download failed: ' + res.status); return; }
+        const blob = await res.blob();
+        const cd = res.headers.get('Content-Disposition') || '';
+        const fnMatch = cd.match(/filename[^;=\n]*=["']?([^"';\n]+)["']?/);
+        const filename = fnMatch ? fnMatch[1].trim() : 'merged.csv';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        alert('Download error: ' + e.message);
+    }
 }
 
 async function sendToClassifier() {
@@ -1014,12 +1314,13 @@ async function sendToClassifier() {
     try {
         const fd = new FormData();
         fd.append('job_name', jobName);
+        fd.append('rejected_ids', JSON.stringify(Array.from(_rejectedIds)));
         const res = await fetch('/api/merge/send-to-classifier/' + _currentToken, { method: 'POST', body: fd });
         const data = await res.json();
         if (data.success && data.preview_id) {
-            // Store full preview data so history.html can auto-trigger the mapping step
             sessionStorage.setItem('waf_pending_preview', JSON.stringify(data));
-            status.textContent = 'Ready! Redirecting to classifier (' + data.total_rows + ' rows)…';
+            const excluded = _rejectedIds.size > 0 ? ' (' + _rejectedIds.size + ' rejected rows excluded)' : '';
+            status.textContent = 'Ready! Redirecting to classifier (' + data.total_rows + ' rows' + excluded + ')…';
             setTimeout(() => { window.location.href = '/history'; }, 600);
         } else {
             status.style.color = 'var(--error)';

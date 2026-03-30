@@ -1,35 +1,45 @@
 """
 WAF Classifier — File Merger Blueprint
 Merges 3 JIRA export files (Epic, Feature, Story) into the canonical WAF import format.
-Purely a file transformation utility — no DB writes.
+Includes data-quality validation before submit: orphans, WAF gaps, color gaps, divergence.
 """
 
+import io
 import os
 import re
 import tempfile
 import uuid
+from datetime import datetime
 
 import pandas as pd
 from flask import Blueprint, request, jsonify, send_file
 
 merge_bp = Blueprint("merge_bp", __name__)
 
+# In-memory store: token -> full merged rows (for reject/refilter on submit)
+_merge_store = {}
+
 # ── WAF Color map ─────────────────────────────────────────────────────────────
 WAF_COLOR_MAP = {
     "ktlo": "GRAY",
     "keep the lights": "GRAY",
-    "regulatory": "RED",
-    "reg mandated": "RED",
+    "business maintenance": "BLACK",
+    "technical maintenance": "BLACK",
+    "regulatory (operational)": "RED",
+    "regulatory mandated": "RED",
+    "enterprise strategic": "ORANGE",
+    "top divisional": "YELLOW",
+    "other block": "GREEN",
     "revenue": "GREEN",
     "efficiency": "BLUE",
     "operational": "BLUE",
     "new capability": "ORANGE",
-    "new feature": "ORANGE",
     "tech debt": "YELLOW",
     "technical debt": "YELLOW",
     "security": "PURPLE",
-    "data": "TEAL",
 }
+
+KNOWN_COLORS = {"GRAY", "BLACK", "RED", "ORANGE", "YELLOW", "GREEN", "BLUE", "PURPLE", "TEAL"}
 
 # ── Column keyword definitions ─────────────────────────────────────────────────
 EPIC_KEYWORDS = {
@@ -39,48 +49,35 @@ EPIC_KEYWORDS = {
 }
 
 FEATURE_KEYWORDS = {
-    "id_col":     ["jira saas feature key", "feature key", "feature id"],
-    "name_col":   ["feature summary", "feature name", "summary"],
-    "epic_col":   ["parent epic number", "parent epic", "epic number", "epic#"],
-    "team_col":   ["team of teams", "team"],
-    "waf_col":    ["work alignment", "waf derived", "work category", "waf"],
+    "id_col":   ["jira saas feature key", "feature key", "feature id"],
+    "name_col": ["feature summary", "feature name", "summary"],
+    "epic_col": ["parent epic number", "parent epic", "epic number", "epic#"],
+    "team_col": ["team of teams", "team"],
+    "waf_col":  ["work alignment", "waf derived", "work category", "waf"],
 }
 
 STORY_KEYWORDS = {
-    "id_col":         ["story #", "story#", "story number", "issue key", "key"],
-    "title_col":      ["story name", "summary", "title", "name"],
-    "feature_col":    ["parent feature", "feature key", "feature#", "feature"],
-    "team_col":       ["teams", "team"],
-    "waf_col":        ["waf derived", "work alignment", "waf"],
-    "timestamp_col":  ["resolved date", "created", "date", "timestamp"],
-    "status_col":     ["status"],
+    "id_col":        ["story #", "story#", "story number", "issue key", "key"],
+    "title_col":     ["story name", "summary", "title", "name"],
+    "feature_col":   ["parent feature", "feature key", "feature#", "feature"],
+    "team_col":      ["teams", "team"],
+    "waf_col":       ["waf derived", "work alignment", "waf"],
+    "timestamp_col": ["resolved date", "created", "date", "timestamp"],
+    "status_col":    ["status"],
 }
 
 OUTPUT_COLUMNS = [
-    "Epic ID",
-    "Feature ID",
-    "Story ID",
-    "Epic",
-    "Parent Feature",
-    "Story Title",
-    "Story Description",
-    "Team",
-    "WAF Category",
-    "WAF Color",
-    "Sub-Category",
-    "Confidence",
-    "Run/Change",
-    "Timestamp",
-    "Issue Key",
+    "Epic ID", "Feature ID", "Story ID",
+    "Epic", "Parent Feature", "Story Title", "Story Description",
+    "Team", "WAF Category", "WAF Color",
+    "Sub-Category", "Confidence", "Run/Change",
+    "Timestamp", "Issue Key",
 ]
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
 def find_col(headers, keywords):
-    """
-    Keyword-priority column finder.
-    Tries each keyword against all column headers; first match wins.
-    Matching is substring, case-insensitive.
-    """
     h_map = {h.lower().strip(): h for h in headers}
     for kw in keywords:
         for h_lower, h_orig in h_map.items():
@@ -90,7 +87,6 @@ def find_col(headers, keywords):
 
 
 def resolve_waf_color(waf_value):
-    """Map a WAF category string to its color using partial matching."""
     if not waf_value or pd.isna(waf_value):
         return ""
     val = str(waf_value).lower().strip()
@@ -101,50 +97,55 @@ def resolve_waf_color(waf_value):
 
 
 def read_file(file_storage):
-    """Read an uploaded file (CSV or XLSX) into a DataFrame."""
     filename = file_storage.filename or ""
     ext = os.path.splitext(filename)[-1].lower()
     if ext in (".xlsx", ".xls"):
         return pd.read_excel(file_storage)
-    else:
-        # Try UTF-8 first, fall back to latin-1
-        try:
-            return pd.read_csv(file_storage, encoding="utf-8")
-        except UnicodeDecodeError:
-            file_storage.seek(0)
-            return pd.read_csv(file_storage, encoding="latin-1")
-
-
-def detect_column_map(df_epic, df_feature, df_story):
-    """Return a dict of detected column names for each file."""
-    epic_cols = list(df_epic.columns)
-    feat_cols = list(df_feature.columns)
-    story_cols = list(df_story.columns)
-
-    epic_map = {k: find_col(epic_cols, v) for k, v in EPIC_KEYWORDS.items()}
-    feature_map = {k: find_col(feat_cols, v) for k, v in FEATURE_KEYWORDS.items()}
-    story_map = {k: find_col(story_cols, v) for k, v in STORY_KEYWORDS.items()}
-
-    return {"epic": epic_map, "feature": feature_map, "story": story_map}
+    try:
+        return pd.read_csv(file_storage, encoding="utf-8")
+    except UnicodeDecodeError:
+        file_storage.seek(0)
+        return pd.read_csv(file_storage, encoding="latin-1")
 
 
 def safe_str(val):
-    """Convert a value to a clean string, treating NaN/None as empty."""
     if val is None or (isinstance(val, float) and pd.isna(val)):
         return ""
     return str(val).strip()
 
 
+def detect_column_map(df_epic, df_feature, df_story):
+    return {
+        "epic":    {k: find_col(list(df_epic.columns),    v) for k, v in EPIC_KEYWORDS.items()},
+        "feature": {k: find_col(list(df_feature.columns), v) for k, v in FEATURE_KEYWORDS.items()},
+        "story":   {k: find_col(list(df_story.columns),   v) for k, v in STORY_KEYWORDS.items()},
+    }
+
+
+def make_filename(job_name, token):
+    """Build a sanitized, timestamped filename."""
+    ts = datetime.now().strftime("%Y%m%d_%H%M")
+    if job_name:
+        safe = re.sub(r"[^\w\s\-]", "", job_name).strip()
+        safe = re.sub(r"\s+", "-", safe)[:60]
+        if safe:
+            return f"{safe}_{ts}.csv"
+    return f"waf_merged_{token}_{ts}.csv"
+
+
+# ── Core merge + validation ───────────────────────────────────────────────────
+
 def merge_files(df_epic, df_feature, df_story, col_map):
     """
-    Core merge logic.
-    Returns (merged_rows: list[dict], stats: dict)
+    Merge three DataFrames. Returns (merged_rows, epic_lookup, feature_lookup).
+    Each merged row carries private _meta fields used for validation; these are
+    stripped before writing to CSV.
     """
     em = col_map["epic"]
     fm = col_map["feature"]
     sm = col_map["story"]
 
-    # ── Build epic lookup: epic_id -> {name, waf} ─────────────────────────────
+    # Build epic lookup
     epic_lookup = {}
     if em["id_col"]:
         for _, row in df_epic.iterrows():
@@ -155,7 +156,7 @@ def merge_files(df_epic, df_feature, df_story, col_map):
                     "waf":  safe_str(row.get(em["waf_col"],  "")) if em["waf_col"]  else "",
                 }
 
-    # ── Build feature lookup: feature_id -> {name, parent_epic_id, team, waf} ─
+    # Build feature lookup
     feature_lookup = {}
     if fm["id_col"]:
         for _, row in df_feature.iterrows():
@@ -172,41 +173,38 @@ def merge_files(df_epic, df_feature, df_story, col_map):
     unmatched_features = 0
     unmatched_epics = 0
 
-    for _, row in df_story.iterrows():
-        story_id  = safe_str(row.get(sm["id_col"],      "")) if sm["id_col"]      else ""
-        title     = safe_str(row.get(sm["title_col"],   "")) if sm["title_col"]   else ""
-        feat_ref  = safe_str(row.get(sm["feature_col"], "")) if sm["feature_col"] else ""
-        s_team    = safe_str(row.get(sm["team_col"],    "")) if sm["team_col"]    else ""
-        s_waf     = safe_str(row.get(sm["waf_col"],     "")) if sm["waf_col"]     else ""
+    for idx, row in df_story.iterrows():
+        story_id  = safe_str(row.get(sm["id_col"],       "")) if sm["id_col"]       else ""
+        title     = safe_str(row.get(sm["title_col"],    "")) if sm["title_col"]    else ""
+        feat_ref  = safe_str(row.get(sm["feature_col"],  "")) if sm["feature_col"]  else ""
+        s_team    = safe_str(row.get(sm["team_col"],     "")) if sm["team_col"]     else ""
+        s_waf     = safe_str(row.get(sm["waf_col"],      "")) if sm["waf_col"]      else ""
         timestamp = safe_str(row.get(sm["timestamp_col"],"")) if sm["timestamp_col"] else ""
 
-        # Resolve feature
-        feat_data = feature_lookup.get(feat_ref, {})
-        feat_name = feat_data.get("name", "")
-        f_team    = feat_data.get("team", "")
-        f_waf     = feat_data.get("waf",  "")
-        epic_ref  = feat_data.get("parent_epic_id", "")
+        feat_data    = feature_lookup.get(feat_ref, {})
+        feat_found   = bool(feat_data)
+        feat_name    = feat_data.get("name", "")
+        f_team       = feat_data.get("team", "")
+        f_waf        = feat_data.get("waf",  "")
+        epic_ref     = feat_data.get("parent_epic_id", "")
 
-        if feat_ref and not feat_data:
+        if feat_ref and not feat_found:
             unmatched_features += 1
 
-        # Resolve epic
-        epic_data = epic_lookup.get(epic_ref, {})
-        epic_name = epic_data.get("name", "")
-        e_waf     = epic_data.get("waf",  "")
+        epic_data  = epic_lookup.get(epic_ref, {})
+        epic_found = bool(epic_data)
+        epic_name  = epic_data.get("name", "")
+        e_waf      = epic_data.get("waf",  "")
 
-        if epic_ref and not epic_data:
+        if epic_ref and not epic_found:
             unmatched_epics += 1
 
-        # WAF priority: story > feature > epic
         waf_category = s_waf or f_waf or e_waf
-
-        # Team priority: story > feature
-        team = s_team or f_team
-
-        waf_color = resolve_waf_color(waf_category)
+        team         = s_team or f_team
+        waf_color    = resolve_waf_color(waf_category)
 
         merged_rows.append({
+            # ── Output columns ──────────────────────────────────────────
             "Epic ID":           epic_ref,
             "Feature ID":        feat_ref,
             "Story ID":          story_id,
@@ -222,6 +220,15 @@ def merge_files(df_epic, df_feature, df_story, col_map):
             "Run/Change":        "",
             "Timestamp":         timestamp,
             "Issue Key":         story_id,
+            # ── Validation metadata (stripped before CSV write) ─────────
+            "_story_id":    story_id,
+            "_feat_ref":    feat_ref,
+            "_feat_found":  feat_found,
+            "_epic_ref":    epic_ref,
+            "_epic_found":  epic_found,
+            "_s_waf":       s_waf,
+            "_f_waf":       f_waf,
+            "_e_waf":       e_waf,
         })
 
     stats = {
@@ -233,23 +240,112 @@ def merge_files(df_epic, df_feature, df_story, col_map):
         "unmatched_epics":    unmatched_epics,
     }
 
-    return merged_rows, stats
+    return merged_rows, stats, epic_lookup, feature_lookup
+
+
+def build_issues(merged_rows, epic_lookup, feature_lookup):
+    """
+    Inspect merged rows and return structured issue lists.
+    Each issue item includes the story_id so the frontend can build reject checkboxes.
+    """
+    orphan_stories   = []   # story's Parent Feature not found
+    orphan_features  = []   # feature's Parent Epic not found
+    missing_waf      = []   # no WAF category after full resolution
+    unknown_color    = []   # WAF category present but no matching color
+    waf_divergence   = []   # story-level WAF differs from feature-level WAF
+
+    # Check features for orphan epics
+    for fid, feat in feature_lookup.items():
+        parent_epic = feat.get("parent_epic_id", "")
+        if parent_epic and parent_epic not in epic_lookup:
+            orphan_features.append({
+                "feature_id":   fid,
+                "feature_name": feat.get("name", ""),
+                "missing_epic": parent_epic,
+            })
+
+    for row in merged_rows:
+        sid   = row["_story_id"]
+        title = row["Story Title"]
+
+        # Orphan story
+        feat_ref   = row["_feat_ref"]
+        feat_found = row["_feat_found"]
+        if feat_ref and not feat_found:
+            orphan_stories.append({
+                "story_id":       sid,
+                "story_title":    title,
+                "missing_feature": feat_ref,
+            })
+        elif not feat_ref:
+            orphan_stories.append({
+                "story_id":       sid,
+                "story_title":    title,
+                "missing_feature": "(no Parent Feature set)",
+            })
+
+        # Missing WAF
+        waf = row["WAF Category"]
+        if not waf:
+            missing_waf.append({"story_id": sid, "story_title": title})
+
+        # Unknown color
+        color = row["WAF Color"]
+        if waf and not color:
+            unknown_color.append({
+                "story_id":    sid,
+                "story_title": title,
+                "waf_category": waf,
+            })
+
+        # WAF divergence: story's own WAF tag vs its parent feature's WAF tag
+        s_waf = row["_s_waf"]
+        f_waf = row["_f_waf"]
+        if s_waf and f_waf and s_waf.lower() != f_waf.lower():
+            waf_divergence.append({
+                "story_id":    sid,
+                "story_title": title,
+                "story_waf":   s_waf,
+                "feature_waf": f_waf,
+                "feature_id":  row["Feature ID"],
+            })
+
+    total = (len(orphan_stories) + len(orphan_features) +
+             len(missing_waf) + len(unknown_color) + len(waf_divergence))
+
+    return {
+        "orphan_stories":  orphan_stories,
+        "orphan_features": orphan_features,
+        "missing_waf":     missing_waf,
+        "unknown_color":   unknown_color,
+        "waf_divergence":  waf_divergence,
+        "total":           total,
+        "clean":           total == 0,
+    }
+
+
+def rows_to_csv_bytes(rows, rejected_ids=None):
+    """Serialize output rows to CSV bytes, excluding rejected story IDs."""
+    rejected = set(rejected_ids or [])
+    clean = [
+        {k: v for k, v in r.items() if not k.startswith("_")}
+        for r in rows
+        if r.get("_story_id", r.get("Story ID", "")) not in rejected
+    ]
+    df = pd.DataFrame(clean, columns=OUTPUT_COLUMNS)
+    buf = io.StringIO()
+    df.to_csv(buf, index=False)
+    return buf.getvalue().encode("utf-8")
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @merge_bp.route("/api/merge/process", methods=["POST"])
 def merge_process():
-    """
-    Accept 3 uploaded files (epic_file, feature_file, story_file),
-    merge them, return JSON with preview + token.
-    """
     errors = []
     for name in ("epic_file", "feature_file", "story_file"):
-        if name not in request.files:
+        if name not in request.files or request.files[name].filename == "":
             errors.append(f"Missing file: {name}")
-        elif request.files[name].filename == "":
-            errors.append(f"Empty filename for: {name}")
     if errors:
         return jsonify({"error": "; ".join(errors)}), 400
 
@@ -263,81 +359,104 @@ def merge_process():
     col_map = detect_column_map(df_epic, df_feature, df_story)
 
     try:
-        merged_rows, stats = merge_files(df_epic, df_feature, df_story, col_map)
+        merged_rows, stats, epic_lookup, feature_lookup = merge_files(
+            df_epic, df_feature, df_story, col_map
+        )
     except Exception as exc:
         return jsonify({"error": f"Merge failed: {exc}"}), 500
 
-    # Save temp file
-    token = uuid.uuid4().hex[:8]
-    tmp_path = os.path.join(tempfile.gettempdir(), f"waf_merge_{token}.csv")
-    df_out = pd.DataFrame(merged_rows, columns=OUTPUT_COLUMNS)
-    df_out.to_csv(tmp_path, index=False)
+    issues = build_issues(merged_rows, epic_lookup, feature_lookup)
 
-    # Preview: first 20 rows as list of dicts
-    preview = merged_rows[:20]
+    # Store full rows (including _meta) for reject filtering on submit/download
+    token = uuid.uuid4().hex[:8]
+    _merge_store[token] = merged_rows
+
+    # Write initial temp CSV (no rejections yet)
+    tmp_path = os.path.join(tempfile.gettempdir(), f"waf_merge_{token}.csv")
+    csv_bytes = rows_to_csv_bytes(merged_rows)
+    with open(tmp_path, "wb") as f:
+        f.write(csv_bytes)
 
     return jsonify({
         "token":      token,
         "stats":      stats,
-        "preview":    preview,
+        "issues":     issues,
+        "preview":    [
+            {k: v for k, v in r.items() if not k.startswith("_")}
+            for r in merged_rows[:20]
+        ],
         "columns":    OUTPUT_COLUMNS,
         "column_map": col_map,
     })
 
 
-@merge_bp.route("/api/merge/download/<token>", methods=["GET"])
+@merge_bp.route("/api/merge/download/<token>", methods=["POST"])
 def merge_download(token):
-    """Return the merged CSV file as a browser download."""
+    """Return merged CSV, excluding any rejected story IDs."""
     if not re.fullmatch(r"[0-9a-f]{8}", token):
         return jsonify({"error": "Invalid token"}), 400
-    tmp_path = os.path.join(tempfile.gettempdir(), f"waf_merge_{token}.csv")
-    if not os.path.exists(tmp_path):
-        return jsonify({"error": "File not found or expired"}), 404
+
+    rows = _merge_store.get(token)
+    if rows is None:
+        # Fall back to temp file if store was cleared
+        tmp_path = os.path.join(tempfile.gettempdir(), f"waf_merge_{token}.csv")
+        if not os.path.exists(tmp_path):
+            return jsonify({"error": "Session expired — please re-process files"}), 404
+        return send_file(tmp_path, mimetype="text/csv", as_attachment=True,
+                         download_name=f"waf_merged_{token}.csv")
+
+    body         = request.get_json(silent=True) or {}
+    rejected_ids = body.get("rejected_ids", [])
+    job_name     = str(body.get("job_name", "")).strip()
+    filename     = make_filename(job_name, token)
+
+    csv_bytes = rows_to_csv_bytes(rows, rejected_ids)
     return send_file(
-        tmp_path,
+        io.BytesIO(csv_bytes),
         mimetype="text/csv",
         as_attachment=True,
-        download_name=f"waf_merged_{token}.csv",
+        download_name=filename,
     )
 
 
 @merge_bp.route("/api/merge/send-to-classifier/<token>", methods=["POST"])
 def merge_send_to_classifier(token):
     """
-    Run the full bulk-verify preview on the merged temp file and return
-    the complete preview JSON (same shape as /api/bulk-verify/preview).
-    The frontend stores this in sessionStorage and redirects to /history,
-    which reads sessionStorage and auto-triggers the mapping step.
+    Filter out rejected rows, write final CSV to uploads folder, run
+    bulk-verify preview logic, return full preview JSON.
+    Frontend stores in sessionStorage → /history auto-triggers mapping step.
     """
     if not re.fullmatch(r"[0-9a-f]{8}", token):
         return jsonify({"error": "Invalid token"}), 400
 
-    tmp_path = os.path.join(tempfile.gettempdir(), f"waf_merge_{token}.csv")
-    if not os.path.exists(tmp_path):
-        return jsonify({"error": "File not found or expired"}), 404
+    rows = _merge_store.get(token)
+    if rows is None:
+        tmp_path = os.path.join(tempfile.gettempdir(), f"waf_merge_{token}.csv")
+        if not os.path.exists(tmp_path):
+            return jsonify({"error": "Session expired — please re-process files"}), 404
+        # Load from temp file (no reject support in this path)
+        rows = None
 
-    # Build a clean filename from the job name (fallback to token)
-    raw_job_name = request.form.get("job_name", "").strip()
-    if raw_job_name:
-        # Sanitize: keep alphanumeric, spaces, hyphens, underscores
-        safe_job = re.sub(r"[^\w\s\-]", "", raw_job_name).strip()
-        safe_job = re.sub(r"\s+", "-", safe_job)[:80]
-        dest_name = f"{safe_job}.csv" if safe_job else f"waf_merged_{token}.csv"
-    else:
-        dest_name = f"waf_merged_{token}.csv"
-
-    # Copy into uploads folder
+    import json, shutil, time as _time
     from config import UPLOAD_FOLDER
-    import shutil
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    dest_path = os.path.join(UPLOAD_FOLDER, dest_name)
-    shutil.copy2(tmp_path, dest_path)
-
-    # Run the same column-detection logic as /api/bulk-verify/preview
-    import pandas as pd
-    import time as _time
     from state import _preview_store
 
+    rejected_ids = json.loads(request.form.get("rejected_ids", "[]"))
+    job_name     = request.form.get("job_name", "").strip()
+    dest_name    = make_filename(job_name, token)
+
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    dest_path = os.path.join(UPLOAD_FOLDER, dest_name)
+
+    if rows is not None:
+        csv_bytes = rows_to_csv_bytes(rows, rejected_ids)
+        with open(dest_path, "wb") as f:
+            f.write(csv_bytes)
+    else:
+        tmp_path = os.path.join(tempfile.gettempdir(), f"waf_merge_{token}.csv")
+        shutil.copy2(tmp_path, dest_path)
+
+    # Run column-detection (same as /api/bulk-verify/preview)
     df = pd.read_csv(dest_path)
     original_columns = list(df.columns)
     df.columns = [c.strip().lower() for c in df.columns]
@@ -350,42 +469,38 @@ def merge_send_to_classifier(token):
         return None
 
     target_fields = [
-        {"key": "title",          "label": "Story Title",      "required": True,  "keywords": ["story title", "title", "summary", "story", "name"]},
-        {"key": "description",    "label": "Story Description", "required": False, "keywords": ["story description", "description", "desc", "detail", "body"]},
+        {"key": "title",          "label": "Story Title",      "required": True,  "keywords": ["story title", "title", "summary"]},
+        {"key": "description",    "label": "Story Description", "required": False, "keywords": ["story description", "description", "desc"]},
         {"key": "waf_category",   "label": "WAF Category",      "required": False, "keywords": ["waf category", "waf_category", "category"]},
         {"key": "waf_color",      "label": "WAF Color",         "required": False, "keywords": ["waf color", "waf_color", "color"]},
         {"key": "run_change",     "label": "Run/Change",        "required": False, "keywords": ["run/change", "run_change", "run change"]},
         {"key": "subcategory",    "label": "Sub-Category",      "required": False, "keywords": ["sub-category", "subcategory", "waf sub"]},
         {"key": "confidence",     "label": "Confidence",        "required": False, "keywords": ["confidence", "conf"]},
         {"key": "team",           "label": "Team",              "required": False, "keywords": ["team", "squad", "group"]},
-        {"key": "epic",           "label": "Epic",              "required": False, "keywords": ["epic", "initiative", "program"]},
+        {"key": "epic",           "label": "Epic",              "required": False, "keywords": ["epic", "initiative"]},
         {"key": "parent_feature", "label": "Parent Feature",    "required": False, "keywords": ["parent feature", "feature", "capability"]},
         {"key": "timestamp",      "label": "Timestamp",         "required": False, "keywords": ["timestamp", "date", "created"]},
-        {"key": "story_id",       "label": "Story ID",          "required": False, "keywords": ["story id", "story_id", "issue key", "ticket"]},
+        {"key": "story_id",       "label": "Story ID",          "required": False, "keywords": ["story id", "story_id", "issue key"]},
         {"key": "feature_id",     "label": "Feature ID",        "required": False, "keywords": ["feature id", "feature_id", "feature key"]},
         {"key": "epic_id",        "label": "Epic ID",           "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic link"]},
     ]
-    suggested = {f["key"]: (_find(f["keywords"]) or "") for f in target_fields}
-    sample_rows = [{col: str(row.get(col, "")) for col in df.columns}
-                   for _, row in df.head(3).iterrows()]
-
-    preview_id = str(uuid.uuid4())
+    suggested    = {f["key"]: (_find(f["keywords"]) or "") for f in target_fields}
+    sample_rows  = [{col: str(row.get(col, "")) for col in df.columns}
+                    for _, row in df.head(3).iterrows()]
+    preview_id   = str(uuid.uuid4())
     _preview_store[preview_id] = {
-        "df": df,
-        "filename": dest_name,
-        "ext": "csv",
-        "filepath": dest_path,
-        "created": _time.time(),
+        "df": df, "filename": dest_name, "ext": "csv",
+        "filepath": dest_path, "created": _time.time(),
     }
 
     return jsonify({
-        "success": True,
-        "filename": dest_name,
-        "file_columns": list(df.columns),
+        "success":          True,
+        "filename":         dest_name,
+        "file_columns":     list(df.columns),
         "original_columns": original_columns,
         "suggested_mappings": suggested,
-        "target_fields": [{"key": f["key"], "label": f["label"], "required": f["required"]} for f in target_fields],
-        "sample_rows": sample_rows,
-        "total_rows": len(df),
-        "preview_id": preview_id,
+        "target_fields":    [{"key": f["key"], "label": f["label"], "required": f["required"]} for f in target_fields],
+        "sample_rows":      sample_rows,
+        "total_rows":       len(df),
+        "preview_id":       preview_id,
     })
