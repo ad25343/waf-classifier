@@ -793,7 +793,7 @@
                 <div class="stat-value" id="stat-stories-val">—</div>
             </div>
             <div class="stat-card warning" id="stat-unmatched">
-                <div class="stat-label">Unmatched</div>
+                <div class="stat-label" id="stat-unmatched-label">Unmatched</div>
                 <div class="stat-value" id="stat-unmatched-val">—</div>
             </div>
         </div>
@@ -1136,7 +1136,7 @@ async function processFiles() {
 
         _currentToken = data.token;
         renderDetection(data.column_map);
-        renderStats(data.stats);
+        renderStats(data.stats, (data.issues || {}).missing_files);
         renderPreview(data.preview, data.columns);
         renderValidation(data.issues);
 
@@ -1214,14 +1214,23 @@ function renderDetection(colMap) {
 }
 
 // ── Stats render ─────────────────────────────────────────────────────
-function renderStats(stats) {
+function renderStats(stats, missingFiles) {
     const show = id => document.getElementById(id).classList.add('visible');
     show('stat-epics'); show('stat-features'); show('stat-stories'); show('stat-unmatched');
-    document.getElementById('stat-epics-val').textContent     = stats.epics    != null ? stats.epics    : '—';
-    document.getElementById('stat-features-val').textContent  = stats.features != null ? stats.features : '—';
-    document.getElementById('stat-stories-val').textContent   = stats.stories  != null ? stats.stories  : '—';
-    document.getElementById('stat-unmatched-val').textContent =
-        (stats.unmatched_features || 0) + (stats.unmatched_epics || 0);
+
+    const epicLabel    = missingFiles && missingFiles.includes('epic')    ? 'Epics (not uploaded)'    : 'Epics Loaded';
+    const featureLabel = missingFiles && missingFiles.includes('feature') ? 'Features (not uploaded)' : 'Features Loaded';
+    document.getElementById('stat-epics').querySelector('.stat-label').textContent    = epicLabel;
+    document.getElementById('stat-features').querySelector('.stat-label').textContent = featureLabel;
+
+    document.getElementById('stat-epics-val').textContent    = stats.epics    != null ? stats.epics    : '—';
+    document.getElementById('stat-features-val').textContent = stats.features != null ? stats.features : '—';
+    document.getElementById('stat-stories-val').textContent  = stats.stories  != null ? stats.stories  : '—';
+
+    const unmatched = (stats.unmatched_features || 0) + (stats.unmatched_epics || 0);
+    document.getElementById('stat-unmatched-val').textContent = unmatched;
+    document.getElementById('stat-unmatched-label').textContent = unmatched > 0 ? 'Unmatched Stories' : 'All Matched';
+    if (unmatched === 0) document.getElementById('stat-unmatched').classList.remove('warning');
 }
 
 // ── Preview render ───────────────────────────────────────────────────

@@ -135,7 +135,7 @@ def make_filename(job_name, token):
 
 # ── Core merge + validation ───────────────────────────────────────────────────
 
-def merge_files(df_epic, df_feature, df_story, col_map):
+def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_feature=True):
     """
     Merge DataFrames. df_epic and df_feature may be None (optional files).
     Returns (merged_rows, stats, epic_lookup, feature_lookup).
@@ -188,7 +188,7 @@ def merge_files(df_epic, df_feature, df_story, col_map):
         f_waf        = feat_data.get("waf",  "")
         epic_ref     = feat_data.get("parent_epic_id", "")
 
-        if feat_ref and not feat_found:
+        if has_feature and feat_ref and not feat_found:
             unmatched_features += 1
 
         epic_data  = epic_lookup.get(epic_ref, {})
@@ -196,7 +196,7 @@ def merge_files(df_epic, df_feature, df_story, col_map):
         epic_name  = epic_data.get("name", "")
         e_waf      = epic_data.get("waf",  "")
 
-        if epic_ref and not epic_found:
+        if has_epic and epic_ref and not epic_found:
             unmatched_epics += 1
 
         waf_category = s_waf or f_waf or e_waf
@@ -367,7 +367,8 @@ def merge_process():
 
     try:
         merged_rows, stats, epic_lookup, feature_lookup = merge_files(
-            df_epic, df_feature, df_story, col_map
+            df_epic, df_feature, df_story, col_map,
+            has_epic=has_epic, has_feature=has_feature
         )
     except Exception as exc:
         return jsonify({"error": f"Merge failed: {exc}"}), 500
