@@ -16,6 +16,13 @@ from flask import Blueprint, request, jsonify, send_file
 
 merge_bp = Blueprint("merge_bp", __name__)
 
+# Import alias normalizer — used to map variant names to canonical WAF categories
+try:
+    from waf_core import normalize_waf_category as _normalize_waf
+except ImportError:
+    def _normalize_waf(val, **_):
+        return (val, False, val)
+
 # In-memory store: token -> full merged rows (for reject/refilter on submit)
 _merge_store = {}
 
@@ -199,7 +206,8 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
         if has_epic and epic_ref and not epic_found:
             unmatched_epics += 1
 
-        waf_category = s_waf or f_waf or e_waf
+        raw_waf      = s_waf or f_waf or e_waf
+        waf_category = _normalize_waf(raw_waf)[0] if raw_waf else ""
         team         = s_team or f_team
         waf_color    = resolve_waf_color(waf_category)
 

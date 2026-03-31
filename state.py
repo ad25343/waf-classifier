@@ -25,30 +25,35 @@ DEFAULT_WAF_CATEGORIES = [
 ]
 
 WAF_ALIASES = {
-    "ktlo": "KTLO (Keep the Lights On)",
-    "keep the lights on": "KTLO (Keep the Lights On)",
-    "keep lights on": "KTLO (Keep the Lights On)",
-    "biz maintenance": "Business Maintenance",
-    "bus maintenance": "Business Maintenance",
-    "business maint": "Business Maintenance",
-    "tech maintenance": "Technical Maintenance",
-    "technical maint": "Technical Maintenance",
-    "tech debt": "Technical Maintenance",
-    "reg operational": "Regulatory (Operational)",
-    "regulatory operational": "Regulatory (Operational)",
-    "reg ops": "Regulatory (Operational)",
-    "reg mandated": "Regulatory Mandated Change",
-    "regulatory mandated": "Regulatory Mandated Change",
-    "reg change": "Regulatory Mandated Change",
-    "enterprise strategic": "Enterprise Strategic Priority",
-    "esp": "Enterprise Strategic Priority",
-    "strategic priority": "Enterprise Strategic Priority",
-    "top divisional": "Top Divisional Priority",
-    "tdp": "Top Divisional Priority",
-    "divisional priority": "Top Divisional Priority",
-    "other blocked": "Other Block Priority",
-    "obp": "Other Block Priority",
-    "blocked priority": "Other Block Priority",
+    # KTLO
+    "ktlo":                          "KTLO (Keep the Lights On)",
+    "keep the lights on":            "KTLO (Keep the Lights On)",
+    "keep lights on":                "KTLO (Keep the Lights On)",
+    # Maintenance
+    "biz maintenance":               "Business Maintenance",
+    "bus maintenance":               "Business Maintenance",
+    "business maint":                "Business Maintenance",
+    "tech maintenance":              "Technical Maintenance",
+    "technical maint":               "Technical Maintenance",
+    "tech debt":                     "Technical Maintenance",
+    # Regulatory — kept separate; aliases only cover shorthand variants
+    "reg operational":               "Regulatory (Operational)",
+    "regulatory operational":        "Regulatory (Operational)",
+    "reg ops":                       "Regulatory (Operational)",
+    "reg mandated":                  "Regulatory Mandated Change",
+    "regulatory mandated":           "Regulatory Mandated Change",
+    "reg change":                    "Regulatory Mandated Change",
+    # Enterprise / Divisional
+    "enterprise strategic":          "Enterprise Strategic Priority",
+    "esp":                           "Enterprise Strategic Priority",
+    "strategic priority":            "Enterprise Strategic Priority",
+    "top divisional":                "Top Divisional Priority",
+    "tdp":                           "Top Divisional Priority",
+    "divisional priority":           "Top Divisional Priority",
+    # Other Block
+    "other blocked":                 "Other Block Priority",
+    "obp":                           "Other Block Priority",
+    "blocked priority":              "Other Block Priority",
 }
 
 # In-memory store for ground truth examples
