@@ -687,7 +687,7 @@
     <div class="upload-grid">
         <!-- Epic -->
         <div class="upload-card" id="card-epic">
-            <div class="upload-card-title">Epic Attributes File</div>
+            <div class="upload-card-title">Epic Attributes File <span style="font-size:11px;font-weight:400;color:var(--text-muted);">Optional</span></div>
             <div class="upload-card-subtitle">Jira SaaS Epic#, Summary, Work Alignment Framework</div>
             <div class="upload-zone">
                 <div class="upload-zone-icon">&#128196;</div>
@@ -703,7 +703,7 @@
 
         <!-- Feature -->
         <div class="upload-card" id="card-feature">
-            <div class="upload-card-title">Feature Attributes File</div>
+            <div class="upload-card-title">Feature Attributes File <span style="font-size:11px;font-weight:400;color:var(--text-muted);">Optional</span></div>
             <div class="upload-card-subtitle">Feature Key, Feature Summary, Parent Epic Number, Team</div>
             <div class="upload-zone">
                 <div class="upload-zone-icon">&#128196;</div>
@@ -719,7 +719,7 @@
 
         <!-- Story -->
         <div class="upload-card" id="card-story">
-            <div class="upload-card-title">Story Attributes File</div>
+            <div class="upload-card-title">Story Attributes File <span style="font-size:11px;font-weight:400;color:var(--accent);">Required</span></div>
             <div class="upload-card-subtitle">Story #, Story Name, Parent Feature, WAF Derived, Team</div>
             <div class="upload-zone">
                 <div class="upload-zone-icon">&#128196;</div>
@@ -950,7 +950,7 @@ function onFileSelected(type, input) {
 
 function updateProcessButton() {
     const btn = document.getElementById('btn-process');
-    btn.disabled = !(_files.epic && _files.feature && _files.story);
+    btn.disabled = !_files.story;  // Story is required; Feature + Epic are optional
 }
 
 // ── Rejection tracking ────────────────────────────────────────────────
@@ -1005,6 +1005,19 @@ function renderValidation(issues) {
 
     const data = issues || {};
     const isClean = !issues || issues.clean;
+    const missingFiles = data.missing_files || [];
+
+    // Missing file callout
+    if (missingFiles.length > 0) {
+        const names = { epic: 'Epic Attributes', feature: 'Feature Attributes' };
+        const notice = document.createElement('div');
+        notice.style.cssText = 'padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;margin-bottom:14px;font-size:13px;';
+        const missing = missingFiles.map(f => '<strong>' + esc(names[f] || f) + '</strong>').join(' and ');
+        notice.innerHTML = '\u26A0 ' + missing + ' file' + (missingFiles.length > 1 ? 's were' : ' was') +
+            ' not uploaded &mdash; related columns (Epic ID, Feature ID, Epic, Parent Feature) will be blank in the output. ' +
+            'Upload the missing file' + (missingFiles.length > 1 ? 's' : '') + ' and re-process for a complete merge.';
+        container.appendChild(notice);
+    }
 
     // Banner
     if (isClean) {
@@ -1168,6 +1181,11 @@ function renderDetection(colMap) {
     ];
 
     function groupHtml(title, fields, map) {
+        if (map === null) {
+            return `<div class="detection-group"><h4>${esc(title)}</h4>
+                <div style="font-size:12px;color:var(--text-muted);font-style:italic;padding:6px 0;">Not uploaded &mdash; fields will be blank</div>
+            </div>`;
+        }
         let rows = '';
         fields.forEach(f => {
             const val = map[f.key];

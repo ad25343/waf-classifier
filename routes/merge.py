@@ -116,8 +116,8 @@ def safe_str(val):
 
 def detect_column_map(df_epic, df_feature, df_story):
     return {
-        "epic":    {k: find_col(list(df_epic.columns),    v) for k, v in EPIC_KEYWORDS.items()},
-        "feature": {k: find_col(list(df_feature.columns), v) for k, v in FEATURE_KEYWORDS.items()},
+        "epic":    {k: find_col(list(df_epic.columns),    v) for k, v in EPIC_KEYWORDS.items()} if df_epic    is not None else None,
+        "feature": {k: find_col(list(df_feature.columns), v) for k, v in FEATURE_KEYWORDS.items()} if df_feature is not None else None,
         "story":   {k: find_col(list(df_story.columns),   v) for k, v in STORY_KEYWORDS.items()},
     }
 
@@ -137,36 +137,36 @@ def make_filename(job_name, token):
 
 def merge_files(df_epic, df_feature, df_story, col_map):
     """
-    Merge three DataFrames. Returns (merged_rows, epic_lookup, feature_lookup).
-    Each merged row carries private _meta fields used for validation; these are
-    stripped before writing to CSV.
+    Merge DataFrames. df_epic and df_feature may be None (optional files).
+    Returns (merged_rows, stats, epic_lookup, feature_lookup).
+    Each merged row carries private _meta fields used for validation.
     """
-    em = col_map["epic"]
-    fm = col_map["feature"]
+    em = col_map["epic"]    or {}
+    fm = col_map["feature"] or {}
     sm = col_map["story"]
 
-    # Build epic lookup
+    # Build epic lookup (only when epic file provided)
     epic_lookup = {}
-    if em["id_col"]:
+    if df_epic is not None and em.get("id_col"):
         for _, row in df_epic.iterrows():
             eid = safe_str(row.get(em["id_col"], ""))
             if eid:
                 epic_lookup[eid] = {
-                    "name": safe_str(row.get(em["name_col"], "")) if em["name_col"] else "",
-                    "waf":  safe_str(row.get(em["waf_col"],  "")) if em["waf_col"]  else "",
+                    "name": safe_str(row.get(em["name_col"], "")) if em.get("name_col") else "",
+                    "waf":  safe_str(row.get(em["waf_col"],  "")) if em.get("waf_col")  else "",
                 }
 
-    # Build feature lookup
+    # Build feature lookup (only when feature file provided)
     feature_lookup = {}
-    if fm["id_col"]:
+    if df_feature is not None and fm.get("id_col"):
         for _, row in df_feature.iterrows():
             fid = safe_str(row.get(fm["id_col"], ""))
             if fid:
                 feature_lookup[fid] = {
-                    "name":          safe_str(row.get(fm["name_col"],  "")) if fm["name_col"]  else "",
-                    "parent_epic_id":safe_str(row.get(fm["epic_col"],  "")) if fm["epic_col"]  else "",
-                    "team":          safe_str(row.get(fm["team_col"],  "")) if fm["team_col"]  else "",
-                    "waf":           safe_str(row.get(fm["waf_col"],   "")) if fm["waf_col"]   else "",
+                    "name":           safe_str(row.get(fm["name_col"],  "")) if fm.get("name_col")  else "",
+                    "parent_epic_id": safe_str(row.get(fm["epic_col"],  "")) if fm.get("epic_col")  else "",
+                    "team":           safe_str(row.get(fm["team_col"],  "")) if fm.get("team_col")  else "",
+                    "waf":            safe_str(row.get(fm["waf_col"],   "")) if fm.get("waf_col")   else "",
                 }
 
     merged_rows = []
@@ -243,46 +243,49 @@ def merge_files(df_epic, df_feature, df_story, col_map):
     return merged_rows, stats, epic_lookup, feature_lookup
 
 
-def build_issues(merged_rows, epic_lookup, feature_lookup):
+def build_issues(merged_rows, epic_lookup, feature_lookup, has_feature=True, has_epic=True):
     """
     Inspect merged rows and return structured issue lists.
-    Each issue item includes the story_id so the frontend can build reject checkboxes.
+    has_feature / has_epic control whether orphan checks apply
+    (skipped when the relevant file was not uploaded).
     """
-    orphan_stories   = []   # story's Parent Feature not found
-    orphan_features  = []   # feature's Parent Epic not found
-    missing_waf      = []   # no WAF category after full resolution
-    unknown_color    = []   # WAF category present but no matching color
-    waf_divergence   = []   # story-level WAF differs from feature-level WAF
+    orphan_stories   = []
+    orphan_features  = []
+    missing_waf      = []
+    unknown_color    = []
+    waf_divergence   = []
 
-    # Check features for orphan epics
-    for fid, feat in feature_lookup.items():
-        parent_epic = feat.get("parent_epic_id", "")
-        if parent_epic and parent_epic not in epic_lookup:
-            orphan_features.append({
-                "feature_id":   fid,
-                "feature_name": feat.get("name", ""),
-                "missing_epic": parent_epic,
-            })
+    # Orphan features only meaningful when both feature + epic files provided
+    if has_feature and has_epic:
+        for fid, feat in feature_lookup.items():
+            parent_epic = feat.get("parent_epic_id", "")
+            if parent_epic and parent_epic not in epic_lookup:
+                orphan_features.append({
+                    "feature_id":   fid,
+                    "feature_name": feat.get("name", ""),
+                    "missing_epic": parent_epic,
+                })
 
     for row in merged_rows:
         sid   = row["_story_id"]
         title = row["Story Title"]
 
-        # Orphan story
-        feat_ref   = row["_feat_ref"]
-        feat_found = row["_feat_found"]
-        if feat_ref and not feat_found:
-            orphan_stories.append({
-                "story_id":       sid,
-                "story_title":    title,
-                "missing_feature": feat_ref,
-            })
-        elif not feat_ref:
-            orphan_stories.append({
-                "story_id":       sid,
-                "story_title":    title,
-                "missing_feature": "(no Parent Feature set)",
-            })
+        # Orphan stories only meaningful when feature file was provided
+        if has_feature:
+            feat_ref   = row["_feat_ref"]
+            feat_found = row["_feat_found"]
+            if feat_ref and not feat_found:
+                orphan_stories.append({
+                    "story_id":        sid,
+                    "story_title":     title,
+                    "missing_feature": feat_ref,
+                })
+            elif not feat_ref:
+                orphan_stories.append({
+                    "story_id":        sid,
+                    "story_title":     title,
+                    "missing_feature": "(no Parent Feature set)",
+                })
 
         # Missing WAF
         waf = row["WAF Category"]
@@ -342,17 +345,21 @@ def rows_to_csv_bytes(rows, rejected_ids=None):
 
 @merge_bp.route("/api/merge/process", methods=["POST"])
 def merge_process():
-    errors = []
-    for name in ("epic_file", "feature_file", "story_file"):
-        if name not in request.files or request.files[name].filename == "":
-            errors.append(f"Missing file: {name}")
-    if errors:
-        return jsonify({"error": "; ".join(errors)}), 400
+    # Story file is required; Feature and Epic are optional
+    def _has_file(name):
+        return name in request.files and request.files[name].filename != ""
+
+    if not _has_file("story_file"):
+        return jsonify({"error": "Story file is required to run the merge."}), 400
+
+    has_feature = _has_file("feature_file")
+    has_epic    = _has_file("epic_file")
+    missing_files = (["epic"] if not has_epic else []) + (["feature"] if not has_feature else [])
 
     try:
-        df_epic    = read_file(request.files["epic_file"])
-        df_feature = read_file(request.files["feature_file"])
         df_story   = read_file(request.files["story_file"])
+        df_feature = read_file(request.files["feature_file"]) if has_feature else None
+        df_epic    = read_file(request.files["epic_file"])    if has_epic    else None
     except Exception as exc:
         return jsonify({"error": f"Failed to read uploaded files: {exc}"}), 400
 
@@ -365,7 +372,9 @@ def merge_process():
     except Exception as exc:
         return jsonify({"error": f"Merge failed: {exc}"}), 500
 
-    issues = build_issues(merged_rows, epic_lookup, feature_lookup)
+    issues = build_issues(merged_rows, epic_lookup, feature_lookup,
+                          has_feature=has_feature, has_epic=has_epic)
+    issues["missing_files"] = missing_files
 
     # Store full rows (including _meta) for reject filtering on submit/download
     token = uuid.uuid4().hex[:8]
