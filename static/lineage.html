@@ -828,6 +828,10 @@ function renderOverview() {
                         <div class="mini-stat-value" style="color:var(--accent)">${epic.total_stories}</div>
                         <div class="mini-stat-label">Stories</div>
                     </div>
+                    ${epic.total_points > 0 ? `<div>
+                        <div class="mini-stat-value" style="color:var(--teal)">${epic.total_points % 1 === 0 ? epic.total_points : epic.total_points.toFixed(1)}</div>
+                        <div class="mini-stat-label">Points</div>
+                    </div>` : ''}
                     <div>
                         <div class="mini-stat-value" style="color:var(--success)">${epic.approved}</div>
                         <div class="mini-stat-label">Approved</div>
@@ -924,9 +928,11 @@ function renderTreeSorted(epic) {
             let status = '';
             if (s.approved) status = '<span class="badge approved">Approved</span>';
             else if (s.mismatch) status = '<span class="badge mismatch">Mismatch</span>';
+            const ptsTag = s.story_points ? `<span title="Story Points" style="font-size:10px;font-weight:600;color:var(--teal);background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.3);padding:1px 5px;border-radius:3px;">${s.story_points} pts</span>` : '';
             return `<div class="story-item">
                 <span class="color-dot" style="background:${dotColor}"></span>
                 <span class="story-title" title="${s.title}">${title}</span>
+                ${ptsTag}
                 ${idTags}
                 <span style="font-size:12px;color:var(--text-muted);">${s.category}</span>
                 <span class="badge ${confClass}">${s.confidence || '—'}</span>
@@ -940,6 +946,7 @@ function renderTreeSorted(epic) {
                     <span class="feature-toggle">▶</span>
                     <span class="feature-name">${feat.name}</span>
                     <span class="feature-count">${feat.story_count} stories</span>
+                    ${feat.total_points > 0 ? `<span style="font-size:11px;font-weight:600;color:var(--teal);margin-left:6px;">${feat.total_points % 1 === 0 ? feat.total_points : feat.total_points.toFixed(1)} pts</span>` : ''}
                     ${Object.entries(feat.categories).map(([c, n]) =>
                         `<span style="font-size:11px;color:var(--text-muted);margin-left:4px;">${c}: ${n}</span>`
                     ).join('')}
@@ -1014,6 +1021,14 @@ function renderEpicDetail(epic) {
             <div class="kpi-label">Stories</div>
             <div class="kpi-value" style="color:var(--accent)">${epic.total_stories}</div>
         </div>
+        ${epic.total_points > 0 ? `<div class="kpi">
+            <div class="kpi-label">Total Points</div>
+            <div class="kpi-value" style="color:var(--teal)">${epic.total_points % 1 === 0 ? epic.total_points : epic.total_points.toFixed(1)}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Avg Pts/Story</div>
+            <div class="kpi-value" style="color:var(--teal)">${epic.total_stories > 0 ? (epic.total_points / epic.total_stories).toFixed(1) : '—'}</div>
+        </div>` : ''}
         <div class="kpi">
             <div class="kpi-label">Features</div>
             <div class="kpi-value" style="color:var(--purple)">${epic.features.length}</div>

@@ -59,7 +59,7 @@ def epic_summary():
         f"""SELECT id, timestamp, story_title, story_description, waf_category,
                    waf_subcategory, waf_color, run_change, confidence,
                    was_mismatch, original_tag, approved, team, epic, parent_feature,
-                   story_id, feature_id, epic_id
+                   story_id, feature_id, epic_id, story_points
             FROM classifications WHERE {where} ORDER BY epic, timestamp DESC""",
         params
     ).fetchall()
@@ -76,6 +76,15 @@ def epic_summary():
         total = len(stories)
         approved = sum(1 for s in stories if s["approved"])
         mismatches = sum(1 for s in stories if s["was_mismatch"])
+
+        def _pts(s):
+            try:
+                v = str(s["story_points"] or "").strip()
+                return float(v) if v else 0
+            except (ValueError, TypeError):
+                return 0
+
+        total_points = sum(_pts(s) for s in stories)
 
         cat_counts = {}
         submitted_cat_counts = {}
@@ -110,18 +119,25 @@ def epic_summary():
                 "feature_id": s["feature_id"] or "",
                 "epic_id": s["epic_id"] or "",
                 "epic": s["epic"] or "",
+                "story_points": s["story_points"] or "",
             })
 
         # Build tree: epic -> features -> stories
         features = []
         for feat_name, feat_stories in feature_map.items():
             feat_cats = {}
+            feat_pts = 0
             for fs in feat_stories:
                 c = fs["category"] or "Unknown"
                 feat_cats[c] = feat_cats.get(c, 0) + 1
+                try:
+                    feat_pts += float(fs["story_points"]) if fs["story_points"] else 0
+                except (ValueError, TypeError):
+                    pass
             features.append({
                 "name": feat_name,
                 "story_count": len(feat_stories),
+                "total_points": feat_pts,
                 "categories": feat_cats,
                 "stories": feat_stories,
             })
@@ -157,6 +173,7 @@ def epic_summary():
         result.append({
             "epic": epic_name,
             "total_stories": total,
+            "total_points": total_points,
             "approved": approved,
             "mismatches": mismatches,
             "approval_rate": round(approved / total * 100, 1) if total else 0,

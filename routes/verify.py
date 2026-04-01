@@ -122,6 +122,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "missing_description": missing_desc,
                 "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
                 "story_id": s.get("story_id", ""), "feature_id": s.get("feature_id", ""), "epic_id": s.get("epic_id", ""),
+                "story_points": s.get("story_points", ""),
                 "timestamp": s["timestamp"], "user_submitted_waf": s["user_submitted_waf"],
                 "user_submitted_waf_normalized": norm_cat if was_normalized else "",
                 "was_normalized": was_normalized,
@@ -141,6 +142,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "title": s["title"], "description": s["description"][:200],
                 "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
                 "story_id": s.get("story_id", ""), "feature_id": s.get("feature_id", ""), "epic_id": s.get("epic_id", ""),
+                "story_points": s.get("story_points", ""),
                 "timestamp": s["timestamp"], "user_submitted_waf": s["user_submitted_waf"],
                 "file_color": s["file_color"], "file_run_change": s["file_run_change"],
                 "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
@@ -278,6 +280,7 @@ def bulk_verify_preview():
             {"key": "story_id", "label": "Story ID", "required": False, "keywords": ["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"]},
             {"key": "feature_id", "label": "Feature ID", "required": False, "keywords": ["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"]},
             {"key": "epic_id", "label": "Epic ID", "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"]},
+            {"key": "story_points", "label": "Story Points", "required": False, "keywords": ["story points", "story_points", "points", " sp ", "estimate"]},
         ]
         for field in target_fields:
             matched = find_col(field["keywords"])
@@ -350,6 +353,7 @@ def bulk_verify():
         story_id_col = mappings.get("story_id", "") or None
         feature_id_col = mappings.get("feature_id", "") or None
         epic_id_col = mappings.get("epic_id", "") or None
+        story_points_col = mappings.get("story_points", "") or None
 
         if not title_col:
             return jsonify({"error": "Title column mapping is required"}), 400
@@ -401,6 +405,7 @@ def bulk_verify():
         story_id_col = find_col(["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"])
         feature_id_col = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"])
         epic_id_col = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
+        story_points_col = find_col(["story points", "story_points", "points", " sp ", "estimate"])
 
         if not title_col:
             return jsonify({"error": "File must have a 'Story Title' or 'Summary' column"}), 400
@@ -432,6 +437,7 @@ def bulk_verify():
                 "story_id": str(row.get(story_id_col, "")).strip() if story_id_col else "",
                 "feature_id": str(row.get(feature_id_col, "")).strip() if feature_id_col else "",
                 "epic_id": str(row.get(epic_id_col, "")).strip() if epic_id_col else "",
+                "story_points": str(row.get(story_points_col, "")).strip() if story_points_col else "",
             })
 
         if not stories:
@@ -541,8 +547,8 @@ def bulk_verify_save():
                (timestamp, story_title, story_description, waf_category,
                 waf_subcategory, waf_color, run_change, confidence,
                 was_mismatch, original_tag, approved, team, epic, parent_feature,
-                story_id, feature_id, epic_id, upload_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                story_id, feature_id, epic_id, story_points, upload_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (ts,
              row.get("title", ""),
              row.get("description", ""),
@@ -560,6 +566,7 @@ def bulk_verify_save():
              row.get("story_id", ""),
              row.get("feature_id", ""),
              row.get("epic_id", ""),
+             row.get("story_points", ""),
              upload_id)
         )
         saved += 1

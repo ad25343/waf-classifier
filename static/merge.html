@@ -507,6 +507,34 @@
             border: 1px solid transparent;
         }
 
+        /* ── Diff / highlight rows ───────────────────────────── */
+        tr.diff-conflict td { background: rgba(217,119,6,0.08); }
+        tr.diff-missing  td { background: rgba(220,38,38,0.08); }
+        .diff-cell-conflict {
+            color: #fbbf24;
+            font-weight: 600;
+            position: relative;
+        }
+        .diff-cell-missing {
+            color: #f87171;
+            font-style: italic;
+        }
+        .diff-tooltip {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px); left: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 20;
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+        .diff-cell-conflict:hover .diff-tooltip { display: block; }
+
         /* ── Action buttons ──────────────────────────────────── */
         .action-row {
             display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
@@ -720,7 +748,7 @@
         <!-- Story -->
         <div class="upload-card" id="card-story">
             <div class="upload-card-title">Story Attributes File <span style="font-size:11px;font-weight:400;color:var(--accent);">Required</span></div>
-            <div class="upload-card-subtitle">Story #, Story Name, Parent Feature, WAF Derived, Team</div>
+            <div class="upload-card-subtitle">Story #, Story Name, Story Points, Parent Feature, WAF Derived, Team</div>
             <div class="upload-zone">
                 <div class="upload-zone-icon">&#128196;</div>
                 <div class="upload-zone-text">Click to select CSV or XLSX</div>
@@ -799,10 +827,10 @@
         </div>
 
         <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text-secondary);">
-            Preview — first 20 rows
+            Preview — first 50 rows
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap" id="preview-table-wrap">
             <table>
                 <thead id="preview-thead"></thead>
                 <tbody id="preview-tbody"></tbody>
@@ -1236,7 +1264,7 @@ function renderStats(stats, missingFiles) {
 // ── Preview render ───────────────────────────────────────────────────
 const PREVIEW_COLS = [
     'Epic ID', 'Feature ID', 'Story ID', 'Epic', 'Parent Feature',
-    'Story Title', 'Team', 'WAF Category', 'WAF Color', 'Timestamp'
+    'Story Title', 'Story Points', 'Team', 'WAF Category', 'WAF Color', 'Timestamp'
 ];
 
 const WAF_COLOR_CSS = {
@@ -1259,23 +1287,55 @@ function renderPreview(rows, allCols) {
     hHtml += '</tr>';
     thead.innerHTML = hHtml;
 
+    let diffCount = 0;
     let bHtml = '';
     rows.forEach(row => {
         const sid = esc(row['Story ID'] != null ? String(row['Story ID']) : '');
         const cbId = 'prev-cb-' + sid.replace(/[^a-z0-9]/gi, '_');
-        bHtml += '<tr>';
+        const isConflict = row['_diff_waf_conflict'];
+        const isMissingWaf = row['_diff_missing_waf'];
+        if (isConflict || isMissingWaf) diffCount++;
+        const rowClass = isConflict ? ' class="diff-conflict"' : isMissingWaf ? ' class="diff-missing"' : '';
+        bHtml += `<tr${rowClass}>`;
         bHtml += `<td style="text-align:center;"><input type="checkbox" id="${cbId}" style="accent-color:var(--accent);cursor:pointer;" ${sid ? `onchange="_toggleReject('${sid}',this.checked)"` : 'disabled'}></td>`;
         PREVIEW_COLS.forEach(col => {
             const val = row[col] != null ? String(row[col]) : '';
             if (col === 'WAF Color' && val) {
                 const style = WAF_COLOR_CSS[val] || { bg: 'rgba(107,114,128,0.2)', fg: '#9ca3af' };
                 bHtml += `<td><span class="waf-color-badge" style="background:${esc(style.bg)};color:${esc(style.fg)};border-color:${esc(style.fg)}33;">${esc(val)}</span></td>`;
+            } else if (col === 'WAF Category') {
+                if (isConflict) {
+                    const sWaf = esc(row['_diff_s_waf'] || '');
+                    const fWaf = esc(row['_diff_f_waf'] || '');
+                    bHtml += `<td class="diff-cell-conflict" title="Story WAF: ${sWaf} ≠ Feature WAF: ${fWaf}">⚠ ${esc(val)}<div class="diff-tooltip">Story: ${sWaf}<br>Feature: ${fWaf}</div></td>`;
+                } else if (isMissingWaf) {
+                    bHtml += `<td class="diff-cell-missing" title="No WAF category assigned">— missing</td>`;
+                } else {
+                    bHtml += `<td title="${esc(val)}">${esc(val)}</td>`;
+                }
             } else {
                 bHtml += `<td title="${esc(val)}">${esc(val)}</td>`;
             }
         });
         bHtml += '</tr>';
     });
+
+    // Show diff legend if any issues found
+    const legendId = 'preview-diff-legend';
+    let existingLegend = document.getElementById(legendId);
+    if (existingLegend) existingLegend.remove();
+    if (diffCount > 0) {
+        const legendEl = document.createElement('div');
+        legendEl.id = legendId;
+        legendEl.style.cssText = 'margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;';
+        legendEl.innerHTML = `
+            <span style="color:var(--text-muted);">Diff highlights (first 50 rows):</span>
+            <span style="background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.4);border-radius:4px;padding:2px 8px;color:#fbbf24;">⚠ WAF conflict — Story ≠ Feature</span>
+            <span style="background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:4px;padding:2px 8px;color:#f87171;">— Missing WAF</span>
+            <span style="color:var(--text-muted);">${diffCount} row${diffCount !== 1 ? 's' : ''} flagged</span>`;
+        document.getElementById('preview-table-wrap').insertAdjacentElement('beforebegin', legendEl);
+    }
+
     tbody.innerHTML = bHtml || '<tr><td colspan="' + (PREVIEW_COLS.length + 1) + '" style="text-align:center;color:var(--text-muted);padding:24px;">No rows</td></tr>';
 }
 

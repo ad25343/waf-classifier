@@ -64,19 +64,20 @@ FEATURE_KEYWORDS = {
 }
 
 STORY_KEYWORDS = {
-    "id_col":        ["story #", "story#", "story number", "issue key", "key"],
-    "title_col":     ["story name", "summary", "title", "name"],
-    "feature_col":   ["parent feature", "feature key", "feature#", "feature"],
-    "team_col":      ["teams", "team"],
-    "waf_col":       ["waf derived", "work alignment", "waf"],
-    "timestamp_col": ["resolved date", "created", "date", "timestamp"],
-    "status_col":    ["status"],
+    "id_col":           ["story #", "story#", "story number", "issue key", "key"],
+    "title_col":        ["story name", "summary", "title", "name"],
+    "feature_col":      ["parent feature", "feature key", "feature#", "feature"],
+    "team_col":         ["teams", "team"],
+    "waf_col":          ["waf derived", "work alignment", "waf"],
+    "timestamp_col":    ["resolved date", "created", "date", "timestamp"],
+    "status_col":       ["status"],
+    "story_points_col": ["story points", "story_points", "points", "sp", "estimate"],
 }
 
 OUTPUT_COLUMNS = [
     "Epic ID", "Feature ID", "Story ID",
     "Epic", "Parent Feature", "Story Title", "Story Description",
-    "Team", "WAF Category", "WAF Color",
+    "Story Points", "Team", "WAF Category", "WAF Color",
     "Sub-Category", "Confidence", "Run/Change",
     "Timestamp", "Issue Key",
 ]
@@ -181,12 +182,13 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
     unmatched_epics = 0
 
     for idx, row in df_story.iterrows():
-        story_id  = safe_str(row.get(sm["id_col"],       "")) if sm["id_col"]       else ""
-        title     = safe_str(row.get(sm["title_col"],    "")) if sm["title_col"]    else ""
-        feat_ref  = safe_str(row.get(sm["feature_col"],  "")) if sm["feature_col"]  else ""
-        s_team    = safe_str(row.get(sm["team_col"],     "")) if sm["team_col"]     else ""
-        s_waf     = safe_str(row.get(sm["waf_col"],      "")) if sm["waf_col"]      else ""
-        timestamp = safe_str(row.get(sm["timestamp_col"],"")) if sm["timestamp_col"] else ""
+        story_id      = safe_str(row.get(sm["id_col"],           "")) if sm["id_col"]           else ""
+        title         = safe_str(row.get(sm["title_col"],        "")) if sm["title_col"]        else ""
+        feat_ref      = safe_str(row.get(sm["feature_col"],      "")) if sm["feature_col"]      else ""
+        s_team        = safe_str(row.get(sm["team_col"],         "")) if sm["team_col"]         else ""
+        s_waf         = safe_str(row.get(sm["waf_col"],          "")) if sm["waf_col"]          else ""
+        timestamp     = safe_str(row.get(sm["timestamp_col"],    "")) if sm["timestamp_col"]    else ""
+        story_points  = safe_str(row.get(sm["story_points_col"], "")) if sm.get("story_points_col") else ""
 
         feat_data    = feature_lookup.get(feat_ref, {})
         feat_found   = bool(feat_data)
@@ -220,6 +222,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             "Parent Feature":    feat_name,
             "Story Title":       title,
             "Story Description": "",
+            "Story Points":      story_points,
             "Team":              team,
             "WAF Category":      waf_category,
             "WAF Color":         waf_color,
@@ -395,14 +398,23 @@ def merge_process():
     with open(tmp_path, "wb") as f:
         f.write(csv_bytes)
 
+    def _preview_row(r):
+        row = {k: v for k, v in r.items() if not k.startswith("_")}
+        # Include diff signals for frontend highlighting
+        s_waf = r["_s_waf"]
+        f_waf = r["_f_waf"]
+        row["_diff_s_waf"] = s_waf
+        row["_diff_f_waf"] = f_waf
+        row["_diff_e_waf"] = r["_e_waf"]
+        row["_diff_waf_conflict"] = bool(s_waf and f_waf and s_waf.lower() != f_waf.lower())
+        row["_diff_missing_waf"]  = not row.get("WAF Category", "")
+        return row
+
     return jsonify({
         "token":      token,
         "stats":      stats,
         "issues":     issues,
-        "preview":    [
-            {k: v for k, v in r.items() if not k.startswith("_")}
-            for r in merged_rows[:20]
-        ],
+        "preview":    [_preview_row(r) for r in merged_rows[:50]],
         "columns":    OUTPUT_COLUMNS,
         "column_map": col_map,
     })
@@ -501,6 +513,7 @@ def merge_send_to_classifier(token):
         {"key": "story_id",       "label": "Story ID",          "required": False, "keywords": ["story id", "story_id", "issue key"]},
         {"key": "feature_id",     "label": "Feature ID",        "required": False, "keywords": ["feature id", "feature_id", "feature key"]},
         {"key": "epic_id",        "label": "Epic ID",           "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic link"]},
+        {"key": "story_points",   "label": "Story Points",      "required": False, "keywords": ["story points", "story_points", "points"]},
     ]
     suggested    = {f["key"]: (_find(f["keywords"]) or "") for f in target_fields}
     sample_rows  = [{col: str(row.get(col, "")) for col in df.columns}

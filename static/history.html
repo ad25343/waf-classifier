@@ -899,6 +899,7 @@
                         <tr>
                             <th style="width:40px;"><input type="checkbox" id="select-all-cb" onchange="selectAll(this.checked)" checked></th>
                             <th class="sortable" onclick="sortVerifyTable('title')">Story <span class="sort-arrow"></span></th>
+                            <th class="sortable" style="min-width:50px;" onclick="sortVerifyTable('story_points')">Pts <span class="sort-arrow"></span></th>
                             <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('user_submitted_waf')">User Submitted WAF <span class="sort-arrow"></span></th>
                             <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('ai_suggested_waf')">AI Suggested WAF <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortVerifyTable('ai_color')">Color <span class="sort-arrow"></span></th>
@@ -909,6 +910,7 @@
                         <tr id="verify-filters" class="col-filter-row">
                             <td></td>
                             <td><input type="text" placeholder="Filter story..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
+                            <td><input type="text" placeholder="Pts..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
                             <td><input type="text" placeholder="Filter tag..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
                             <td><input type="text" placeholder="Filter AI cat..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
                             <td><input type="text" placeholder="Filter color..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
@@ -1488,7 +1490,7 @@ function sortVerifyTable(col) {
     }
     // Update header arrows
     document.querySelectorAll('#verify-table th.sortable').forEach(th => th.classList.remove('asc', 'desc'));
-    const headers = { title: 0, user_submitted_waf: 1, ai_suggested_waf: 2, ai_color: 3, ai_confidence: 4, status: 5 };
+    const headers = { title: 0, story_points: 1, user_submitted_waf: 2, ai_suggested_waf: 3, ai_color: 4, ai_confidence: 5, status: 6 };
     const thIdx = headers[col];
     if (thIdx !== undefined) {
         const th = document.querySelectorAll('#verify-table th.sortable')[thIdx];
@@ -1611,6 +1613,7 @@ function showMappingStep(data) {
         story_id:       'e.g. Story ID (STR-10001) or Issue Key (PROJ-123) — either maps here',
         feature_id:     'e.g. Feature ID (F-C001) or Feature Key',
         epic_id:        'e.g. Epic ID (EP-C001), Epic Key, or Epic Link',
+        story_points:   'e.g. Story Points, Points, SP, Estimate',
     };
     const fieldsEl = document.getElementById('mapping-fields');
     fieldsEl.innerHTML = data.target_fields.map(f => {
@@ -1809,9 +1812,11 @@ function renderVerifyTable() {
         const missingDesc = r.missing_description ? ' <span title="No description provided" style="color:var(--warning);font-size:11px;cursor:help;">⚠</span>' : '';
         const reason = esc(r.ai_reason ? (r.ai_reason.length > 60 ? r.ai_reason.substring(0, 60) + '...' : r.ai_reason) : '—');
 
+        const ptsDisp = r.story_points ? `<span style="font-weight:600;color:var(--accent);">${esc(String(r.story_points))}</span>` : '<span style="color:var(--text-muted)">—</span>';
         return `<tr data-idx="${fullIdx}" class="${r.is_match === false ? 'mismatch-row' : ''}" style="cursor:pointer;" onclick="if(event.target.tagName!=='INPUT')showStoryDetail(verifyResultsFull[${fullIdx}])">
             <td><input type="checkbox" class="row-cb" data-idx="${fullIdx}" onchange="updateSelectedCount()" ${r.is_match === false ? 'checked' : ''}></td>
             <td style="color:var(--text-primary)" title="${esc(r.title)}">${title}</td>
+            <td style="text-align:center;">${ptsDisp}</td>
             <td>${fileTag}</td>
             <td style="color:var(--text-primary);font-weight:500;">${aiTag}</td>
             <td>${esc(r.ai_color || '—')}</td>
@@ -2507,6 +2512,7 @@ function showStoryDetail(data) {
             ${field('Sub-Category', esc(data.ai_subcategory || data.waf_subcategory || ''))}
             ${field('Confidence', '<span class="badge ' + confClass + '">' + esc(conf || '—') + '</span>')}
             ${field('Match Status', matchHtml)}
+            ${field('Story Points', data.story_points ? `<span style="font-weight:600;color:var(--teal);">${esc(String(data.story_points))}</span>` : '')}
             ${field('Team', esc(data.team || ''))}
             ${field('Epic', esc(data.epic || ''))}
             ${field('Parent Feature', esc(data.parent_feature || ''))}

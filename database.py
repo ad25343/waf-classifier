@@ -47,7 +47,8 @@ def init_db():
             upload_id INTEGER DEFAULT NULL,
             story_id TEXT DEFAULT '',
             feature_id TEXT DEFAULT '',
-            epic_id TEXT DEFAULT ''
+            epic_id TEXT DEFAULT '',
+            story_points TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -97,6 +98,10 @@ def init_db():
         pass
     try:
         conn.execute("ALTER TABLE classifications ADD COLUMN epic_id TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE classifications ADD COLUMN story_points TEXT DEFAULT ''")
     except sqlite3.OperationalError:
         pass
 
@@ -235,7 +240,8 @@ def save_classification(title, description, category, subcategory, color,
                         run_change, confidence, was_mismatch=False,
                         original_tag="", approved=False, team="default",
                         epic="", parent_feature="",
-                        story_id="", feature_id="", epic_id=""):
+                        story_id="", feature_id="", epic_id="",
+                        story_points=""):
     """Save a classification to the database."""
     db = get_db()
     db.execute(
@@ -243,12 +249,12 @@ def save_classification(title, description, category, subcategory, color,
            (timestamp, story_title, story_description, waf_category,
             waf_subcategory, waf_color, run_change, confidence,
             was_mismatch, original_tag, approved, team, epic, parent_feature,
-            story_id, feature_id, epic_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            story_id, feature_id, epic_id, story_points)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (datetime.now().isoformat(), title, description, category,
          subcategory, color, run_change, confidence,
          1 if was_mismatch else 0, original_tag, 1 if approved else 0, team,
-         epic, parent_feature, story_id, feature_id, epic_id)
+         epic, parent_feature, story_id, feature_id, epic_id, story_points)
     )
     db.commit()
     return db.execute("SELECT last_insert_rowid()").fetchone()[0]
