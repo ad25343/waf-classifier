@@ -101,8 +101,8 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 if len(parts) >= 6: ai_reason = parts[5].strip()
 
             # Normalize file category for comparison
-            norm_cat, was_normalized, orig_cat = normalize_waf_category(s["original_waf"])
-            if s["original_waf"] and ai_cat:
+            norm_cat, was_normalized, orig_cat = normalize_waf_category(s["user_submitted_waf"])
+            if s["user_submitted_waf"] and ai_cat:
                 is_match = norm_cat.lower().strip() == ai_cat.lower().strip()
             else:
                 is_match = None
@@ -122,8 +122,8 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "missing_description": missing_desc,
                 "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
                 "story_id": s.get("story_id", ""), "feature_id": s.get("feature_id", ""), "epic_id": s.get("epic_id", ""),
-                "timestamp": s["timestamp"], "original_waf": s["original_waf"],
-                "original_waf_normalized": norm_cat if was_normalized else "",
+                "timestamp": s["timestamp"], "user_submitted_waf": s["user_submitted_waf"],
+                "user_submitted_waf_normalized": norm_cat if was_normalized else "",
                 "was_normalized": was_normalized,
                 "file_color": s["file_color"], "file_run_change": s["file_run_change"],
                 "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
@@ -141,7 +141,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "title": s["title"], "description": s["description"][:200],
                 "team": s["team"], "epic": s["epic"], "parent_feature": s["parent_feature"],
                 "story_id": s.get("story_id", ""), "feature_id": s.get("feature_id", ""), "epic_id": s.get("epic_id", ""),
-                "timestamp": s["timestamp"], "original_waf": s["original_waf"],
+                "timestamp": s["timestamp"], "user_submitted_waf": s["user_submitted_waf"],
                 "file_color": s["file_color"], "file_run_change": s["file_run_change"],
                 "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
                 "ai_suggested_waf": "", "ai_subcategory": "", "ai_color": "", "ai_run_change": "",
@@ -420,7 +420,7 @@ def bulk_verify():
             stories.append({
                 "title": title,
                 "description": str(row.get(desc_col, "")).strip() if desc_col else "",
-                "original_waf": str(row.get(cat_col, "")).strip() if cat_col else "",
+                "user_submitted_waf": str(row.get(cat_col, "")).strip() if cat_col else "",
                 "file_color": str(row.get(color_col, "")).strip() if color_col else "",
                 "file_run_change": str(row.get(rc_col, "")).strip() if rc_col else "",
                 "file_subcategory": str(row.get(subcat_col, "")).strip() if subcat_col else "",
@@ -529,7 +529,7 @@ def bulk_verify_save():
     for row in data["rows"]:
         # Determine which category to use (AI recommendation or file's original)
         use_ai = row.get("use_ai", True)
-        category = row.get("ai_suggested_waf", "") if use_ai else row.get("original_waf", "")
+        category = row.get("ai_suggested_waf", "") if use_ai else row.get("user_submitted_waf", "")
         subcategory = row.get("ai_subcategory", "") if use_ai else row.get("file_subcategory", "")
         color = row.get("ai_color", "") if use_ai else row.get("file_color", "")
         run_change = row.get("ai_run_change", "") if use_ai else row.get("file_run_change", "")
@@ -552,7 +552,7 @@ def bulk_verify_save():
              run_change,
              confidence,
              1 if row.get("is_match") is False else 0,
-             row.get("original_waf", ""),
+             row.get("user_submitted_waf", ""),
              1 if row.get("is_match") is False else 0,  # approved — only mismatches are reviewed/approved
              row.get("team", "default"),
              row.get("epic", ""),

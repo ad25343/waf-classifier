@@ -444,7 +444,7 @@ Save selected verified classifications to the database. Only mismatch rows (`is_
       "story_id": "PROJ-123",
       "feature_id": "PROJ-100",
       "epic_id": "PROJ-50",
-      "original_waf": "New Feature",
+      "user_submitted_waf": "New Feature",
       "ai_suggested_waf": "KTLO",
       "ai_color": "GRAY",
       "ai_confidence": "HIGH",

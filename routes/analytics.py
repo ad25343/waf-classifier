@@ -47,6 +47,10 @@ def dashboard_summary():
         f"SELECT confidence, COUNT(*) as cnt FROM classifications WHERE confidence != ''{wh_and} GROUP BY confidence ORDER BY cnt DESC", params
     ).fetchall()
 
+    submitted_waf = db.execute(
+        f"SELECT original_tag, COUNT(*) as cnt FROM classifications WHERE original_tag != ''{wh_and} GROUP BY original_tag ORDER BY cnt DESC", params
+    ).fetchall()
+
     run_change = db.execute(
         f"SELECT run_change, COUNT(*) as cnt FROM classifications WHERE run_change != ''{wh_and} GROUP BY run_change ORDER BY cnt DESC", params
     ).fetchall()
@@ -72,6 +76,7 @@ def dashboard_summary():
         "categories": [{"name": r["waf_category"], "count": r["cnt"]} for r in categories],
         "colors": [{"name": r["waf_color"], "count": r["cnt"]} for r in colors],
         "confidence": [{"name": r["confidence"], "count": r["cnt"]} for r in confidence],
+        "submitted_waf": [{"name": r["original_tag"], "count": r["cnt"]} for r in submitted_waf],
         "run_change": [{"name": r["run_change"], "count": r["cnt"]} for r in run_change],
         "daily_trend": [{"date": r["day"], "count": r["cnt"]} for r in reversed(list(daily))],
         "recent": [{

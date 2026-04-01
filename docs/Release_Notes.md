@@ -304,7 +304,7 @@ Consolidation release: async processing, clickable KPI cards, and Epic Lineage i
 - **Chart percentages** — Category and doughnut charts display percentages directly on chart
 - **Clickable Summary KPI cards** — Open drill-down table of individual matching stories
 - **Epic Lineage Table and Graph views** — Sortable table or expandable tree (Epic → Feature → Story)
-- **Mismatch visibility improved** — Mismatched rows highlighted; tree view shows Original WAF (strikethrough) → AI Suggested WAF
+- **Mismatch visibility improved** — Mismatched rows highlighted; tree view shows User Submitted WAF (strikethrough) → AI Suggested WAF
 
 ---
 
