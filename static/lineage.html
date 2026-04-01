@@ -304,7 +304,7 @@
         /* "All Epics" overview cards */
         .epic-cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 16px;
         }
 
@@ -331,10 +331,14 @@
         .mini-stat-label { font-size: 11px; color: var(--text-muted); }
 
         .cat-bar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 12px; }
-        .cat-bar-label { width: 120px; color: var(--text-secondary); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cat-bar-track { flex: 1; height: 14px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
+        .cat-bar-label { width: 160px; flex-shrink: 0; color: var(--text-secondary); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cat-bar-label:hover { white-space: normal; overflow: visible; }
+        .cat-bar-track { flex: 1; height: 8px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
         .cat-bar-fill { height: 100%; border-radius: 3px; }
-        .cat-bar-count { width: 24px; color: var(--text-muted); font-size: 11px; }
+        .cat-bar-count { width: 28px; color: var(--text-muted); font-size: 11px; text-align: right; flex-shrink: 0; }
+        .cat-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin: 10px 0 4px; }
+        .cat-section-label.submitted { color: var(--teal); }
+        .cat-section-label.ai { color: var(--accent); }
 
         /* Column filter row */
         .col-filter-row td { padding: 4px 6px; }
@@ -801,13 +805,28 @@ function renderOverview() {
         return;
     }
 
-    container.innerHTML = allEpicData.map((epic, idx) => {
-        const allCats = Object.entries(epic.categories).sort((a, b) => b[1] - a[1]);
-        const maxCat = allCats.length > 0 ? allCats[0][1] : 1;
+    function catBars(entries, maxVal) {
+        if (!entries.length) return '<div style="font-size:11px;color:var(--text-muted);padding:4px 0;">No data</div>';
+        return entries.slice(0, 4).map(([cat, cnt], ci) =>
+            `<div class="cat-bar-row">
+                <div class="cat-bar-label" title="${cat}">${cat}</div>
+                <div class="cat-bar-track">
+                    <div class="cat-bar-fill" style="width:${Math.round(cnt/maxVal*100)}%;background:${CHART_PALETTE[ci % CHART_PALETTE.length]}"></div>
+                </div>
+                <div class="cat-bar-count">${cnt}</div>
+            </div>`
+        ).join('');
+    }
+
+    container.innerHTML = allEpicData.map((epic) => {
+        const aiCats  = Object.entries(epic.categories || {}).sort((a, b) => b[1] - a[1]);
+        const subCats = Object.entries(epic.submitted_categories || {}).sort((a, b) => b[1] - a[1]);
+        const maxAi  = aiCats.length  > 0 ? aiCats[0][1]  : 1;
+        const maxSub = subCats.length > 0 ? subCats[0][1] : 1;
 
         return `
             <div class="epic-summary-card" onclick="selectEpicByName('${epic.epic.replace(/'/g, "\\'")}')">
-                <h3>${epic.epic}</h3>
+                <h3 title="${epic.epic}">${epic.epic}</h3>
                 <div class="mini-stats">
                     <div>
                         <div class="mini-stat-value" style="color:var(--accent)">${epic.total_stories}</div>
@@ -822,15 +841,10 @@ function renderOverview() {
                         <div class="mini-stat-label">Mismatches</div>
                     </div>
                 </div>
-                ${allCats.slice(0, 4).map(([cat, cnt], ci) => `
-                    <div class="cat-bar-row">
-                        <div class="cat-bar-label">${cat}</div>
-                        <div class="cat-bar-track">
-                            <div class="cat-bar-fill" style="width:${Math.round(cnt/maxCat*100)}%;background:${CHART_PALETTE[ci % CHART_PALETTE.length]}"></div>
-                        </div>
-                        <div class="cat-bar-count">${cnt}</div>
-                    </div>
-                `).join('')}
+                <div class="cat-section-label submitted">&#8679; User Submitted WAF</div>
+                ${catBars(subCats, maxSub)}
+                <div class="cat-section-label ai">&#x2728; AI Suggested WAF</div>
+                ${catBars(aiCats, maxAi)}
             </div>
         `;
     }).join('');

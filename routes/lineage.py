@@ -78,6 +78,7 @@ def epic_summary():
         mismatches = sum(1 for s in stories if s["was_mismatch"])
 
         cat_counts = {}
+        submitted_cat_counts = {}
         color_counts = {}
         rc_counts = {}
         feature_map = defaultdict(list)  # parent_feature -> stories
@@ -85,6 +86,9 @@ def epic_summary():
         for s in stories:
             cat = s["waf_category"] or "Unknown"
             cat_counts[cat] = cat_counts.get(cat, 0) + 1
+            sub_cat = s["original_tag"] or ""
+            if sub_cat:
+                submitted_cat_counts[sub_cat] = submitted_cat_counts.get(sub_cat, 0) + 1
             if s["waf_color"]:
                 color_counts[s["waf_color"]] = color_counts.get(s["waf_color"], 0) + 1
             if s["run_change"]:
@@ -157,6 +161,7 @@ def epic_summary():
             "approval_rate": round(approved / total * 100, 1) if total else 0,
             "mismatch_rate": round(mismatches / total * 100, 1) if total else 0,
             "categories": cat_counts,
+            "submitted_categories": submitted_cat_counts,
             "colors": color_counts,
             "run_change": rc_counts,
             "features": features,
