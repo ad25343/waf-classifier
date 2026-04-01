@@ -109,6 +109,7 @@ def epic_summary():
                 "story_id": s["story_id"] or "",
                 "feature_id": s["feature_id"] or "",
                 "epic_id": s["epic_id"] or "",
+                "epic": s["epic"] or "",
             })
 
         # Build tree: epic -> features -> stories

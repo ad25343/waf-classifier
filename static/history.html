@@ -2615,7 +2615,8 @@ checkStatus();
         let html = '<div class="search-results-header">' + data.results.length + ' result' + (data.results.length!==1?'s':'') + ' for &ldquo;' + _esc(q) + '&rdquo;</div>';
         data.results.forEach(r => {
             const c = CM[r.color] || '#6b7280';
-            const ids = [r.story_id, r.feature_id, r.epic_id].filter(Boolean)
+            const epicLabel = (r.epic_id ? r.epic_id + (r.epic ? ' · ' + r.epic : '') : r.epic) || null;
+            const ids = [r.story_id, r.feature_id, epicLabel].filter(Boolean)
                 .map(id => '<span style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:monospace;">' + _esc(id) + '</span>')
                 .join(' ');
             const badge = r.color ? '<span style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '44;border-radius:4px;padding:1px 6px;font-size:10px;">' + _esc(r.color) + '</span>' : '';
