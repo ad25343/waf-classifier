@@ -595,8 +595,8 @@
                             <th style="width:6px;padding:0;"></th>
                             <th class="sortable" style="text-align:left;" onclick="sortDrillDown('title')">Story <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortDrillDown('epic')">Epic <span class="sort-arrow"></span></th>
-                            <th class="sortable" onclick="sortDrillDown('original_tag')">File Tag <span class="sort-arrow"></span></th>
-                            <th class="sortable" onclick="sortDrillDown('category')">AI Category <span class="sort-arrow"></span></th>
+                            <th class="sortable" onclick="sortDrillDown('original_tag')">Original WAF <span class="sort-arrow"></span></th>
+                            <th class="sortable" onclick="sortDrillDown('category')">AI Suggested WAF <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortDrillDown('color')">Color <span class="sort-arrow"></span></th>
                             <th class="sortable" style="text-align:center;" onclick="sortDrillDown('run_change')">Run/Change <span class="sort-arrow"></span></th>
                             <th class="sortable" style="text-align:center;" onclick="sortDrillDown('confidence')">Confidence <span class="sort-arrow"></span></th>
@@ -723,8 +723,8 @@
                             <th style="width:6px;padding:0;"></th>
                             <th style="text-align:left;">Story</th>
                             <th style="text-align:left;">Feature</th>
-                            <th style="text-align:left;">File Tag</th>
-                            <th style="text-align:left;">AI Category</th>
+                            <th style="text-align:left;">Original WAF</th>
+                            <th style="text-align:left;">AI Suggested WAF</th>
                             <th>Color</th>
                             <th>Run/Change</th>
                             <th>Confidence</th>
@@ -899,8 +899,8 @@
                         <tr>
                             <th style="width:40px;"><input type="checkbox" id="select-all-cb" onchange="selectAll(this.checked)" checked></th>
                             <th class="sortable" onclick="sortVerifyTable('title')">Story <span class="sort-arrow"></span></th>
-                            <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('file_category')">File Tag <span class="sort-arrow"></span></th>
-                            <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('ai_category')">AI Recommendation <span class="sort-arrow"></span></th>
+                            <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('original_waf')">Original WAF <span class="sort-arrow"></span></th>
+                            <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('ai_suggested_waf')">AI Suggested WAF <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortVerifyTable('ai_color')">Color <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortVerifyTable('ai_confidence')">Confidence <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortVerifyTable('status')">Status <span class="sort-arrow"></span></th>
@@ -1274,7 +1274,7 @@ function summaryDrillDown(filter, value) {
     // Title
     const titles = {
         '': 'All Classifications',
-        'mismatches': 'Mismatches — File Tag vs AI Category',
+        'mismatches': 'Mismatches — Original WAF vs AI Suggested WAF',
         'approved': 'Approved Stories',
         'category': `Category: ${value}`,
         'color': `Color: ${value}`,
@@ -1437,7 +1437,7 @@ function sortVerifyTable(col) {
     }
     // Update header arrows
     document.querySelectorAll('#verify-table th.sortable').forEach(th => th.classList.remove('asc', 'desc'));
-    const headers = { title: 0, file_category: 1, ai_category: 2, ai_color: 3, ai_confidence: 4, status: 5 };
+    const headers = { title: 0, original_waf: 1, ai_suggested_waf: 2, ai_color: 3, ai_confidence: 4, status: 5 };
     const thIdx = headers[col];
     if (thIdx !== undefined) {
         const th = document.querySelectorAll('#verify-table th.sortable')[thIdx];
@@ -1722,8 +1722,8 @@ function onVerifyFilter() {
     const verifyFieldMap = [
         null, // checkbox
         'title',
-        function(r) { return String(r.file_category_normalized || r.file_category || '').toLowerCase(); },
-        'ai_category',
+        function(r) { return String(r.original_waf_normalized || r.original_waf || '').toLowerCase(); },
+        'ai_suggested_waf',
         'ai_color',
         'ai_confidence',
         function(r) { return r.is_match === true ? 'match' : r.is_match === false ? 'mismatch' : 'new'; }
@@ -1738,12 +1738,12 @@ function renderVerifyTable() {
         const fullIdx = verifyResultsFull.indexOf(r);
         const title = esc(r.title.length > 45 ? r.title.substring(0, 45) + '...' : r.title);
         let fileTag;
-        if (r.was_normalized && r.file_category_normalized) {
-            fileTag = esc(r.file_category_normalized) + ' <span title="Normalized from: ' + esc(r.file_category) + '" style="cursor:help;font-size:11px;color:var(--warning);">&#x1F504;</span>';
+        if (r.was_normalized && r.original_waf_normalized) {
+            fileTag = esc(r.original_waf_normalized) + ' <span title="Normalized from: ' + esc(r.original_waf) + '" style="cursor:help;font-size:11px;color:var(--warning);">&#x1F504;</span>';
         } else {
-            fileTag = r.file_category ? esc(r.file_category) : '<span style="color:var(--text-muted)">—</span>';
+            fileTag = r.original_waf ? esc(r.original_waf) : '<span style="color:var(--text-muted)">—</span>';
         }
-        const aiTag = r.ai_category ? esc(r.ai_category) : '<span style="color:var(--text-muted)">—</span>';
+        const aiTag = r.ai_suggested_waf ? esc(r.ai_suggested_waf) : '<span style="color:var(--text-muted)">—</span>';
 
         let statusBadge;
         if (r.is_match === true) {
@@ -1813,12 +1813,12 @@ async function saveVerified() {
             epic: r.epic || '',
             parent_feature: r.parent_feature || '',
             timestamp: r.timestamp || '',
-            file_category: r.file_category,
+            original_waf: r.original_waf,
             file_color: r.file_color,
             file_run_change: r.file_run_change,
             file_subcategory: r.file_subcategory || '',
             file_confidence: r.file_confidence || '',
-            ai_category: r.ai_category,
+            ai_suggested_waf: r.ai_suggested_waf,
             ai_subcategory: r.ai_subcategory,
             ai_color: r.ai_color,
             ai_run_change: r.ai_run_change,
@@ -2431,9 +2431,9 @@ function showStoryDetail(data) {
     const confClass = conf.toLowerCase();
 
     // File category (with normalization note)
-    let fileCatHtml = esc(data.file_category || data.original_tag || '—');
-    if (data.was_normalized && data.file_category_normalized) {
-        fileCatHtml = esc(data.file_category_normalized) + ' <span style="font-size:11px;color:var(--warning);">(was: ' + esc(data.file_category) + ')</span>';
+    let fileCatHtml = esc(data.original_waf || data.original_tag || '—');
+    if (data.was_normalized && data.original_waf_normalized) {
+        fileCatHtml = esc(data.original_waf_normalized) + ' <span style="font-size:11px;color:var(--warning);">(was: ' + esc(data.original_waf) + ')</span>';
     }
 
     function field(label, value, fullWidth) {
@@ -2449,8 +2449,8 @@ function showStoryDetail(data) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;">
             ${field('Title', esc(data.title || data.story_title || ''), true)}
             ${field('Description', esc(data.description || data.story_description || ''), true)}
-            ${field('File Category', fileCatHtml)}
-            ${field('AI Category', esc(data.ai_category || data.waf_category || data.category || ''))}
+            ${field('Original WAF', fileCatHtml)}
+            ${field('AI Suggested WAF', esc(data.ai_suggested_waf || data.waf_category || data.category || ''))}
             ${field('WAF Color', '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + dotColor + ';vertical-align:middle;margin-right:6px;' + (wafColor === 'BLACK' ? 'border:1px solid #4b5563;' : '') + '"></span>' + esc(wafColor || '—'))}
             ${field('Run / Change', esc(data.ai_run_change || data.run_change || ''))}
             ${field('Sub-Category', esc(data.ai_subcategory || data.waf_subcategory || ''))}
