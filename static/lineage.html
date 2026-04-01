@@ -637,10 +637,6 @@
                         <div class="card-title">WAF Category Breakdown</div>
                         <div class="chart-container"><canvas id="epicCatChart"></canvas></div>
                     </div>
-                    <div class="card">
-                        <div class="card-title">Run vs Change</div>
-                        <div class="chart-container"><canvas id="epicRcChart"></canvas></div>
-                    </div>
                 </div>
 
                 <!-- Tree: Features -> Stories -->
@@ -1060,27 +1056,7 @@ function renderEpicDetail(epic) {
         }
     });
 
-    // Run/Change chart
-    const rc = Object.entries(epic.run_change);
     destroyChart('epicRcChart');
-    if (rc.length > 0) {
-        charts['epicRcChart'] = new Chart(document.getElementById('epicRcChart'), {
-            type: 'doughnut',
-            data: {
-                labels: rc.map(r => r[0]),
-                datasets: [{
-                    data: rc.map(r => r[1]),
-                    backgroundColor: ['#e8944a', '#c084fc'],
-                    borderWidth: 0,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                cutout: '60%',
-                plugins: { legend: { position: 'right', labels: { color: '#9395a5', padding: 12 } } }
-            }
-        });
-    }
 
     // Tree view
     document.getElementById('tree-title').textContent = `${epic.epic} — Story Lineage`;
