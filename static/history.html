@@ -1178,8 +1178,18 @@ async function loadSummary() {
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { callbacks: { label: ctx => ` ${ctx.raw} (${subTotal > 0 ? Math.round(ctx.raw/subTotal*100) : 0}%)` } },
-                    datalabels: { display: false }
+                    tooltip: pctTooltip,
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'end',
+                        color: '#9395a5',
+                        font: { size: 11, weight: '600' },
+                        formatter: function(value) {
+                            const pct = subTotal > 0 ? ((value / subTotal) * 100).toFixed(1) : 0;
+                            return value + ' (' + pct + '%)';
+                        }
+                    }
                 },
                 scales: {
                     x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca0b0', font: { size: 11 } } },
