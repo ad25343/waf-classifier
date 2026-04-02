@@ -636,9 +636,9 @@
             padding: 14px 16px;
             font-size: 14px;
             font-family: inherit;
-            resize: none;
-            min-height: 50px;
-            max-height: 150px;
+            resize: vertical;
+            min-height: 80px;
+            max-height: 320px;
             line-height: 1.5;
         }
 
@@ -1137,7 +1137,7 @@
                     <div class="quick-actions">
                         <div class="quick-action" onclick="useQuickAction('Classify this story: ')">Classify a story</div>
                         <div class="quick-action" onclick="useQuickAction('What WAF categories are available?')">List categories</div>
-                        <div class="quick-action" onclick="useQuickAction('This story is currently tagged as \"New Feature\": ')">Check a tag</div>
+                        <div class="quick-action" onclick="useQuickAction('This story is currently tagged as \"[paste current tag here]\": [paste story title and description]')">Check a tag</div>
                         <div class="quick-action" onclick="useQuickAction('Help me understand the difference between ')">Compare categories</div>
                     </div>
                 </div>
@@ -1169,7 +1169,7 @@
                 <div class="input-wrapper">
                     <textarea class="chat-input" id="chat-input"
                         placeholder="Paste a JIRA story title and description to classify..."
-                        rows="1"
+                        rows="3"
                         onkeydown="handleKeyDown(event)"></textarea>
                     <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
                 </div>
@@ -1216,10 +1216,11 @@
 
         // Auto-resize textarea
         const chatInput = document.getElementById("chat-input");
-        chatInput.addEventListener("input", function() {
-            this.style.height = "auto";
-            this.style.height = Math.min(this.scrollHeight, 150) + "px";
-        });
+        function resizeChatInput() {
+            chatInput.style.height = "auto";
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 320) + "px";
+        }
+        chatInput.addEventListener("input", resizeChatInput);
 
         function setMode(mode) {
             currentMode = mode;
@@ -1477,7 +1478,10 @@
         function useQuickAction(text) {
             const input = document.getElementById("chat-input");
             input.value = text;
+            resizeChatInput();
             input.focus();
+            // Move cursor to end
+            input.setSelectionRange(input.value.length, input.value.length);
         }
 
         async function clearChat() {
