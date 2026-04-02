@@ -747,6 +747,66 @@
             color: var(--text-muted);
         }
 
+        .correct-btn {
+            padding: 6px 14px;
+            border: 1px solid var(--warning);
+            background: transparent;
+            color: var(--warning);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .correct-btn:hover { background: rgba(217,119,6,0.15); }
+
+        .correction-form {
+            display: none;
+            margin-top: 12px;
+            padding: 14px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--warning);
+            border-radius: 8px;
+            gap: 10px;
+            flex-direction: column;
+        }
+        .correction-form.open { display: flex; }
+        .correction-form label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+            display: block;
+        }
+        .correction-form select,
+        .correction-form textarea {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            padding: 7px 10px;
+            box-sizing: border-box;
+        }
+        .correction-form textarea { resize: vertical; min-height: 60px; }
+        .correction-form-row { display: flex; gap: 10px; }
+        .correction-form-row > div { flex: 1; }
+        .correction-save-btn {
+            align-self: flex-start;
+            padding: 7px 18px;
+            background: var(--warning);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .correction-save-btn:hover { opacity: 0.85; }
+
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -1336,7 +1396,7 @@
             bubble.className = "message-bubble";
             bubble.innerHTML = formatMessage(text);
 
-            // Add approve button for assistant classification responses
+            // Add approve + correct buttons for assistant classification responses
             if (role === "assistant" && isClassificationResponse(text)) {
                 const approveBar = document.createElement("div");
                 approveBar.className = "approve-bar";
@@ -1346,13 +1406,63 @@
                 approveBtn.innerHTML = "&#10003; Approve &amp; Save to Ground Truth";
                 approveBtn.onclick = () => approveClassification(text, approveBtn);
 
+                const correctBtn = document.createElement("button");
+                correctBtn.className = "correct-btn";
+                correctBtn.innerHTML = "&#9998; Correct this";
+                correctBtn.onclick = () => toggleCorrectionForm(correctBtn, correctionForm);
+
                 const hint = document.createElement("span");
                 hint.className = "approve-hint";
-                hint.textContent = "Saves this classification as a training example";
+                hint.textContent = "AI wrong? Override and save the correct answer";
 
                 approveBar.appendChild(approveBtn);
+                approveBar.appendChild(correctBtn);
                 approveBar.appendChild(hint);
                 bubble.appendChild(approveBar);
+
+                // ── Inline correction form ──────────────────────────────
+                const WAF_CATS = [
+                    "KTLO (Keep the Lights On)", "Business Maintenance",
+                    "Technical Maintenance", "Regulatory (Operational)",
+                    "Regulatory Mandated Change", "Enterprise Strategic Priority",
+                    "Top Divisional Priority", "Other Block Priority"
+                ];
+                const WAF_COLORS = ["GRAY","BLACK","RED","ORANGE","YELLOW","GREEN","BLUE","PURPLE"];
+
+                // Pre-fill from AI response
+                const aiCat   = extractField(text, "Recommended WAF Category") || extractField(text, "WAF Category") || "";
+                const aiColor = extractField(text, "WAF Color") || "";
+
+                const correctionForm = document.createElement("div");
+                correctionForm.className = "correction-form";
+                correctionForm.innerHTML = `
+                    <div style="font-size:12px;font-weight:600;color:var(--warning);">&#9998; Provide the correct classification</div>
+                    <div class="correction-form-row">
+                        <div>
+                            <label>Correct WAF Category</label>
+                            <select id="corr-cat-${Date.now()}">
+                                ${WAF_CATS.map(c => `<option value="${c}" ${c === aiCat ? 'selected' : ''}>${c}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Correct WAF Color</label>
+                            <select id="corr-col-${Date.now()}">
+                                ${WAF_COLORS.map(c => `<option value="${c}" ${c === aiColor ? 'selected' : ''}>${c}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Your rationale (why is this the correct category?)</label>
+                        <textarea placeholder="e.g. This is planned tech debt reduction, not reactive support — should be Technical Maintenance not KTLO"></textarea>
+                    </div>
+                    <button class="correction-save-btn">Save Correction to Ground Truth</button>
+                `;
+
+                // Wire up save button
+                correctionForm.querySelector('.correction-save-btn').onclick = () =>
+                    saveCorrection(text, correctionForm, correctBtn);
+
+                bubble.appendChild(correctionForm);
             }
 
             msgDiv.appendChild(label);
@@ -1378,6 +1488,68 @@
                 if (match) return match[1].replace(/\*\*/g, "").trim();
             }
             return "";
+        }
+
+        function toggleCorrectionForm(btn, form) {
+            const open = form.classList.toggle('open');
+            btn.innerHTML = open ? '&#10005; Cancel' : '&#9998; Correct this';
+        }
+
+        async function saveCorrection(responseText, form, correctBtn) {
+            const catEl   = form.querySelector('select:nth-of-type(1)');
+            const colorEl = form.querySelector('select:nth-of-type(2)');
+            const noteEl  = form.querySelector('textarea');
+
+            const category  = catEl.value;
+            const color     = colorEl.value;
+            const rationale = noteEl.value.trim();
+
+            if (!rationale) {
+                showToast("Please add a rationale before saving", "error");
+                noteEl.focus();
+                return;
+            }
+
+            const runCategories = ["KTLO", "Keep the Lights On", "Business Maintenance",
+                                   "Technical Maintenance", "Regulatory (Operational)"];
+            const runChange = runCategories.some(c => category.includes(c)) ? "Run" : "Change";
+
+            const messages = document.querySelectorAll(".message.user .message-bubble");
+            const lastUserMsg = messages.length > 0 ? messages[messages.length - 1].textContent.trim() : "";
+            let title = lastUserMsg.replace(/^(classify this story:|classify:|check this:)\s*/i, "").substring(0, 200);
+            const quoteMatch = lastUserMsg.match(/"([^"]+)"/);
+            if (quoteMatch) title = quoteMatch[1];
+
+            // Append rationale to description so it's captured in ground truth
+            const description = lastUserMsg + (rationale ? `\n\n[Correction note: ${rationale}]` : "");
+
+            try {
+                const saveBtn = form.querySelector('.correction-save-btn');
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving…';
+
+                const res = await fetch("/api/approve-classification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, description, run_change: runChange,
+                                          waf_color: color, waf_category: category, waf_subcategory: "" })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    form.innerHTML = `<div style="color:var(--warning);font-size:13px;">&#10003; Correction saved — <strong>${category}</strong> / ${color}. Ground truth: ${data.example_count} examples.</div>`;
+                    form.style.borderColor = 'var(--success)';
+                    correctBtn.disabled = true;
+                    correctBtn.textContent = '✓ Corrected';
+                    showToast(`Correction saved: ${category}`, "success");
+                    updateStatus();
+                } else {
+                    showToast(data.error || "Failed to save correction", "error");
+                    form.querySelector('.correction-save-btn').disabled = false;
+                    form.querySelector('.correction-save-btn').textContent = 'Save Correction to Ground Truth';
+                }
+            } catch (e) {
+                showToast("Error saving correction: " + e.message, "error");
+            }
         }
 
         async function approveClassification(responseText, btn) {
