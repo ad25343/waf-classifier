@@ -121,31 +121,6 @@ def classify():
         assistant_message = response.content[0].text
         chat_history.append({"role": "assistant", "content": assistant_message})
 
-        # Auto-save classification to history if response contains a recommendation
-        if "Recommended WAF Category" in assistant_message or "WAF Category:" in assistant_message:
-            try:
-                cat_match = re.search(r"(?:Recommended )?WAF Category:?\*?\*?\s*(.+?)(?:\n|$)", assistant_message, re.I)
-                conf_match = re.search(r"Confidence:?\*?\*?\s*(.+?)(?:\n|$)", assistant_message, re.I)
-                color_match = re.search(r"WAF Color:?\*?\*?\s*(.+?)(?:\n|$)", assistant_message, re.I)
-                mismatch = "Mismatch" in assistant_message or "\u26a0\ufe0f" in assistant_message
-
-                save_classification(
-                    title=user_message[:200],
-                    description=user_message,
-                    category=cat_match.group(1).strip().strip("*") if cat_match else "",
-                    subcategory="",
-                    color=color_match.group(1).strip().strip("*") if color_match else "",
-                    run_change="",
-                    confidence=conf_match.group(1).strip().strip("*") if conf_match else "",
-                    was_mismatch=mismatch,
-                    epic=epic,
-                    parent_feature=parent_feature,
-                    story_id=story_id,
-                    story_points=story_points,
-                )
-            except Exception:
-                pass  # Best-effort save
-
         return jsonify({
             "response": assistant_message,
             "waf_loaded": waf_store["definitions"] is not None or bool(waf_store["raw_text"]),
