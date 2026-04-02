@@ -36,7 +36,7 @@ Open **http://localhost:8080** in your browser. You should see the home page wit
 ## Your First Classification
 
 1. Click **Classify Stories** from the home page
-2. Optionally enter a **Story Key** (e.g. `PROJ-123`), **Epic**, and **Parent Feature** in the fields above the chat box — these are saved alongside the classification for lineage tracking
+2. Optionally enter a **Story Key** (e.g. `PROJ-123`), **Points**, **Epic**, and **Parent Feature** in the fields above the chat box — these are saved alongside the classification for lineage tracking
 3. Type a story in the chat box, for example:
 
    > Classify this story: "Fix production database connection pool exhaustion causing 504 errors on loan lookup service during peak hours"
@@ -54,7 +54,7 @@ Open **http://localhost:8080** in your browser. You should see the home page wit
 
 1. Click **Analytics** from the home page
 2. **Upload Data tab** (default) — Upload a CSV or Excel file with story data
-3. **Map Columns** — Auto-detected column mappings shown for confirmation. Adjust if needed. Title and Description are required. Optional: Team, Epic, Parent Feature, Story ID, Feature ID, Epic ID.
+3. **Map Columns** — Auto-detected column mappings shown for confirmation. Adjust if needed. Title and Description are required. Optional: Team, Epic, Parent Feature, Story ID, Feature ID, Epic ID, Story Points.
 4. Click **Continue to AI Classification** — live progress bar tracks each batch
 5. **Review & Approve** — side-by-side table shows file tag vs AI recommendation. Mismatches are highlighted and pre-selected. Match rows are included but not pre-selected.
 6. Click any row to see full story details in a modal
@@ -73,9 +73,9 @@ If your JIRA data comes as separate Epic, Feature, and Story export files:
 2. Upload your three files:
    - **Epic Attributes** — must contain Epic ID (e.g. `Jira SaaS Epic#`) and Summary
    - **Feature Attributes** — must contain Feature ID, Feature Summary, and Parent Epic Number
-   - **Story Attributes** — must contain Story #, Story Name, and Parent Feature
+   - **Story Attributes** — must contain Story #, Story Name, and Parent Feature. Optional: Story Points (auto-detected as "Story Points", "Points", "SP", or "Estimate")
 3. Enter a **Job Name** (auto-filled with today's date — edit to something meaningful like `SOX Compliance PI-3`)
-4. Click **Process Files** — the app joins the three files and shows a stats summary and 20-row preview
+4. Click **Process Files** — the app joins the three files and shows a stats summary and 50-row preview. Rows with WAF conflicts (story WAF ≠ feature WAF) are highlighted yellow; rows missing WAF are highlighted red.
 5. Click **Submit for Analysis** to send the merged file directly to the AI classifier — you'll land on the column mapping step automatically
 6. Alternatively click **Download Merged CSV** to save locally and upload manually later
 
@@ -167,7 +167,7 @@ Re-generate or modify test datasets using `test-data/generate_test_data.py`.
 **Recommended column order** (matches test data files):
 
 ```
-Epic ID · Feature ID · Story ID · Epic · Parent Feature · Story Title · Story Description · Team · WAF Category · WAF Color · Sub-Category · Confidence · Run/Change · Timestamp · Issue Key
+Epic ID · Feature ID · Story ID · Epic · Parent Feature · Story Title · Story Description · Story Points · Team · WAF Category · WAF Color · Sub-Category · Confidence · Run/Change · Timestamp · Issue Key
 ```
 
 **Column names recognized during bulk import:**
@@ -183,6 +183,7 @@ Epic ID · Feature ID · Story ID · Epic · Parent Feature · Story Title · St
 | Story Description | **Story Description** (priority), description, desc, detail, body, acceptance | |
 | Team | team, squad, group | |
 | WAF Category | category, waf cat, waf category | |
+| Story Points | story points, points, sp, estimate | Numeric; shown in verify table and lineage |
 | Issue Key | — (fallback for Story ID only) | e.g. PROJ-123 |
 
 ---

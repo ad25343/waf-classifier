@@ -121,11 +121,12 @@ Classify a single story via chat.
   "session_id": "optional-session-id",
   "epic": "Platform Reliability",
   "parent_feature": "Database Health",
-  "story_id": "PROJ-123"
+  "story_id": "PROJ-123",
+  "story_points": "5"
 }
 ```
 
-All three context fields (`epic`, `parent_feature`, `story_id`) are optional. When provided, they are saved alongside the AI classification in the database.
+All context fields (`epic`, `parent_feature`, `story_id`, `story_points`) are optional. When provided, they are saved alongside the AI classification in the database.
 
 **Response:**
 ```json
@@ -395,6 +396,7 @@ Upload a file and return column info for field mapping without starting AI class
 | `story_id` | **Story ID** (priority), Issue Key, Key, Ticket, JIRA ID, Item ID | Both `Story ID` (e.g. STR-10001) and `Issue Key` (e.g. COMP-001) are accepted; `Story ID` takes priority when both are present |
 | `feature_id` | Feature ID, Feature key, Parent ID, Parent key | e.g. F-C001 |
 | `epic_id` | Epic ID, Epic key, Epic link, Initiative ID | e.g. EP-C001 |
+| `story_points` | Story Points, story_points, Points, SP, Estimate | Numeric value stored as text |
 
 ### POST /api/bulk-verify
 
@@ -444,6 +446,7 @@ Save selected verified classifications to the database. Only mismatch rows (`is_
       "story_id": "PROJ-123",
       "feature_id": "PROJ-100",
       "epic_id": "PROJ-50",
+      "story_points": "5",
       "user_submitted_waf": "New Feature",
       "ai_suggested_waf": "KTLO",
       "ai_color": "GRAY",
@@ -498,7 +501,9 @@ Get detailed data for all epics including health scores, category breakdowns, an
   "team": "Platform",
   "story_id": "PROJ-123",
   "feature_id": "PROJ-100",
-  "epic_id": "PROJ-50"
+  "epic_id": "PROJ-50",
+  "story_points": "5",
+  "epic": "Platform Reliability"
 }
 ```
 
@@ -750,6 +755,7 @@ Accept three JIRA export files and merge them into the canonical WAF import form
 | Story | Team | Team, Teams |
 | Story | WAF | WAF Derived, Work Alignment |
 | Story | Timestamp | Resolved Date, Created, Date |
+| Story | Story Points | Story Points, Points, SP, Estimate |
 
 **Join logic:** Story → Feature (via Parent Feature = Feature ID) → Epic (via Parent Epic = Epic ID). WAF priority: Story > Feature > Epic. Team priority: Story > Team.
 
@@ -765,8 +771,8 @@ Accept three JIRA export files and merge them into the canonical WAF import form
     "unmatched_features": 0,
     "unmatched_epics": 0
   },
-  "preview": [ { "Epic ID": "EP-C001", "Story Title": "...", "..." : "..." } ],
-  "columns": ["Epic ID", "Feature ID", "Story ID", "Epic", "Parent Feature", "Story Title", "Story Description", "Team", "WAF Category", "WAF Color", "Sub-Category", "Confidence", "Run/Change", "Timestamp", "Issue Key"],
+  "preview": [ { "Epic ID": "EP-C001", "Story Title": "...", "Story Points": "5", "_diff_waf_conflict": false, "_diff_missing_waf": false, "_diff_s_waf": "KTLO", "_diff_f_waf": "KTLO" } ],
+  "columns": ["Epic ID", "Feature ID", "Story ID", "Epic", "Parent Feature", "Story Title", "Story Description", "Story Points", "Team", "WAF Category", "WAF Color", "Sub-Category", "Confidence", "Run/Change", "Timestamp", "Issue Key"],
   "column_map": { "epic": { "id_col": "Jira SaaS Epic#", "..." : "..." } },
   "issues": {
     "orphan_stories":  [ { "story_id": "STR-001", "story_title": "...", "missing_feature": "F-X99" } ],
