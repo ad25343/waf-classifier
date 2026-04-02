@@ -1187,6 +1187,12 @@ async function processFiles() {
 
 // ── Column detection render ───────────────────────────────────────────
 function renderDetection(colMap) {
+    const grid = document.getElementById('detection-grid');
+    if (!colMap) {
+        grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Column map unavailable.</div>';
+        return;
+    }
+
     const epicFields = [
         { key: 'id_col',   label: 'Epic ID' },
         { key: 'name_col', label: 'Epic Name' },
@@ -1200,16 +1206,17 @@ function renderDetection(colMap) {
         { key: 'waf_col',  label: 'WAF' },
     ];
     const storyFields = [
-        { key: 'id_col',        label: 'Story ID' },
-        { key: 'title_col',     label: 'Story Title' },
-        { key: 'feature_col',   label: 'Parent Feature' },
-        { key: 'team_col',      label: 'Team' },
-        { key: 'waf_col',       label: 'WAF' },
-        { key: 'timestamp_col', label: 'Timestamp' },
+        { key: 'id_col',            label: 'Story ID' },
+        { key: 'title_col',         label: 'Story Title' },
+        { key: 'feature_col',       label: 'Parent Feature' },
+        { key: 'team_col',          label: 'Team' },
+        { key: 'waf_col',           label: 'WAF' },
+        { key: 'story_points_col',  label: 'Story Points' },
+        { key: 'timestamp_col',     label: 'Timestamp' },
     ];
 
     function groupHtml(title, fields, map) {
-        if (map === null) {
+        if (map == null) {
             return `<div class="detection-group"><h4>${esc(title)}</h4>
                 <div style="font-size:12px;color:var(--text-muted);font-style:italic;padding:6px 0;">Not uploaded &mdash; fields will be blank</div>
             </div>`;
@@ -1217,28 +1224,25 @@ function renderDetection(colMap) {
         let rows = '';
         fields.forEach(f => {
             const val = map[f.key];
-            if (val) {
-                rows += `<div class="detection-row">
+            rows += val
+                ? `<div class="detection-row">
                     <span class="detection-label">${esc(f.label)}</span>
                     <span class="detection-arrow">&#8594;</span>
                     <span class="detection-value" title="${esc(val)}">${esc(val)}</span>
-                </div>`;
-            } else {
-                rows += `<div class="detection-row">
+                   </div>`
+                : `<div class="detection-row">
                     <span class="detection-label">${esc(f.label)}</span>
                     <span class="detection-arrow">&#8594;</span>
                     <span class="detection-missing">&#9888; Not found</span>
-                </div>`;
-            }
+                   </div>`;
         });
         return `<div class="detection-group"><h4>${esc(title)}</h4>${rows}</div>`;
     }
 
-    const grid = document.getElementById('detection-grid');
     grid.innerHTML =
-        groupHtml('Epic File',    epicFields,  colMap.epic)  +
-        groupHtml('Feature File', featFields,  colMap.feature) +
-        groupHtml('Story File',   storyFields, colMap.story);
+        groupHtml('Epic File',    epicFields,  colMap.epic    ?? null) +
+        groupHtml('Feature File', featFields,  colMap.feature ?? null) +
+        groupHtml('Story File',   storyFields, colMap.story   ?? null);
 }
 
 // ── Stats render ─────────────────────────────────────────────────────
