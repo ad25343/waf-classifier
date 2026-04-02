@@ -760,6 +760,20 @@
         }
         .correct-btn:hover { background: rgba(217,119,6,0.15); }
 
+        .new-story-btn {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+        .new-story-btn:hover { border-color: var(--accent); color: var(--accent); }
+
         .correction-form {
             display: none;
             margin-top: 12px;
@@ -1415,9 +1429,15 @@
                 hint.className = "approve-hint";
                 hint.textContent = "AI wrong? Override and save the correct answer";
 
+                const newStoryBtn = document.createElement("button");
+                newStoryBtn.className = "new-story-btn";
+                newStoryBtn.innerHTML = "&#8617; New Story";
+                newStoryBtn.onclick = () => clearChat();
+
                 approveBar.appendChild(approveBtn);
                 approveBar.appendChild(correctBtn);
                 approveBar.appendChild(hint);
+                approveBar.appendChild(newStoryBtn);
                 bubble.appendChild(approveBar);
 
                 // ── Inline correction form ──────────────────────────────
