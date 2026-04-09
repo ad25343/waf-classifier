@@ -1419,6 +1419,16 @@
                 approveBar.appendChild(newStoryBtn);
                 bubble.appendChild(approveBar);
 
+                // ── Color/category validation ───────────────────────────
+                const CATEGORY_COLOR_MAP = {
+                    "ktlo (keep the lights on)": "GRAY", "business maintenance": "BLACK",
+                    "technical maintenance": "BLACK", "regulatory (operational)": "RED",
+                    "regulatory mandated change": "RED", "enterprise strategic priority": "ORANGE",
+                    "top divisional priority": "YELLOW", "other block priority": "GREEN",
+                };
+                function expectedColor(cat) { return cat ? CATEGORY_COLOR_MAP[cat.toLowerCase().trim()] || null : null; }
+                function colorOk(cat, col) { const e = expectedColor(cat); return (!e || !col) ? true : e === col.toUpperCase().trim(); }
+
                 // ── Inline correction form ──────────────────────────────
                 const WAF_CATS = [
                     "KTLO (Keep the Lights On)", "Business Maintenance",
@@ -1431,6 +1441,15 @@
                 // Pre-fill from AI response
                 const aiCat   = extractField(text, "Recommended WAF Category") || extractField(text, "WAF Category") || "";
                 const aiColor = extractField(text, "WAF Color") || "";
+
+                // Color/category mismatch warning
+                if (aiCat && aiColor && !colorOk(aiCat, aiColor)) {
+                    const expCol = expectedColor(aiCat);
+                    const colorWarn = document.createElement("div");
+                    colorWarn.style.cssText = "font-size:11px;color:var(--warning);margin-top:6px;padding:4px 8px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:6px;";
+                    colorWarn.innerHTML = `⚠ Color mismatch: AI suggested <strong>${aiColor}</strong> but <strong>${expCol}</strong> is expected for <em>${aiCat}</em>`;
+                    bubble.appendChild(colorWarn);
+                }
 
                 const correctionForm = document.createElement("div");
                 correctionForm.className = "correction-form";

@@ -97,21 +97,21 @@
         /* KPI Cards */
         .kpi-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
         .kpi-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 24px;
+            padding: 14px 16px;
         }
 
-        .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
-        .kpi-value { font-size: 36px; font-weight: 700; }
-        .kpi-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .kpi-value { font-size: 26px; font-weight: 700; }
+        .kpi-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
 
         .kpi-value.blue { color: var(--accent); }
         .kpi-value.green { color: var(--success); }
@@ -380,8 +380,6 @@
             id="global-search-input"
             placeholder="Search stories..."
             autocomplete="off"
-            oninput="onGlobalSearchInput()"
-            onfocus="onGlobalSearchFocus()"
         >
         <div class="global-search-results" id="global-search-results"></div>
     </div>
@@ -439,6 +437,16 @@
             <div class="kpi-value purple" id="kpi-gt">—</div>
             <div class="kpi-sub">Calibration data</div>
         </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Run</div>
+            <div class="kpi-value" style="color:#e8944a" id="kpi-run">—</div>
+            <div class="kpi-sub" id="kpi-run-pct">—</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Change</div>
+            <div class="kpi-value" style="color:#c084fc" id="kpi-change">—</div>
+            <div class="kpi-sub" id="kpi-change-pct">—</div>
+        </div>
     </div>
 
     <!-- Charts -->
@@ -446,22 +454,6 @@
         <div class="chart-card">
             <div class="chart-title">WAF Category Distribution</div>
             <div class="chart-container"><canvas id="categoryChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-title">Confidence Breakdown</div>
-            <div class="chart-container"><canvas id="confidenceChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-title">Run vs Change</div>
-            <div class="chart-container"><canvas id="runChangeChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-title">WAF Color Distribution</div>
-            <div class="chart-container"><canvas id="colorChart"></canvas></div>
-        </div>
-        <div class="chart-card full">
-            <div class="chart-title">Classification Activity (Daily)</div>
-            <div class="chart-container tall"><canvas id="trendChart"></canvas></div>
         </div>
     </div>
 
@@ -508,11 +500,34 @@ const WAF_COLORS_MAP = {
     GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
     ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"
 };
+const CATEGORY_COLOR_MAP = {
+    "ktlo (keep the lights on)": "GRAY",
+    "business maintenance": "BLACK",
+    "technical maintenance": "BLACK",
+    "regulatory (operational)": "RED",
+    "regulatory mandated change": "RED",
+    "enterprise strategic priority": "ORANGE",
+    "top divisional priority": "YELLOW",
+    "other block priority": "GREEN",
+};
+function expectedColor(category) {
+    if (!category) return null;
+    return CATEGORY_COLOR_MAP[category.toLowerCase().trim()] || null;
+}
+function colorOk(category, color) {
+    const exp = expectedColor(category);
+    if (!exp || !color) return true;
+    return exp === color.toUpperCase().trim();
+}
+function colorCheckTag(category, color) {
+    if (!category || !color) return '';
+    const exp = expectedColor(category);
+    if (!exp) return '';
+    const ok = exp === color.toUpperCase().trim();
+    if (ok) return '';
+    return `<span title="Color mismatch: ${color} used but ${exp} expected for ${category}" style="font-size:10px;color:var(--warning);cursor:default;">⚠</span>`;
+}
 
-const CHART_PALETTE = [
-    "#e8944a", "#c084fc", "#4ade80", "#fbbf24", "#f87171",
-    "#60a5fa", "#f472b6", "#34d399"
-];
 
 let charts = {};
 
@@ -538,26 +553,19 @@ async function loadDashboard() {
         document.getElementById("kpi-mismatches").textContent = data.total_mismatches;
         document.getElementById("kpi-gt").textContent = statusData.ground_truth_count || 0;
 
+        // Run / Change KPIs
+        const total = data.total_classifications || 0;
+        const runItem   = (data.run_change || []).find(i => i.name === "Run");
+        const changeItem = (data.run_change || []).find(i => i.name === "Change");
+        const runCount    = runItem    ? runItem.count    : 0;
+        const changeCount = changeItem ? changeItem.count : 0;
+        document.getElementById("kpi-run").textContent    = runCount;
+        document.getElementById("kpi-change").textContent = changeCount;
+        document.getElementById("kpi-run-pct").textContent    = total ? (runCount / total * 100).toFixed(1) + "% of total" : "—";
+        document.getElementById("kpi-change-pct").textContent = total ? (changeCount / total * 100).toFixed(1) + "% of total" : "—";
+
         // Category Chart (horizontal bar)
         renderBarChart("categoryChart", data.categories);
-
-        // Confidence Chart (doughnut)
-        renderDoughnut("confidenceChart", data.confidence,
-            {"HIGH": "#4ade80", "MEDIUM": "#fbbf24", "LOW": "#f87171"});
-
-        // Run/Change Chart (doughnut)
-        renderDoughnut("runChangeChart", data.run_change,
-            {"Run": "#e8944a", "Change": "#c084fc"});
-
-        // Color Chart (doughnut)
-        const colorColors = data.colors.map(c => WAF_COLORS_MAP[c.name] || "#e8944a");
-        renderDoughnutRaw("colorChart",
-            data.colors.map(c => c.name),
-            data.colors.map(c => c.count),
-            colorColors);
-
-        // Trend Chart (line)
-        renderTrend("trendChart", data.daily_trend);
 
         // Recent Table
         renderRecent(data.recent);
@@ -576,7 +584,7 @@ function renderBarChart(id, items) {
             labels: items.map(i => i.name),
             datasets: [{
                 data: items.map(i => i.count),
-                backgroundColor: CHART_PALETTE.slice(0, items.length),
+                backgroundColor: items.map(i => WAF_COLORS_MAP[expectedColor(i.name)] || '#e8944a'),
                 borderRadius: 6, barThickness: 24
             }]
         },
@@ -587,55 +595,6 @@ function renderBarChart(id, items) {
             scales: {
                 x: { ticks: { color: "#6b6e80" }, grid: { color: "#353849" } },
                 y: { ticks: { color: "#9395a5", font: { size: 11 } }, grid: { display: false } }
-            }
-        }
-    });
-}
-
-function renderDoughnut(id, items, colorMap) {
-    const colors = items.map(i => colorMap[i.name] || "#e8944a");
-    renderDoughnutRaw(id, items.map(i => i.name), items.map(i => i.count), colors);
-}
-
-function renderDoughnutRaw(id, labels, data, colors) {
-    if (charts[id]) charts[id].destroy();
-    const ctx = document.getElementById(id).getContext("2d");
-    charts[id] = new Chart(ctx, {
-        type: "doughnut",
-        data: {
-            labels: labels,
-            datasets: [{ data: data, backgroundColor: colors, borderWidth: 0 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            cutout: "60%",
-            plugins: {
-                legend: { position: "right", labels: { color: "#9395a5", padding: 12, font: { size: 12 } } }
-            }
-        }
-    });
-}
-
-function renderTrend(id, items) {
-    if (charts[id]) charts[id].destroy();
-    const ctx = document.getElementById(id).getContext("2d");
-    charts[id] = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: items.map(i => i.date),
-            datasets: [{
-                label: "Classifications",
-                data: items.map(i => i.count),
-                borderColor: "#e8944a", backgroundColor: "rgba(232,148,74,0.12)",
-                fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#e8944a"
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { ticks: { color: "#6b6e80", font: { size: 10 } }, grid: { color: "#353849" } },
-                y: { beginAtZero: true, ticks: { color: "#6b6e80", stepSize: 1 }, grid: { color: "#353849" } }
             }
         }
     });
@@ -660,7 +619,7 @@ function renderRecent(items) {
             <td>${time}</td>
             <td style="color:var(--text-primary)">${title}</td>
             <td>${r.category}</td>
-            <td><span class="color-dot" style="background:${dotColor}"></span>${r.color}</td>
+            <td><span class="color-dot" style="background:${dotColor}"></span>${r.color} ${colorCheckTag(r.category, r.color)}</td>
             <td><span class="badge ${confClass}">${r.confidence || "—"}</span></td>
             <td>${status}</td>
         </tr>`;

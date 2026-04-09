@@ -10,7 +10,7 @@ import uuid
 import time as _time
 import logging
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
@@ -31,12 +31,33 @@ DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "waf_history.
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
+_JOB_TTL = 2 * 60 * 60  # 2 hours — evict completed/errored jobs after this
+
+
+def _find_col(df_columns, keywords):
+    """Return the first column name matching any keyword (substring, priority order)."""
+    for kw in keywords:
+        for col in df_columns:
+            if kw in col:
+                return col
+    return None
+
+
 def _cleanup_previews():
     """Remove expired previews."""
     now = _time.time()
     expired = [k for k, v in _preview_store.items() if now - v["created"] > _PREVIEW_TTL]
     for k in expired:
         del _preview_store[k]
+
+
+def _cleanup_jobs():
+    """Evict completed/errored jobs older than _JOB_TTL to prevent unbounded memory growth."""
+    cutoff = (datetime.now() - timedelta(seconds=_JOB_TTL)).isoformat()
+    stale = [jid for jid, j in list(verify_jobs.items())
+             if j["status"] in ("done", "error") and j.get("started_at", "9") < cutoff]
+    for jid in stale:
+        del verify_jobs[jid]
 
 
 def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_short):
@@ -100,14 +121,12 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 if len(parts) >= 5: ai_conf = parts[4].strip().replace("Confidence:", "").strip()
                 if len(parts) >= 6: ai_reason = parts[5].strip()
 
-            # Normalize file category for comparison
             norm_cat, was_normalized, orig_cat = normalize_waf_category(s["user_submitted_waf"])
             if s["user_submitted_waf"] and ai_cat:
                 is_match = norm_cat.lower().strip() == ai_cat.lower().strip()
             else:
                 is_match = None
 
-            # Flag rows with missing description
             missing_desc = not s["description"] or s["description"].strip() == "" or s["description"].strip().lower() == "nan"
             if missing_desc:
                 ai_conf = "LOW"
@@ -255,13 +274,7 @@ def bulk_verify_preview():
         original_columns = list(df.columns)
         df.columns = [c.strip().lower() for c in df.columns]
 
-        def find_col(keywords):
-            # Try keywords in priority order — first keyword match wins
-            for kw in keywords:
-                for col in df.columns:
-                    if kw in col:
-                        return col
-            return None
+        find_col = lambda kws: _find_col(df.columns, kws)
 
         # Auto-detect suggested mappings
         suggested = {}
@@ -274,13 +287,13 @@ def bulk_verify_preview():
             {"key": "subcategory", "label": "Sub-Category", "required": False, "keywords": ["sub-category", "sub_category", "subcategory", "waf sub"]},
             {"key": "confidence", "label": "Confidence", "required": False, "keywords": ["confidence", "conf"]},
             {"key": "team", "label": "Team", "required": False, "keywords": ["team", "squad", "group"]},
+            {"key": "story_points", "label": "Story Points", "required": False, "keywords": ["story points", "story_points", "points", " sp ", "estimate"]},
             {"key": "epic", "label": "Epic", "required": False, "keywords": ["epic", "initiative", "program"]},
             {"key": "parent_feature", "label": "Parent Feature", "required": False, "keywords": ["feature", "parent feature", "parent_feature", "capability"]},
             {"key": "timestamp", "label": "Timestamp", "required": False, "keywords": ["timestamp", "date", "created", "created_at"]},
             {"key": "story_id", "label": "Story ID", "required": False, "keywords": ["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"]},
             {"key": "feature_id", "label": "Feature ID", "required": False, "keywords": ["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"]},
             {"key": "epic_id", "label": "Epic ID", "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"]},
-            {"key": "story_points", "label": "Story Points", "required": False, "keywords": ["story points", "story_points", "points", " sp ", "estimate"]},
         ]
         for field in target_fields:
             matched = find_col(field["keywords"])
@@ -382,14 +395,7 @@ def bulk_verify():
             return jsonify({"error": f"Failed to read file: {str(e)[:200]}"}), 400
 
         df.columns = [c.strip().lower() for c in df.columns]
-
-        def find_col(keywords):
-            # Try keywords in priority order — first keyword match wins
-            for kw in keywords:
-                for col in df.columns:
-                    if kw in col:
-                        return col
-            return None
+        find_col = lambda kws: _find_col(df.columns, kws)
 
         title_col = find_col(["story title", "title", "summary", "story", "name"])
         desc_col = find_col(["story description", "description", "desc", "detail", "body", "acceptance"])
@@ -455,6 +461,7 @@ def bulk_verify():
             "filename": filename,
             "results": None,
             "error": None,
+            "started_at": datetime.now().isoformat(),
         }
 
         thread = threading.Thread(
@@ -512,6 +519,31 @@ def bulk_verify_status(job_id):
     return jsonify(resp)
 
 
+@verify_bp.route("/api/bulk-verify/jobs", methods=["GET"])
+def list_verify_jobs():
+    """Return all in-memory classification jobs (running + recently completed)."""
+    _cleanup_jobs()
+    jobs = []
+    for jid, job in list(verify_jobs.items()):
+        jobs.append({
+            "job_id": jid,
+            "status": job["status"],
+            "filename": job.get("filename", ""),
+            "total_stories": job.get("total_stories", 0),
+            "stories_processed": job.get("stories_processed", 0),
+            "total_batches": job.get("total_batches", 0),
+            "completed_batches": job.get("completed_batches", 0),
+            "upload_id": job.get("upload_id"),
+            "matches": job.get("matches", 0),
+            "mismatches": job.get("mismatches", 0),
+            "error": job.get("error", ""),
+            "started_at": job.get("started_at", ""),
+        })
+    # Most recent first
+    jobs.sort(key=lambda j: j.get("started_at", ""), reverse=True)
+    return jsonify({"jobs": jobs})
+
+
 @verify_bp.route("/api/classifications/<int:classification_id>", methods=["GET"])
 def get_classification(classification_id):
     """Return full details for a single classification."""
@@ -547,8 +579,9 @@ def bulk_verify_save():
                (timestamp, story_title, story_description, waf_category,
                 waf_subcategory, waf_color, run_change, confidence,
                 was_mismatch, original_tag, approved, team, epic, parent_feature,
-                story_id, feature_id, epic_id, story_points, upload_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                story_id, feature_id, epic_id, story_points, upload_id, original_color,
+                waf_reasoning)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (ts,
              row.get("title", ""),
              row.get("description", ""),
@@ -557,9 +590,9 @@ def bulk_verify_save():
              color,
              run_change,
              confidence,
-             1 if row.get("is_match") is False else 0,
+             1 if row.get("is_match") is False else 0,  # was_mismatch
              row.get("user_submitted_waf", ""),
-             1 if row.get("is_match") is False else 0,  # approved — only mismatches are reviewed/approved
+             1,  # approved — user explicitly saved this row
              row.get("team", "default"),
              row.get("epic", ""),
              row.get("parent_feature", ""),
@@ -567,7 +600,9 @@ def bulk_verify_save():
              row.get("feature_id", ""),
              row.get("epic_id", ""),
              row.get("story_points", ""),
-             upload_id)
+             upload_id,
+             row.get("file_color", ""),
+             row.get("ai_reason", ""))
         )
         saved += 1
 

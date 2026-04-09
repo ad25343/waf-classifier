@@ -48,7 +48,9 @@ def init_db():
             story_id TEXT DEFAULT '',
             feature_id TEXT DEFAULT '',
             epic_id TEXT DEFAULT '',
-            story_points TEXT DEFAULT ''
+            story_points TEXT DEFAULT '',
+            original_color TEXT DEFAULT '',
+            waf_reasoning TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -102,6 +104,14 @@ def init_db():
         pass
     try:
         conn.execute("ALTER TABLE classifications ADD COLUMN story_points TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE classifications ADD COLUMN original_color TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE classifications ADD COLUMN waf_reasoning TEXT DEFAULT ''")
     except sqlite3.OperationalError:
         pass
 
@@ -241,7 +251,7 @@ def save_classification(title, description, category, subcategory, color,
                         original_tag="", approved=False, team="default",
                         epic="", parent_feature="",
                         story_id="", feature_id="", epic_id="",
-                        story_points=""):
+                        story_points="", original_color="", waf_reasoning=""):
     """Save a classification to the database."""
     db = get_db()
     db.execute(
@@ -249,12 +259,13 @@ def save_classification(title, description, category, subcategory, color,
            (timestamp, story_title, story_description, waf_category,
             waf_subcategory, waf_color, run_change, confidence,
             was_mismatch, original_tag, approved, team, epic, parent_feature,
-            story_id, feature_id, epic_id, story_points)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            story_id, feature_id, epic_id, story_points, original_color, waf_reasoning)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (datetime.now().isoformat(), title, description, category,
          subcategory, color, run_change, confidence,
          1 if was_mismatch else 0, original_tag, 1 if approved else 0, team,
-         epic, parent_feature, story_id, feature_id, epic_id, story_points)
+         epic, parent_feature, story_id, feature_id, epic_id, story_points,
+         original_color, waf_reasoning)
     )
     db.commit()
     return db.execute("SELECT last_insert_rowid()").fetchone()[0]

@@ -276,6 +276,7 @@
 
         .mapping-group { display: flex; flex-direction: column; gap: 4px; }
         .mapping-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.85); } }
         .mapping-group .required-star { color: var(--error); }
         .mapping-group select {
             padding: 8px 10px; background: var(--bg-tertiary); color: var(--text-primary);
@@ -576,6 +577,16 @@
                 <div class="kpi-mini-value" style="color:var(--purple)" id="sum-gt">—</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Calibration data</div>
             </div>
+            <div class="kpi-mini kpi-clickable" onclick="summaryDrillDown('run_change','Run')" title="Click to view Run stories">
+                <div class="kpi-mini-label">Run</div>
+                <div class="kpi-mini-value" style="color:#e8944a" id="sum-run">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;" id="sum-run-pct">—</div>
+            </div>
+            <div class="kpi-mini kpi-clickable" onclick="summaryDrillDown('run_change','Change')" title="Click to view Change stories">
+                <div class="kpi-mini-label">Change</div>
+                <div class="kpi-mini-value" style="color:#c084fc" id="sum-change">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;" id="sum-change-pct">—</div>
+            </div>
         </div>
 
         <!-- Drill-down panel (hidden by default) -->
@@ -630,38 +641,24 @@
                     <div class="card-title">User Submitted WAF Distribution</div>
                     <div class="chart-container"><canvas id="sumSubmittedWafChart"></canvas></div>
                 </div>
-                <div class="card">
-                    <div class="card-title">Run vs Change</div>
-                    <div class="chart-container"><canvas id="sumRunChangeChart"></canvas></div>
-                </div>
-                <div class="card">
-                    <div class="card-title">WAF Color Distribution</div>
-                    <div class="chart-container"><canvas id="sumColorChart"></canvas></div>
-                </div>
             </div>
 
-            <!-- Daily Trend -->
-            <div class="card" style="margin-bottom:20px;">
-                <div class="card-title">Classification Activity (Daily)</div>
-                <div class="chart-container short"><canvas id="sumTrendChart"></canvas></div>
-            </div>
-
-            <!-- Recent Table -->
+            <!-- All Stories Table -->
             <div class="card">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-                    <div class="card-title" style="margin:0;">Recent Classifications</div>
+                    <div class="card-title" style="margin:0;">All Stories</div>
                     <div id="recent-pagination" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);"></div>
                 </div>
                 <div style="overflow-x:auto;">
                     <table>
                         <thead>
                             <tr>
-                                <th class="sortable" data-col="timestamp" style="cursor:pointer;user-select:none;" onclick="sortRecent('timestamp')">Time <span id="recent-sort-timestamp">↓</span></th>
-                                <th class="sortable" data-col="title" style="cursor:pointer;user-select:none;" onclick="sortRecent('title')">Story <span id="recent-sort-title"></span></th>
-                                <th class="sortable" data-col="category" style="cursor:pointer;user-select:none;" onclick="sortRecent('category')">Category <span id="recent-sort-category"></span></th>
-                                <th class="sortable" data-col="color" style="cursor:pointer;user-select:none;" onclick="sortRecent('color')">Color <span id="recent-sort-color"></span></th>
-                                <th class="sortable" data-col="confidence" style="cursor:pointer;user-select:none;" onclick="sortRecent('confidence')">Confidence <span id="recent-sort-confidence"></span></th>
-                                <th class="sortable" data-col="status" style="cursor:pointer;user-select:none;" onclick="sortRecent('status')">Status <span id="recent-sort-status"></span></th>
+                                <th class="sortable" style="text-align:left;cursor:pointer;user-select:none;" onclick="sortRecent('title')">Story <span id="recent-sort-title"></span></th>
+                                <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('epic')">Epic <span id="recent-sort-epic"></span></th>
+                                <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('original_tag')">User WAF <span id="recent-sort-original_tag"></span></th>
+                                <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('category')">AI WAF <span id="recent-sort-category"></span></th>
+                                <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('color')">Color <span id="recent-sort-color"></span></th>
+                                <th class="sortable" style="text-align:center;cursor:pointer;user-select:none;" onclick="sortRecent('status')">Status <span id="recent-sort-status"></span></th>
                             </tr>
                         </thead>
                         <tbody id="sum-recent-table"></tbody>
@@ -747,6 +744,19 @@
 
     <!-- ═══ HISTORY ═══ -->
     <div class="tab-panel" id="panel-history">
+
+        <!-- Active Jobs Panel: shown when jobs are in-memory -->
+        <div id="active-jobs-card" class="card" style="display:none;margin-bottom:16px;">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>Active Jobs</span>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <span id="active-jobs-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.5s infinite;"></span>
+                    <span id="active-jobs-count" style="font-size:13px;color:var(--text-muted);font-weight:400;"></span>
+                </span>
+            </div>
+            <div id="active-jobs-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
         <div class="card">
             <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
                 <span>Upload History</span>
@@ -810,6 +820,7 @@
                         <tr><td style="color:var(--text-primary)">Story Description</td><td><span class="badge medium">Optional</span></td><td>Helps AI classify more accurately</td></tr>
                         <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Organisation —</td></tr>
                         <tr><td style="color:var(--text-primary)">Team</td><td><span class="badge medium">Optional</span></td><td>Team or squad name</td></tr>
+                        <tr><td style="color:var(--text-primary)">Story Points</td><td><span class="badge medium">Optional</span></td><td>Effort estimate — recognised as Story Points, Points, SP, Estimate</td></tr>
                         <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— WAF Classification —</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Category</td><td><span class="badge medium">Optional</span></td><td>Existing tag — AI will verify against this</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Color</td><td><span class="badge medium">Optional</span></td><td>GRAY, BLACK, RED, ORANGE, YELLOW, GREEN</td></tr>
@@ -887,7 +898,7 @@
                     <button class="btn btn-sm btn-outline" onclick="selectMismatches()">Select Mismatches Only</button>
                     <div style="flex:1;"></div>
                     <span style="font-size:13px;color:var(--text-secondary);" id="selected-count">0 selected</span>
-                    <button class="btn btn-primary" onclick="saveVerified()" id="save-verified-btn">Save Selected to History</button>
+                    <button class="btn btn-primary" onclick="saveVerified()" id="save-verified-btn">Save All to History</button>
                     <button class="btn btn-outline" onclick="backToUpload()">Start Over</button>
                 </div>
             </div>
@@ -945,6 +956,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const icon = document.querySelector('.theme-icon');
     if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
 
+    // Resume any in-progress classification job (survives navigation away)
+    const activeJob = localStorage.getItem('waf_active_job');
+    if (activeJob) {
+        try {
+            const { jobId, filename, started } = JSON.parse(activeJob);
+            // Only resume if job started within the last 2 hours (stale otherwise)
+            if (jobId && Date.now() - started < 2 * 60 * 60 * 1000) {
+                // Quick check: is the job still alive?
+                fetch(`/api/bulk-verify/status/${jobId}`).then(r => r.json()).then(pd => {
+                    if (pd.status === 'processing' || pd.status === 'done') {
+                        startJobPolling(jobId, filename || 'your file');
+                    } else {
+                        localStorage.removeItem('waf_active_job');
+                    }
+                }).catch(() => localStorage.removeItem('waf_active_job'));
+            } else {
+                localStorage.removeItem('waf_active_job');
+            }
+        } catch(e) { localStorage.removeItem('waf_active_job'); }
+    }
+
     // Auto-trigger mapping step if redirected from File Merger
     const pending = sessionStorage.getItem('waf_pending_preview');
     if (pending) {
@@ -972,11 +1004,34 @@ const WAF_COLORS_MAP = {
     GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
     ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"
 };
+const CATEGORY_COLOR_MAP = {
+    "ktlo (keep the lights on)": "GRAY",
+    "business maintenance": "BLACK",
+    "technical maintenance": "BLACK",
+    "regulatory (operational)": "RED",
+    "regulatory mandated change": "RED",
+    "enterprise strategic priority": "ORANGE",
+    "top divisional priority": "YELLOW",
+    "other block priority": "GREEN",
+};
+function expectedColor(category) {
+    if (!category) return null;
+    return CATEGORY_COLOR_MAP[category.toLowerCase().trim()] || null;
+}
+function colorOk(category, color) {
+    const exp = expectedColor(category);
+    if (!exp || !color) return true;
+    return exp === color.toUpperCase().trim();
+}
+function colorCheckTag(category, color) {
+    if (!category || !color) return '';
+    const exp = expectedColor(category);
+    if (!exp) return '';
+    const ok = exp === color.toUpperCase().trim();
+    if (ok) return '';
+    return `<span title="Color mismatch: ${color} used but ${exp} expected for ${category}" style="font-size:10px;color:var(--warning);cursor:default;">⚠</span>`;
+}
 
-const CHART_PALETTE = [
-    "#e8944a", "#c084fc", "#4ade80", "#fbbf24", "#f87171",
-    "#60a5fa", "#f472b6", "#34d399", "#818cf8", "#fb923c"
-];
 
 let charts = {};
 
@@ -1024,6 +1079,11 @@ document.querySelectorAll('.tab').forEach(tab => {
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+        // Refresh active jobs panel whenever History tab is opened
+        if (tab.dataset.tab === 'history') {
+            refreshActiveJobs();
+            loadUploadHistory();
+        }
     });
 });
 
@@ -1097,6 +1157,17 @@ async function loadSummary() {
         document.getElementById("sum-mismatches").textContent = data.total_mismatches;
         document.getElementById("sum-gt").textContent = statusData.ground_truth_count || 0;
 
+        // Run / Change KPIs
+        const rcTotal = data.total_classifications || 0;
+        const rcRun    = (data.run_change || []).find(i => i.name === "Run");
+        const rcChange = (data.run_change || []).find(i => i.name === "Change");
+        const runCount    = rcRun    ? rcRun.count    : 0;
+        const changeCount = rcChange ? rcChange.count : 0;
+        document.getElementById("sum-run").textContent    = runCount;
+        document.getElementById("sum-change").textContent = changeCount;
+        document.getElementById("sum-run-pct").textContent    = rcTotal ? (runCount / rcTotal * 100).toFixed(1) + "% of total" : "—";
+        document.getElementById("sum-change-pct").textContent = rcTotal ? (changeCount / rcTotal * 100).toFixed(1) + "% of total" : "—";
+
         // Close any open drilldown on data refresh
         closeDrillDown();
 
@@ -1110,7 +1181,7 @@ async function loadSummary() {
                 labels: data.categories.map(i => i.name),
                 datasets: [{
                     data: data.categories.map(i => i.count),
-                    backgroundColor: CHART_PALETTE.slice(0, data.categories.length),
+                    backgroundColor: data.categories.map(i => WAF_COLORS_MAP[expectedColor(i.name)] || '#e8944a'),
                     borderRadius: 6, barThickness: 24
                 }]
             },
@@ -1155,24 +1226,7 @@ async function loadSummary() {
                 labels: (data.submitted_waf || []).map(i => i.name || '(none)'),
                 datasets: [{
                     data: (data.submitted_waf || []).map(i => i.count),
-                    backgroundColor: (data.submitted_waf || []).map(i => {
-                        const colorCss = {GRAY:'rgba(107,114,128,0.7)',BLACK:'rgba(30,30,30,0.85)',RED:'rgba(220,38,38,0.7)',ORANGE:'rgba(234,88,12,0.7)',YELLOW:'rgba(217,119,6,0.7)',GREEN:'rgba(22,163,74,0.7)',BLUE:'rgba(37,99,235,0.7)',PURPLE:'rgba(147,51,234,0.7)',TEAL:'rgba(13,148,136,0.7)'};
-                        const catColor = {
-                            'ktlo':'GRAY','keep the lights':'GRAY',
-                            'business maintenance':'BLACK','technical maintenance':'BLACK',
-                            'regulatory (operational)':'RED','regulatory mandated':'RED',
-                            'enterprise strategic':'ORANGE',
-                            'top divisional':'YELLOW',
-                            'other block':'GREEN',
-                            'efficiency':'BLUE','operational':'BLUE',
-                            'new capability':'ORANGE',
-                            'tech debt':'YELLOW','technical debt':'YELLOW',
-                            'security':'PURPLE',
-                        };
-                        const name = (i.name || '').toLowerCase();
-                        const colorKey = Object.keys(catColor).find(k => name.includes(k));
-                        return colorCss[catColor[colorKey]] || 'rgba(107,114,128,0.7)';
-                    }),
+                    backgroundColor: (data.submitted_waf || []).map(i => WAF_COLORS_MAP[i.original_color] || WAF_COLORS_MAP[expectedColor(i.name)] || '#9CA3AF'),
                     borderRadius: 4, borderSkipped: false,
                 }]
             },
@@ -1200,108 +1254,11 @@ async function loadSummary() {
             }
         });
 
-        // Run/Change Doughnut with percentages
-        renderSumDoughnut("sumRunChangeChart", data.run_change,
-            {"Run": "#e8944a", "Change": "#c084fc"}, 'run_change');
-
-        // Color Doughnut with percentages
-        const colorColors = data.colors.map(c => WAF_COLORS_MAP[c.name] || "#e8944a");
-        destroyChart("sumColorChart");
-        const colCtx = document.getElementById("sumColorChart").getContext("2d");
-        charts["sumColorChart"] = new Chart(colCtx, {
-            type: "doughnut",
-            data: {
-                labels: data.colors.map(c => c.name),
-                datasets: [{ data: data.colors.map(c => c.count), backgroundColor: colorColors, borderWidth: 0 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, cutout: "60%",
-                onClick: (evt, elems) => {
-                    if (elems.length > 0) {
-                        const idx = elems[0].index;
-                        summaryDrillDown('color', data.colors[idx].name);
-                    }
-                },
-                plugins: {
-                    legend: pctLegend, tooltip: pctTooltip,
-                    datalabels: {
-                        display: function(ctx) {
-                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                            return total > 0 && (ctx.dataset.data[ctx.dataIndex] / total) > 0.05;
-                        },
-                        color: '#fff', font: { size: 11, weight: '600' },
-                        formatter: function(value, ctx) {
-                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                            return total > 0 ? ((value / total) * 100).toFixed(0) + '%' : '';
-                        }
-                    }
-                }
-            }
-        });
-
-        // Trend Line
-        destroyChart("sumTrendChart");
-        const trendCtx = document.getElementById("sumTrendChart").getContext("2d");
-        charts["sumTrendChart"] = new Chart(trendCtx, {
-            type: "line",
-            data: {
-                labels: data.daily_trend.map(i => i.date),
-                datasets: [{
-                    label: "Classifications", data: data.daily_trend.map(i => i.count),
-                    borderColor: "#e8944a", backgroundColor: "rgba(232,148,74,0.1)",
-                    fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#e8944a"
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { ticks: { color: "#6b6e80", font: { size: 10 } }, grid: { color: "#353849" } },
-                    y: { beginAtZero: true, ticks: { color: "#6b6e80", stepSize: 1 }, grid: { color: "#353849" } }
-                }
-            }
-        });
-
         // Recent Table — now driven by loadRecentTable()
         loadRecentTable();
     } catch (err) {
         console.error("Summary load failed:", err);
     }
-}
-
-function renderSumDoughnut(id, items, colorMap, filterType) {
-    destroyChart(id);
-    const ctx = document.getElementById(id).getContext("2d");
-    charts[id] = new Chart(ctx, {
-        type: "doughnut",
-        data: {
-            labels: items.map(i => i.name),
-            datasets: [{ data: items.map(i => i.count), backgroundColor: items.map(i => colorMap[i.name] || "#e8944a"), borderWidth: 0 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, cutout: "60%",
-            onClick: (evt, elems) => {
-                if (elems.length > 0 && filterType) {
-                    const idx = elems[0].index;
-                    summaryDrillDown(filterType, items[idx].name);
-                }
-            },
-            plugins: {
-                legend: pctLegend, tooltip: pctTooltip,
-                datalabels: {
-                    display: function(ctx) {
-                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                        return total > 0 && (ctx.dataset.data[ctx.dataIndex] / total) > 0.05;
-                    },
-                    color: '#fff', font: { size: 11, weight: '600' },
-                    formatter: function(value, ctx) {
-                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                        return total > 0 ? ((value / total) * 100).toFixed(0) + '%' : '';
-                    }
-                }
-            }
-        }
-    });
 }
 
 // ── Summary Drill-Down ──
@@ -1427,7 +1384,7 @@ function renderDrillDownTable() {
             '<td style="color:var(--text-muted);font-size:12px;" title="' + esc(s.epic||'') + '">' + epic + '</td>' +
             '<td' + (isMismatch ? ' style="color:var(--error);text-decoration:line-through;opacity:0.85;"' : '') + '>' + ogTag + '</td>' +
             '<td' + (isMismatch ? ' style="color:var(--success);font-weight:600;"' : '') + '>' + esc(s.category || '—') + '</td>' +
-            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—') + '</td>' +
+            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—') + ' ' + colorCheckTag(s.category, s.color) + '</td>' +
             '<td style="text-align:center;">' + esc(s.run_change || '—') + '</td>' +
             '<td style="text-align:center;"><span class="badge ' + confClass + '">' + esc(s.confidence || '—') + '</span></td>' +
             '<td style="text-align:center;">' + statusBadge + '</td>' +
@@ -1480,6 +1437,8 @@ let verifyResultsFull = [];
 let verifyUploadId = null;
 let verifySortCol = null;
 let verifySortDir = 'asc';
+let _uploadPollInterval = null; // guard against duplicate upload-progress polls
+let _activeJobsInterval = null; // guard against duplicate active-jobs polls
 
 function sortVerifyTable(col) {
     if (verifySortCol === col) {
@@ -1705,26 +1664,9 @@ async function confirmMapping() {
         if (data.async && data.job_id) {
             // Large file — poll for progress
             const jobId = data.job_id;
-            const poll = setInterval(async () => {
-                try {
-                    const pr = await fetch(`/api/bulk-verify/status/${jobId}`);
-                    const pd = await pr.json();
-                    if (pd.status === 'processing') {
-                        renderProgress(importStatus, savedFilename, pd.stories_processed, pd.total_stories, pd.completed_batches, pd.total_batches);
-                    } else if (pd.status === 'done' && pd.results) {
-                        clearInterval(poll);
-                        verifyResultsFull = pd.results;
-                        verifyResults = pd.results.slice();
-                        verifyUploadId = pd.upload_id || null;
-                        showReviewStep(pd);
-                    } else if (pd.status === 'error') {
-                        clearInterval(poll);
-                        importStatus.innerHTML = `<span style="color:var(--error)">Error: ${pd.error}</span>`;
-                    }
-                } catch (pollErr) {
-                    console.warn('Poll error, retrying...', pollErr);
-                }
-            }, 2000);
+            // Persist so navigation away doesn't lose the job
+            localStorage.setItem('waf_active_job', JSON.stringify({ jobId, filename: savedFilename, started: Date.now() }));
+            startJobPolling(jobId, savedFilename);
         } else if (data.success) {
             // Small file — results returned directly
             verifyResultsFull = data.results;
@@ -1737,6 +1679,66 @@ async function confirmMapping() {
     } catch (err) {
         importStatus.innerHTML = `<span style="color:var(--error)">Verification failed: ${err.message}</span>`;
     }
+}
+
+function startJobPolling(jobId, filename) {
+    // Clear any existing upload-progress poll to avoid duplicates
+    if (_uploadPollInterval) { clearInterval(_uploadPollInterval); _uploadPollInterval = null; }
+
+    // Pause the history-panel poller while the dedicated upload poller is running
+    // to avoid two requests every 2s hitting the server for the same job.
+    stopActiveJobsPolling();
+
+    // Show the upload tab and progress UI
+    const uploadTab = document.querySelector('.tab[data-tab="upload"]');
+    if (uploadTab) uploadTab.click();
+
+    // Show the progress area (hide file drop zone)
+    document.getElementById('import-step-upload').style.display = 'block';
+    document.getElementById('import-area').style.display = 'none';
+    document.getElementById('import-step-mapping').style.display = 'none';
+    document.getElementById('import-step-review').style.display = 'none';
+    document.getElementById('sticky-save-bar').style.display = 'none';
+    window._verifyStartTime = window._verifyStartTime || Date.now();
+
+    const importStatus = document.getElementById('import-status');
+    if (importStatus) {
+        importStatus.innerHTML = `<span style="color:var(--accent)">&#9654; Classifying <strong>${esc(filename)}</strong> — you can navigate away and come back, classification continues in the background.</span>`;
+    }
+
+    _uploadPollInterval = setInterval(async () => {
+        try {
+            const pr = await fetch(`/api/bulk-verify/status/${jobId}`);
+            const pd = await pr.json();
+            const statusEl = document.getElementById('import-status');
+            if (!pr.ok || pd.error) {
+                clearInterval(_uploadPollInterval); _uploadPollInterval = null;
+                localStorage.removeItem('waf_active_job');
+                startActiveJobsPolling();
+                document.getElementById('import-area').style.display = '';
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--warning)">&#9888; Classification job not found — the server may have restarted. Please re-upload your file.</span>`;
+            } else if (pd.status === 'processing') {
+                renderProgress(statusEl, filename, pd.stories_processed, pd.total_stories, pd.completed_batches, pd.total_batches);
+            } else if (pd.status === 'done' && pd.results) {
+                clearInterval(_uploadPollInterval); _uploadPollInterval = null;
+                localStorage.removeItem('waf_active_job');
+                startActiveJobsPolling();
+                verifyResultsFull = pd.results;
+                verifyResults = pd.results.slice();
+                verifyUploadId = pd.upload_id || null;
+                window._verifyStartTime = null;
+                showReviewStep(pd);
+            } else if (pd.status === 'error') {
+                clearInterval(_uploadPollInterval); _uploadPollInterval = null;
+                localStorage.removeItem('waf_active_job');
+                startActiveJobsPolling();
+                document.getElementById('import-area').style.display = '';
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--error)">Classification error: ${pd.error}</span>`;
+            }
+        } catch (pollErr) {
+            console.warn('Poll error, retrying...', pollErr);
+        }
+    }, 2000);
 
     _previewData = null;
 }
@@ -1814,12 +1816,12 @@ function renderVerifyTable() {
 
         const ptsDisp = r.story_points ? `<span style="font-weight:600;color:var(--accent);">${esc(String(r.story_points))}</span>` : '<span style="color:var(--text-muted)">—</span>';
         return `<tr data-idx="${fullIdx}" class="${r.is_match === false ? 'mismatch-row' : ''}" style="cursor:pointer;" onclick="if(event.target.tagName!=='INPUT')showStoryDetail(verifyResultsFull[${fullIdx}])">
-            <td><input type="checkbox" class="row-cb" data-idx="${fullIdx}" onchange="updateSelectedCount()" ${r.is_match === false ? 'checked' : ''}></td>
+            <td><input type="checkbox" class="row-cb" data-idx="${fullIdx}" onchange="updateSelectedCount()" checked></td>
             <td style="color:var(--text-primary)" title="${esc(r.title)}">${title}</td>
             <td style="text-align:center;">${ptsDisp}</td>
             <td>${fileTag}</td>
             <td style="color:var(--text-primary);font-weight:500;">${aiTag}</td>
-            <td>${esc(r.ai_color || '—')}</td>
+            <td>${esc(r.ai_color || '—')} ${colorCheckTag(r.ai_suggested_waf, r.ai_color)}</td>
             <td><span class="badge ${confClass}">${esc(r.ai_confidence || '—')}</span>${missingDesc}</td>
             <td>${statusBadge}</td>
             <td style="font-size:12px;color:var(--text-muted);" title="${esc(r.ai_reason || '')}">${reason}</td>
@@ -1869,6 +1871,10 @@ async function saveVerified() {
             epic: r.epic || '',
             parent_feature: r.parent_feature || '',
             timestamp: r.timestamp || '',
+            story_id: r.story_id || '',
+            feature_id: r.feature_id || '',
+            epic_id: r.epic_id || '',
+            story_points: r.story_points || '',
             user_submitted_waf: r.user_submitted_waf,
             file_color: r.file_color,
             file_run_change: r.file_run_change,
@@ -1879,6 +1885,7 @@ async function saveVerified() {
             ai_color: r.ai_color,
             ai_run_change: r.ai_run_change,
             ai_confidence: r.ai_confidence,
+            ai_reason: r.ai_reason || '',
             is_match: r.is_match,
             use_ai: true,
         });
@@ -1914,16 +1921,16 @@ async function saveVerified() {
             }, 2000);
         } else {
             alert('Save failed: ' + data.error);
-            document.getElementById('save-verified-btn').textContent = 'Save Selected to History';
+            document.getElementById('save-verified-btn').textContent = 'Save All to History';
             document.getElementById('save-verified-btn').disabled = false;
-            document.getElementById('sticky-save-btn').textContent = 'Save Selected to History';
+            document.getElementById('sticky-save-btn').textContent = 'Save All to History';
             document.getElementById('sticky-save-btn').disabled = false;
         }
     } catch (err) {
         alert('Save failed: ' + err.message);
-        document.getElementById('save-verified-btn').textContent = 'Save Selected to History';
+        document.getElementById('save-verified-btn').textContent = 'Save All to History';
         document.getElementById('save-verified-btn').disabled = false;
-        document.getElementById('sticky-save-btn').textContent = 'Save Selected to History';
+        document.getElementById('sticky-save-btn').textContent = 'Save All to History';
         document.getElementById('sticky-save-btn').disabled = false;
     }
 }
@@ -1935,10 +1942,10 @@ function backToUpload() {
     document.getElementById('import-step-mapping').style.display = 'none';
     document.getElementById('sticky-save-bar').style.display = 'none';
     document.getElementById('import-status').innerHTML = '';
-    document.getElementById('save-verified-btn').textContent = 'Save Selected to History';
+    document.getElementById('save-verified-btn').textContent = 'Save All to History';
     document.getElementById('save-verified-btn').disabled = false;
     document.getElementById('save-verified-btn').style.background = '';
-    document.getElementById('sticky-save-btn').textContent = 'Save Selected to History';
+    document.getElementById('sticky-save-btn').textContent = 'Save All to History';
     document.getElementById('sticky-save-btn').disabled = false;
     document.getElementById('sticky-save-btn').style.background = '';
     verifyResultsFull = [];
@@ -2123,7 +2130,7 @@ function linRenderStoryTable() {
             '<td style="color:var(--text-muted);" title="' + esc(s.feature) + '">' + feat + '</td>' +
             '<td' + (isMismatch ? ' style="color:var(--error);text-decoration:line-through;opacity:0.85;"' : '') + '>' + ogTag + '</td>' +
             '<td' + (isMismatch ? ' style="color:var(--success);font-weight:600;"' : '') + '>' + esc(s.category || '—') + '</td>' +
-            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—') + '</td>' +
+            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—') + ' ' + colorCheckTag(s.category, s.color) + '</td>' +
             '<td style="text-align:center;">' + esc(s.run_change || '—') + '</td>' +
             '<td style="text-align:center;"><span class="badge ' + confClass + '">' + esc(s.confidence || '—') + '</span></td>' +
             '<td style="text-align:center;">' + statusBadge + '</td>' +
@@ -2185,8 +2192,8 @@ function linToggleTree(header) {
 // ── Recent Classifications Table (sortable + paginated) ──
 let recentPage = 1;
 let recentPerPage = 25;
-let recentSortCol = 'timestamp';
-let recentSortDir = 'desc';
+let recentSortCol = 'status';
+let recentSortDir = 'desc'; // mismatches first
 
 async function loadRecentTable() {
     const qs = getAnalyticsQS();
@@ -2212,7 +2219,7 @@ async function loadRecentTable() {
         }
 
         // Sort arrow indicators
-        ['timestamp','title','category','color','confidence','status'].forEach(col => {
+        ['title','epic','original_tag','category','color','status'].forEach(col => {
             const el = document.getElementById('recent-sort-' + col);
             if (el) el.textContent = col === recentSortCol ? (recentSortDir === 'desc' ? '↓' : '↑') : '';
         });
@@ -2221,23 +2228,32 @@ async function loadRecentTable() {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No classifications yet</td></tr>';
             return;
         }
-        tbody.innerHTML = stories.map(s => {
-            const time = new Date(s.timestamp).toLocaleString();
-            const rawTitle = s.title || s.story_title || '';
-            const title = esc(rawTitle.length > 60 ? rawTitle.substring(0,60)+'...' : rawTitle);
-            const rawColor = s.color || s.waf_color || '';
-            const rawCategory = s.category || s.waf_category || '';
-            const dotColor = WAF_COLORS_MAP[rawColor] || '#e8944a';
-            const confClass = (s.confidence||'').toLowerCase();
+
+        // Store stories for click access
+        window._recentStories = stories;
+
+        tbody.innerHTML = stories.map((s, idx) => {
+            const rawTitle = s.title || '';
+            const title = esc(rawTitle.length > 55 ? rawTitle.substring(0,55)+'…' : rawTitle);
+            const rawEpic = s.epic || '—';
+            const epic = esc(rawEpic.length > 22 ? rawEpic.substring(0,22)+'…' : rawEpic);
+            const rawColor = s.color || '';
+            const rawCategory = s.category || '';
+            const rawOrigTag = s.original_tag || '—';
+            const origTag = esc(rawOrigTag.length > 22 ? rawOrigTag.substring(0,22)+'…' : rawOrigTag);
+            const dotColor = WAF_COLORS_MAP[rawColor] || '#9ca3af';
             const isMismatch = s.mismatch !== undefined ? s.mismatch : s.was_mismatch;
-            let status = isMismatch ? '<span class="badge mismatch">Mismatch</span>' : '<span class="badge high">Correct</span>';
-            return `<tr style="cursor:pointer;" onclick="summaryDrillDown('${isMismatch ? 'mismatches' : 'all'}')">
-                <td>${esc(time)}</td>
-                <td style="color:var(--text-primary)">${title}</td>
-                <td>${esc(rawCategory||'—')}</td>
-                <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:${dotColor}"></span>${esc(rawColor||'—')}</td>
-                <td><span class="badge ${confClass}">${esc(s.confidence||'—')}</span></td>
-                <td>${status}</td>
+            const statusBadge = isMismatch
+                ? '<span class="badge mismatch">Mismatch</span>'
+                : '<span class="badge high">Match</span>';
+            const rowCls = isMismatch ? 'lin-mismatch-row' : '';
+            return `<tr class="${rowCls}" style="cursor:pointer;" onclick="showStoryDetail(window._recentStories[${idx}])">
+                <td style="color:var(--text-primary);" title="${esc(rawTitle)}">${title}</td>
+                <td style="color:var(--text-muted);font-size:12px;" title="${esc(rawEpic)}">${epic}</td>
+                <td style="font-size:12px;" title="${esc(rawOrigTag)}">${origTag}</td>
+                <td style="font-size:12px;">${esc(rawCategory||'—')}</td>
+                <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle;background:${dotColor}"></span>${esc(rawColor||'—')} ${colorCheckTag(rawCategory, rawColor)}</td>
+                <td style="text-align:center;">${statusBadge}</td>
             </tr>`;
         }).join('');
     } catch(e) {
@@ -2250,7 +2266,7 @@ function sortRecent(col) {
         recentSortDir = recentSortDir === 'desc' ? 'asc' : 'desc';
     } else {
         recentSortCol = col;
-        recentSortDir = col === 'timestamp' ? 'desc' : 'asc';
+        recentSortDir = 'asc';
     }
     recentPage = 1;
     loadRecentTable();
@@ -2309,6 +2325,8 @@ function onAnalyticsFilterChange() {
 loadAnalyticsUploads();
 loadSummary();
 loadLineage();
+// Check for any in-memory jobs on startup (e.g. page refresh while job running)
+startActiveJobsPolling();
 
 // Show existing data count on upload tab
 fetch('/api/dashboard/summary').then(r => r.json()).then(data => {
@@ -2324,6 +2342,125 @@ const tabParam = urlParams.get('tab');
 if (tabParam) {
     const tabBtn = document.querySelector(`.tab[data-tab="${tabParam}"]`);
     if (tabBtn) tabBtn.click();
+}
+
+// ── Active Jobs Panel ──
+
+function startActiveJobsPolling() {
+    // Poll every 2s; stop when no running jobs remain
+    if (_activeJobsInterval) return; // already running
+    _activeJobsInterval = setInterval(() => {
+        refreshActiveJobs();
+    }, 2000);
+    refreshActiveJobs(); // immediate first call
+}
+
+function stopActiveJobsPolling() {
+    if (_activeJobsInterval) { clearInterval(_activeJobsInterval); _activeJobsInterval = null; }
+}
+
+async function refreshActiveJobs() {
+    try {
+        const res = await fetch('/api/bulk-verify/jobs');
+        const data = await res.json();
+        const jobs = data.jobs || [];
+        const card = document.getElementById('active-jobs-card');
+        const list = document.getElementById('active-jobs-list');
+        const countEl = document.getElementById('active-jobs-count');
+        const dot = document.getElementById('active-jobs-dot');
+        if (!card || !list) return;
+
+        if (jobs.length === 0) {
+            card.style.display = 'none';
+            stopActiveJobsPolling();
+            return;
+        }
+
+        card.style.display = '';
+        const running = jobs.filter(j => j.status === 'processing').length;
+        countEl.textContent = `${jobs.length} job${jobs.length !== 1 ? 's' : ''} · ${running} running`;
+        dot.style.animation = running > 0 ? 'pulse 1.5s infinite' : 'none';
+        dot.style.background = running > 0 ? 'var(--accent)' : 'var(--success)';
+
+        list.innerHTML = jobs.map(j => {
+            const pct = j.total_stories > 0 ? Math.round((j.stories_processed / j.total_stories) * 100) : 0;
+            const fname = esc(j.filename || 'Unknown file');
+
+            if (j.status === 'processing') {
+                return `<div style="background:var(--bg-tertiary);border-radius:8px;padding:14px 16px;cursor:pointer;" title="Click to view live progress" onclick="startJobPolling('${j.job_id}', ${JSON.stringify(j.filename)})">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-weight:500;color:var(--text-primary);">${fname}</span>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="badge medium" style="font-size:11px;">Running</span>
+                            <span style="font-size:12px;color:var(--accent);">View progress →</span>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-secondary);border-radius:6px;height:20px;overflow:hidden;margin-bottom:6px;position:relative;">
+                        <div style="background:linear-gradient(90deg,var(--accent),#f0a050);height:100%;width:${pct}%;transition:width 0.5s ease;border-radius:6px;"></div>
+                        <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:600;color:var(--text-primary);">${pct}%</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">
+                        <span>${j.stories_processed} of ${j.total_stories} stories classified</span>
+                        <span>Batch ${j.completed_batches} of ${j.total_batches}</span>
+                    </div>
+                </div>`;
+            } else if (j.status === 'done') {
+                const alreadySaved = j.upload_id != null;
+                const actionBtn = alreadySaved
+                    ? `<button class="btn btn-outline" style="padding:5px 12px;font-size:12px;" onclick="reloadUpload(${Number(j.upload_id)}, true)">View Results</button>`
+                    : `<button class="btn btn-primary" style="padding:5px 12px;font-size:12px;" onclick="resumeJobSave('${j.job_id}')">Save Now</button>`;
+                return `<div style="background:var(--bg-tertiary);border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div>
+                        <span style="font-weight:500;color:var(--text-primary);">${fname}</span>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                            ${j.total_stories} stories · ${j.matches} matched · ${j.mismatches} mismatch${alreadySaved ? ' · <span style="color:var(--success);">Saved</span>' : ' · <span style="color:var(--warning);">Not saved yet</span>'}
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="badge high" style="font-size:11px;">Done</span>
+                        ${actionBtn}
+                    </div>
+                </div>`;
+            } else if (j.status === 'error') {
+                return `<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <span style="font-weight:500;color:var(--text-primary);">${fname}</span>
+                        <div style="font-size:12px;color:var(--error);margin-top:2px;">${esc(j.error || 'Unknown error')}</div>
+                    </div>
+                    <span class="badge mismatch" style="font-size:11px;">Failed</span>
+                </div>`;
+            }
+            return '';
+        }).join('');
+
+        // Stop polling if no jobs are still running
+        if (running === 0) stopActiveJobsPolling();
+
+    } catch (e) {
+        console.warn('[ActiveJobs] fetch error', e);
+    }
+}
+
+async function resumeJobSave(jobId) {
+    // Fetch the completed job's results and load them into the review step
+    try {
+        const pr = await fetch(`/api/bulk-verify/status/${jobId}`);
+        const pd = await pr.json();
+        if (pd.status === 'done' && pd.results) {
+            localStorage.removeItem('waf_active_job');
+            verifyResultsFull = pd.results;
+            verifyResults = pd.results.slice();
+            verifyUploadId = pd.upload_id || null;
+            // Switch to upload tab and show review step
+            const uploadTab = document.querySelector('.tab[data-tab="upload"]');
+            if (uploadTab) uploadTab.click();
+            showReviewStep(pd);
+        } else if (!pr.ok || pd.error) {
+            alert('Job results no longer available — the server may have restarted. Please re-upload the file.');
+        }
+    } catch (e) {
+        alert('Could not load job results: ' + e.message);
+    }
 }
 
 // ── Upload History ──
@@ -2445,14 +2582,14 @@ loadUploadHistory();
         <span style="font-weight:600;color:var(--text-primary);font-size:15px;"
               id="sticky-selected-count">0 selected</span>
         <span style="color:var(--text-muted);margin-left:10px;font-size:13px;">
-            Select rows above then save
+            All stories selected — uncheck any to exclude
         </span>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
         <button class="btn btn-outline" style="font-size:13px;padding:7px 14px;"
                 onclick="backToUpload()">Start Over</button>
         <button class="btn btn-primary" style="font-size:14px;padding:8px 20px;"
-                onclick="saveVerified()" id="sticky-save-btn">Save Selected to History</button>
+                onclick="saveVerified()" id="sticky-save-btn">Save All to History</button>
     </div>
 </div>
 
@@ -2476,11 +2613,13 @@ function showStoryDetail(data) {
     const wafColor = (data.ai_color || data.waf_color || data.color || '').toUpperCase().trim();
     const dotColor = colorMap[wafColor] || 'var(--text-muted)';
 
-    // Match status
+    // Match status — handle both is_match (verify table) and mismatch (stories API)
     let matchHtml = '';
-    if (data.is_match === true) matchHtml = '<span class="badge high">Match</span>';
-    else if (data.is_match === false) matchHtml = '<span class="badge mismatch">Mismatch</span>';
-    else matchHtml = '<span class="badge medium">Untagged</span>';
+    const isMismatchVal = data.is_match === false || data.mismatch === true || data.was_mismatch === true;
+    const isMatchVal = data.is_match === true || (data.mismatch === false && data.is_match !== undefined);
+    if (isMismatchVal) matchHtml = '<span class="badge mismatch">Mismatch</span>';
+    else if (isMatchVal || data.mismatch === false) matchHtml = '<span class="badge high">Match</span>';
+    else matchHtml = '<span class="badge medium">—</span>';
 
     // Confidence
     const conf = (data.ai_confidence || data.confidence || '').replace(/confidence:\s*/i, '');
@@ -2505,18 +2644,43 @@ function showStoryDetail(data) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;">
             ${field('Title', esc(data.title || data.story_title || ''), true)}
             ${field('Description', esc(data.description || data.story_description || ''), true)}
-            ${field('User Submitted WAF', fileCatHtml)}
+            ${field('User Submitted WAF', (() => {
+                const origColor = data.original_color || '';
+                let colorBit = '';
+                if (origColor) {
+                    const oc = origColor.toUpperCase();
+                    const ocDot = WAF_COLORS_MAP[oc] || '#9ca3af';
+                    const ocOk = colorOk(data.user_submitted_waf || data.original_tag || '', oc);
+                    colorBit = ' <span style="display:inline-flex;align-items:center;gap:3px;font-size:12px;margin-left:6px;">' +
+                        '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + ocDot + ';vertical-align:middle;"></span>' +
+                        esc(oc) + (ocOk ? ' <span style="color:var(--success);">✓</span>' : ' <span style="color:var(--warning);" title="Color does not match expected for this category">⚠</span>') +
+                        '</span>';
+                }
+                return fileCatHtml + colorBit;
+            })())}
             ${field('AI Suggested WAF', esc(data.ai_suggested_waf || data.waf_category || data.category || ''))}
-            ${field('WAF Color', '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + dotColor + ';vertical-align:middle;margin-right:6px;' + (wafColor === 'BLACK' ? 'border:1px solid #4b5563;' : '') + '"></span>' + esc(wafColor || '—'))}
+            ${field('WAF Color', (() => {
+                const aiCat = data.ai_suggested_waf || data.waf_category || data.category || '';
+                const exp = expectedColor(aiCat);
+                const colorDot = '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + dotColor + ';vertical-align:middle;margin-right:6px;' + (wafColor === 'BLACK' ? 'border:1px solid #4b5563;' : '') + '"></span>';
+                if (exp && wafColor && exp !== wafColor) {
+                    const expDot = WAF_COLORS_MAP[exp] || '#e8944a';
+                    return colorDot + esc(wafColor) +
+                        ' <span style="font-size:11px;color:var(--warning);margin-left:4px;" title="Color mismatch">⚠ Expected: ' +
+                        '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + expDot + ';vertical-align:middle;margin:0 3px;"></span>' +
+                        esc(exp) + ' for ' + esc(aiCat) + '</span>';
+                }
+                return colorDot + esc(wafColor || '—') + (exp && wafColor ? ' <span style="font-size:11px;color:var(--success);">✓</span>' : '');
+            })())}
+            ${field('Story Points', data.story_points ? `<span style="font-weight:700;font-size:16px;color:var(--accent);">${esc(String(data.story_points))}</span>` : '<span style="color:var(--text-muted)">—</span>')}
             ${field('Run / Change', esc(data.ai_run_change || data.run_change || ''))}
-            ${field('Sub-Category', esc(data.ai_subcategory || data.waf_subcategory || ''))}
             ${field('Confidence', '<span class="badge ' + confClass + '">' + esc(conf || '—') + '</span>')}
             ${field('Match Status', matchHtml)}
-            ${field('Story Points', data.story_points ? `<span style="font-weight:600;color:var(--teal);">${esc(String(data.story_points))}</span>` : '')}
+            ${field('Sub-Category', esc(data.ai_subcategory || data.waf_subcategory || ''))}
             ${field('Team', esc(data.team || ''))}
             ${field('Epic', esc(data.epic || ''))}
-            ${field('Parent Feature', esc(data.parent_feature || ''))}
-            ${field('AI Reasoning', esc(data.ai_reason || ''), true)}
+            ${field('Parent Feature', esc(data.parent_feature || data.feature || ''))}
+            ${field('AI Reasoning', esc(data.ai_reason || data.waf_reasoning || ''), true)}
             ${field('Timestamp', esc(data.timestamp || ''))}
         </div>
     `;

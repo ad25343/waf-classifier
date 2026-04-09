@@ -266,6 +266,27 @@
         .badge.mismatch { background: rgba(248,113,113,0.15); color: var(--error); }
         .badge.approved { background: rgba(74,222,128,0.15); color: var(--success); }
 
+        /* WAF comparison tag (User Submitted → AI Suggested) */
+        .waf-compare {
+            display: inline-flex; align-items: center; gap: 3px;
+            font-size: 10px; font-weight: 500;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 5px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .waf-compare.waf-mismatch {
+            background: rgba(248,113,113,0.1);
+            border-color: rgba(248,113,113,0.35);
+        }
+        .waf-user  { color: var(--text-muted); }
+        .waf-arrow { color: var(--text-muted); font-size: 9px; }
+        .waf-ai    { color: var(--text-primary); font-weight: 600; }
+        .waf-flag  { color: var(--warning); font-size: 11px; }
+        .waf-ok    { color: var(--success); font-size: 10px; }
+
         /* Assign epic modal */
         .assign-bar {
             display: flex; gap: 8px; align-items: center;
@@ -683,6 +704,33 @@ const WAF_COLORS_MAP = {
     GRAY: "#9CA3AF", BLACK: "#4B5563", RED: "#EF4444",
     ORANGE: "#F97316", YELLOW: "#EAB308", GREEN: "#22C55E"
 };
+const CATEGORY_COLOR_MAP = {
+    "ktlo (keep the lights on)": "GRAY",
+    "business maintenance": "BLACK",
+    "technical maintenance": "BLACK",
+    "regulatory (operational)": "RED",
+    "regulatory mandated change": "RED",
+    "enterprise strategic priority": "ORANGE",
+    "top divisional priority": "YELLOW",
+    "other block priority": "GREEN",
+};
+function expectedColor(category) {
+    if (!category) return null;
+    return CATEGORY_COLOR_MAP[category.toLowerCase().trim()] || null;
+}
+function colorOk(category, color) {
+    const exp = expectedColor(category);
+    if (!exp || !color) return true;
+    return exp === color.toUpperCase().trim();
+}
+function colorCheckTag(category, color) {
+    if (!category || !color) return '';
+    const exp = expectedColor(category);
+    if (!exp) return '';
+    const ok = exp === color.toUpperCase().trim();
+    if (ok) return '';
+    return `<span title="Color mismatch: ${color} used but ${exp} expected for ${category}" style="font-size:10px;color:var(--warning);cursor:default;">⚠</span>`;
+}
 
 const CHART_PALETTE = [
     "#e8944a", "#c084fc", "#4ade80", "#fbbf24", "#f87171",
@@ -770,7 +818,7 @@ function renderEpicList() {
             <div class="epic-meta">
                 <span class="epic-count">${e.story_count} stories</span>
                 ${e.mismatches > 0 ? `<span class="epic-mismatch">${e.mismatches} mismatches</span>` : ''}
-                ${e.approved > 0 ? `<span style="color:var(--success)">${e.approved} approved</span>` : ''}
+                ${e.dominant_category_pct > 0 ? `<span style="color:${e.dominant_category_pct >= 70 ? 'var(--success)' : 'var(--warning)'};font-size:11px;">${e.dominant_category_pct}% aligned</span>` : ''}
             </div>
         </div>
     `).join('');
@@ -833,8 +881,8 @@ function renderOverview() {
                         <div class="mini-stat-label">Points</div>
                     </div>` : ''}
                     <div>
-                        <div class="mini-stat-value" style="color:var(--success)">${epic.approved}</div>
-                        <div class="mini-stat-label">Approved</div>
+                        <div class="mini-stat-value" style="color:${epic.dominant_category_pct >= 70 ? 'var(--success)' : epic.dominant_category_pct >= 50 ? 'var(--warning)' : 'var(--error)'}">${epic.dominant_category_pct}%</div>
+                        <div class="mini-stat-label">WAF Aligned</div>
                     </div>
                     <div>
                         <div class="mini-stat-value" style="color:var(--error)">${epic.mismatches}</div>
@@ -923,20 +971,53 @@ function renderTreeSorted(epic) {
             const idTags = [
                 s.story_id   ? `<span title="Story ID"  style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${s.story_id}</span>`   : '',
                 s.feature_id ? `<span title="Feature ID" style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${s.feature_id}</span>` : '',
-                s.epic_id    ? `<span title="Epic ID"    style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${s.epic_id}${s.epic ? ' · ' + s.epic : ''}</span>`    : '',
+                s.epic_id    ? `<span title="Epic ID"    style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${s.epic_id}${s.epic ? ' · ' + s.epic : ''}</span>` : '',
             ].join(' ');
-            let status = '';
-            if (s.approved) status = '<span class="badge approved">Approved</span>';
-            else if (s.mismatch) status = '<span class="badge mismatch">Mismatch</span>';
-            const ptsTag = s.story_points ? `<span title="Story Points" style="font-size:10px;font-weight:600;color:var(--teal);background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.3);padding:1px 5px;border-radius:3px;">${s.story_points} pts</span>` : '';
+
+            // ── User Submitted vs AI Suggested WAF ──────────────────
+            const userWaf = s.original_tag || '';
+            const aiWaf   = s.category || '';
+            const hasBoth = userWaf && aiWaf;
+            const differ  = hasBoth && userWaf.toLowerCase() !== aiWaf.toLowerCase();
+            let wafTag = '';
+            if (differ) {
+                wafTag = `<span class="waf-compare waf-mismatch" title="User submitted: ${userWaf} · AI suggested: ${aiWaf}">
+                    <span class="waf-user">${userWaf}</span>
+                    <span class="waf-arrow">→</span>
+                    <span class="waf-ai">${aiWaf}</span>
+                    <span class="waf-flag">⚠</span>
+                </span>`;
+            } else if (aiWaf) {
+                wafTag = `<span class="waf-compare" title="${userWaf ? 'User submitted: ' + userWaf + ' · AI suggested: ' + aiWaf + ' ✓ Match' : 'AI suggested: ' + aiWaf}">
+                    ${userWaf ? `<span class="waf-user">${userWaf}</span><span class="waf-arrow">→</span>` : ''}
+                    <span class="waf-ai">${aiWaf}</span>
+                    ${userWaf ? '<span class="waf-ok">✓</span>' : ''}
+                </span>`;
+            }
+
+            // ── Epic alignment ───────────────────────────────────────
+            const epicDomCat   = epic.dominant_category || '';
+            const epicDomColor = epic.dominant_color || '';
+            const catAligned   = !aiWaf || !epicDomCat   || aiWaf.toLowerCase()   === epicDomCat.toLowerCase();
+            const colorAligned = !s.color || !epicDomColor || s.color.toUpperCase() === epicDomColor.toUpperCase();
+            const aligned      = catAligned && colorAligned;
+            const alignTitle   = aligned
+                ? `Aligned with epic (${epicDomCat} / ${epicDomColor})`
+                : `Differs from epic dominant: ${epicDomCat} / ${epicDomColor}`;
+            const alignTag = `<span title="${alignTitle}" style="font-size:12px;cursor:default;${aligned ? 'color:var(--success)' : 'color:var(--warning)'}">
+                ${aligned ? '●' : '◎'}
+            </span>`;
+
+            const ptsTag = s.story_points ? `<span title="Story Points" style="font-size:10px;font-weight:600;color:var(--accent);background:rgba(232,148,74,0.12);border:1px solid rgba(232,148,74,0.3);padding:1px 5px;border-radius:3px;">${s.story_points} pts</span>` : '';
+
             return `<div class="story-item">
-                <span class="color-dot" style="background:${dotColor}"></span>
+                <span class="color-dot" style="background:${dotColor}" title="${s.color || ''}"></span>${colorCheckTag(s.category, s.color)}
                 <span class="story-title" title="${s.title}">${title}</span>
                 ${ptsTag}
                 ${idTags}
-                <span style="font-size:12px;color:var(--text-muted);">${s.category}</span>
+                ${wafTag}
                 <span class="badge ${confClass}">${s.confidence || '—'}</span>
-                ${status}
+                ${alignTag}
             </div>`;
         }).join('');
 
@@ -1034,8 +1115,8 @@ function renderEpicDetail(epic) {
             <div class="kpi-value" style="color:var(--purple)">${epic.features.length}</div>
         </div>
         <div class="kpi">
-            <div class="kpi-label">Approved</div>
-            <div class="kpi-value" style="color:var(--success)">${epic.approved}</div>
+            <div class="kpi-label">WAF Aligned</div>
+            <div class="kpi-value" style="color:${epic.dominant_category_pct >= 70 ? 'var(--success)' : epic.dominant_category_pct >= 50 ? 'var(--warning)' : 'var(--error)'}">${epic.dominant_category_pct}%</div>
         </div>
         <div class="kpi">
             <div class="kpi-label">Mismatches</div>
@@ -1070,8 +1151,6 @@ function renderEpicDetail(epic) {
             }
         }
     });
-
-    destroyChart('epicRcChart');
 
     // Tree view
     document.getElementById('tree-title').textContent = `${epic.epic} — Story Lineage`;

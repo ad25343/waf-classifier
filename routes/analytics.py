@@ -47,9 +47,21 @@ def dashboard_summary():
         f"SELECT confidence, COUNT(*) as cnt FROM classifications WHERE confidence != ''{wh_and} GROUP BY confidence ORDER BY cnt DESC", params
     ).fetchall()
 
-    submitted_waf = db.execute(
+    submitted_waf_rows = db.execute(
         f"SELECT original_tag, COUNT(*) as cnt FROM classifications WHERE original_tag != ''{wh_and} GROUP BY original_tag ORDER BY cnt DESC", params
     ).fetchall()
+    # Most common original_color per original_tag
+    orig_color_rows = db.execute(
+        f"""SELECT original_tag, original_color, COUNT(*) as cnt
+            FROM classifications
+            WHERE original_tag != '' AND original_color != ''{wh_and}
+            GROUP BY original_tag, original_color""", params
+    ).fetchall()
+    orig_color_map = {}
+    for r in orig_color_rows:
+        tag = r["original_tag"]
+        if tag not in orig_color_map or r["cnt"] > orig_color_map[tag][1]:
+            orig_color_map[tag] = (r["original_color"], r["cnt"])
 
     run_change = db.execute(
         f"SELECT run_change, COUNT(*) as cnt FROM classifications WHERE run_change != ''{wh_and} GROUP BY run_change ORDER BY cnt DESC", params
@@ -76,7 +88,7 @@ def dashboard_summary():
         "categories": [{"name": r["waf_category"], "count": r["cnt"]} for r in categories],
         "colors": [{"name": r["waf_color"], "count": r["cnt"]} for r in colors],
         "confidence": [{"name": r["confidence"], "count": r["cnt"]} for r in confidence],
-        "submitted_waf": [{"name": r["original_tag"], "count": r["cnt"]} for r in submitted_waf],
+        "submitted_waf": [{"name": r["original_tag"], "count": r["cnt"], "original_color": orig_color_map.get(r["original_tag"], ("", 0))[0]} for r in submitted_waf_rows],
         "run_change": [{"name": r["run_change"], "count": r["cnt"]} for r in run_change],
         "daily_trend": [{"date": r["day"], "count": r["cnt"]} for r in reversed(list(daily))],
         "recent": [{
@@ -127,7 +139,9 @@ def dashboard_stories():
     SORT_COLS = {
         "timestamp": "timestamp", "title": "story_title",
         "category": "waf_category", "color": "waf_color",
-        "confidence": "confidence", "status": "was_mismatch"
+        "confidence": "confidence", "status": "was_mismatch",
+        "epic": "epic", "original_tag": "original_tag",
+        "run_change": "run_change", "team": "team",
     }
     sort_col = SORT_COLS.get(request.args.get("sort", "timestamp"), "timestamp")
     sort_dir = "ASC" if request.args.get("dir", "desc").lower() == "asc" else "DESC"
@@ -138,7 +152,8 @@ def dashboard_stories():
     rows = db.execute(
         f"""SELECT id, story_title, story_description, waf_category, original_tag,
                    waf_color, run_change, confidence, was_mismatch, approved, team,
-                   epic, parent_feature, timestamp
+                   epic, parent_feature, timestamp, original_color,
+                   story_id, story_points, waf_reasoning
             FROM classifications{where}
             ORDER BY {sort_col} {sort_dir} LIMIT ? OFFSET ?""",
         params + [per_page, offset]
@@ -157,6 +172,10 @@ def dashboard_stories():
             "approved": bool(r["approved"]), "team": r["team"],
             "epic": r["epic"], "feature": r["parent_feature"],
             "timestamp": r["timestamp"],
+            "original_color": r["original_color"] or "",
+            "story_id": r["story_id"] or "",
+            "story_points": r["story_points"] or "",
+            "waf_reasoning": r["waf_reasoning"] or "",
         } for r in rows]
     })
 
@@ -463,24 +482,21 @@ def history_import():
 
         df.columns = [c.strip().lower() for c in df.columns]
 
-        # Map columns flexibly
-        def find_col(keywords):
-            for col in df.columns:
-                if any(kw in col for kw in keywords):
-                    return col
-            return None
+        find_col = lambda kws: next((col for col in df.columns if any(kw in col for kw in kws)), None)
 
-        title_col = find_col(["title", "summary", "story", "name"])
-        desc_col = find_col(["desc", "detail", "body"])
-        cat_col = find_col(["waf category", "waf_category", "category"])
-        color_col = find_col(["waf color", "waf_color", "color"])
-        rc_col = find_col(["run/change", "run_change", "run change"])
-        subcat_col = find_col(["sub-category", "sub_category", "subcategory", "waf sub"])
-        conf_col = find_col(["confidence", "conf"])
-        team_col = find_col(["team", "squad", "group"])
-        epic_col = find_col(["epic", "initiative", "program"])
+        title_col   = find_col(["story title", "title", "summary", "story", "name"])
+        desc_col    = find_col(["story description", "description", "desc", "detail", "body"])
+        cat_col     = find_col(["waf category", "waf_category", "category"])
+        color_col   = find_col(["waf color", "waf_color", "color"])
+        rc_col      = find_col(["run/change", "run_change", "run change"])
+        subcat_col  = find_col(["sub-category", "sub_category", "subcategory", "waf sub"])
+        conf_col    = find_col(["confidence", "conf"])
+        team_col    = find_col(["team", "squad", "group"])
+        epic_col    = find_col(["epic", "initiative", "program"])
         feature_col = find_col(["feature", "parent feature", "parent_feature", "capability"])
-        ts_col = find_col(["timestamp", "date", "created", "created_at"])
+        ts_col      = find_col(["timestamp", "date", "created", "created_at"])
+        story_id_col   = find_col(["story id", "story_id", "issue key", "issue_key", "ticket", "jira id"])
+        story_points_col = find_col(["story points", "story_points", "points", "estimate"])
 
         if not title_col or not cat_col:
             return jsonify({"error": "File must have at least 'Story Title' and 'WAF Category' columns"}), 400
@@ -509,23 +525,21 @@ def history_import():
                 if raw_ts and raw_ts != "nan":
                     ts = raw_ts
 
+            def _v(col, default=""):
+                return str(row.get(col, default)).strip() if col else default
+
             db.execute(
                 """INSERT INTO classifications
                    (timestamp, story_title, story_description, waf_category,
                     waf_subcategory, waf_color, run_change, confidence,
-                    was_mismatch, original_tag, approved, team, epic, parent_feature, upload_id)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 1, ?, ?, ?, ?)""",
-                (ts,
-                 title,
-                 str(row.get(desc_col, "")).strip() if desc_col else "",
-                 str(row.get(cat_col, "")).strip() if cat_col else "",
-                 str(row.get(subcat_col, "")).strip() if subcat_col else "",
-                 str(row.get(color_col, "")).strip() if color_col else "",
-                 str(row.get(rc_col, "")).strip() if rc_col else "",
-                 str(row.get(conf_col, "")).strip() if conf_col else "",
-                 str(row.get(team_col, "default")).strip() if team_col else "default",
-                 str(row.get(epic_col, "")).strip() if epic_col else "",
-                 str(row.get(feature_col, "")).strip() if feature_col else "",
+                    was_mismatch, original_tag, approved, team, epic, parent_feature,
+                    story_id, story_points, upload_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 1, ?, ?, ?, ?, ?, ?)""",
+                (ts, title,
+                 _v(desc_col), _v(cat_col), _v(subcat_col), _v(color_col),
+                 _v(rc_col), _v(conf_col), _v(team_col, "default"),
+                 _v(epic_col), _v(feature_col),
+                 _v(story_id_col), _v(story_points_col),
                  upload_id)
             )
             imported += 1

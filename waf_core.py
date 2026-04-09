@@ -276,7 +276,15 @@ When classifying a story:
 Format your response clearly with:
 - **Recommended WAF Category:** [category name]
 - **Recommended WAF Sub-Category:** [sub-category name, if applicable]
-- **WAF Color:** [color, if known from definitions]
+- **WAF Color:** [use ONLY the exact color from this fixed mapping — do not guess or deviate:
+  KTLO (Keep the Lights On) → GRAY
+  Business Maintenance → BLACK
+  Technical Maintenance → BLACK
+  Regulatory (Operational) → RED
+  Regulatory Mandated Change → RED
+  Enterprise Strategic Priority → ORANGE
+  Top Divisional Priority → YELLOW
+  Other Block Priority → GREEN]
 - **Confidence:** [High/Medium/Low]
 - **Reasoning:** [2-3 sentences explaining why, referencing definitions AND similar ground truth examples]
 - **Current Tag Assessment:** [only if a current tag was provided — either "\u2705 Correct" or "\u26a0\ufe0f Mismatch — should be [X] instead of [Y]" with explanation]

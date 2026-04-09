@@ -59,7 +59,7 @@ def epic_summary():
         f"""SELECT id, timestamp, story_title, story_description, waf_category,
                    waf_subcategory, waf_color, run_change, confidence,
                    was_mismatch, original_tag, approved, team, epic, parent_feature,
-                   story_id, feature_id, epic_id, story_points
+                   story_id, feature_id, epic_id, story_points, original_color, waf_reasoning
             FROM classifications WHERE {where} ORDER BY epic, timestamp DESC""",
         params
     ).fetchall()
@@ -120,6 +120,8 @@ def epic_summary():
                 "epic_id": s["epic_id"] or "",
                 "epic": s["epic"] or "",
                 "story_points": s["story_points"] or "",
+                "original_color": s["original_color"] or "",
+                "waf_reasoning": s["waf_reasoning"] or "",
             })
 
         # Build tree: epic -> features -> stories
