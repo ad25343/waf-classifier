@@ -21,6 +21,7 @@
             --warning: #fbbf24;
             --error: #f87171;
             --purple: #c084fc;
+            --teal: #2dd4bf;
             --radius: 12px;
         }
         [data-theme="light"] {
@@ -37,6 +38,7 @@
             --warning: #d97706;
             --error: #dc2626;
             --purple: #9333ea;
+            --teal: #0d9488;
             --radius: 12px;
         }
 
@@ -818,7 +820,7 @@ function renderEpicList() {
             <div class="epic-meta">
                 <span class="epic-count">${e.story_count} stories</span>
                 ${e.mismatches > 0 ? `<span class="epic-mismatch">${e.mismatches} mismatches</span>` : ''}
-                ${e.dominant_category_pct > 0 ? `<span style="color:${e.dominant_category_pct >= 70 ? 'var(--success)' : 'var(--warning)'};font-size:11px;">${e.dominant_category_pct}% aligned</span>` : ''}
+                ${e.story_count > 0 ? `<span style="color:${(100 - e.mismatch_rate) >= 70 ? 'var(--success)' : 'var(--warning)'};font-size:11px;">${(100 - e.mismatch_rate).toFixed(1)}% WAF match</span>` : ''}
             </div>
         </div>
     `).join('');
@@ -881,7 +883,7 @@ function renderOverview() {
                         <div class="mini-stat-label">Points</div>
                     </div>` : ''}
                     <div>
-                        <div class="mini-stat-value" style="color:${epic.dominant_category_pct >= 70 ? 'var(--success)' : epic.dominant_category_pct >= 50 ? 'var(--warning)' : 'var(--error)'}">${epic.dominant_category_pct}%</div>
+                        <div class="mini-stat-value" style="color:${(100 - epic.mismatch_rate) >= 70 ? 'var(--success)' : (100 - epic.mismatch_rate) >= 50 ? 'var(--warning)' : 'var(--error)'}">` + (100 - epic.mismatch_rate).toFixed(1) + `%</div>
                         <div class="mini-stat-label">WAF Aligned</div>
                     </div>
                     <div>
@@ -995,16 +997,12 @@ function renderTreeSorted(epic) {
                 </span>`;
             }
 
-            // ── Epic alignment ───────────────────────────────────────
-            const epicDomCat   = epic.dominant_category || '';
-            const epicDomColor = epic.dominant_color || '';
-            const catAligned   = !aiWaf || !epicDomCat   || aiWaf.toLowerCase()   === epicDomCat.toLowerCase();
-            const colorAligned = !s.color || !epicDomColor || s.color.toUpperCase() === epicDomColor.toUpperCase();
-            const aligned      = catAligned && colorAligned;
-            const alignTitle   = aligned
-                ? `Aligned with epic (${epicDomCat} / ${epicDomColor})`
-                : `Differs from epic dominant: ${epicDomCat} / ${epicDomColor}`;
-            const alignTag = `<span title="${alignTitle}" style="font-size:12px;cursor:default;${aligned ? 'color:var(--success)' : 'color:var(--warning)'}">
+            // ── WAF alignment: user submitted vs AI suggested ────────
+            const aligned    = !s.mismatch;
+            const alignTitle = aligned
+                ? `WAF match: user and AI agree (${userWaf || aiWaf})`
+                : `WAF mismatch: user submitted "${userWaf}", AI suggested "${aiWaf}"`;
+            const alignTag = `<span title="${alignTitle}" style="font-size:12px;cursor:default;${aligned ? 'color:var(--success)' : 'color:var(--error)'}">
                 ${aligned ? '●' : '◎'}
             </span>`;
 
