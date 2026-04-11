@@ -3044,12 +3044,12 @@ async function loadQualityRubric() {
 async function loadQualityTab() {
     loadQualityRubric();
 
-    // Restore state from localStorage
+    // Restore upload + domain from localStorage; always start fresh with all teams selected
     try {
         const saved = JSON.parse(localStorage.getItem('waf_quality_state') || '{}');
         if (saved.domain) _qualityState.domain = saved.domain;
         if (saved.upload_id) _qualityState.upload_id = saved.upload_id;
-        if (saved.teams) _qualityState.teams = saved.teams;
+        _qualityState.teams = [];   // always reset — don't carry prior team selections forward
     } catch(e) {}
 
     await loadQualityUploads();
