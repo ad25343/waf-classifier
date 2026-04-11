@@ -943,19 +943,15 @@
         <!-- Filters -->
         <div class="card" style="margin-bottom:16px;">
             <div class="card-title" style="margin-bottom:14px;">Story Quality Scoring</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+                Using the <strong style="color:var(--text-secondary);">Data Source</strong> selected above. Select a specific upload to enable scoring.
+            </div>
             <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
                 <!-- Domain -->
                 <div style="min-width:180px;">
                     <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Domain</div>
                     <select id="quality-domain" onchange="onQualityDomainChange()" style="width:100%;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:7px;color:var(--text-primary);font-size:13px;">
                         <option value="data_reporting">Data &amp; Reporting</option>
-                    </select>
-                </div>
-                <!-- Upload -->
-                <div style="min-width:220px;flex:1;">
-                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Upload / Data Source</div>
-                    <select id="quality-upload" onchange="onQualityUploadChange()" style="width:100%;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:7px;color:var(--text-primary);font-size:13px;">
-                        <option value="">Select an upload…</option>
                     </select>
                 </div>
                 <!-- Teams multi-select -->
@@ -2499,7 +2495,20 @@ function onAnalyticsFilterChange() {
     const info = document.getElementById('analytics-filter-info');
     info.textContent = uid ? 'Filtered to one upload' : '';
     recentPage = 1;
-    // Always navigate to Summary when a data source is selected
+
+    // If quality tab is active, reload it with the new data source
+    const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
+    if (activeTab === 'quality') {
+        _qualityState.teams = [];
+        _qualityResults = [];
+        document.getElementById('quality-results-section').style.display = 'none';
+        document.getElementById('quality-empty').style.display = 'block';
+        document.getElementById('quality-desc-warning').style.display = 'none';
+        loadQualityTab();
+        return;
+    }
+
+    // Otherwise navigate to Summary
     document.querySelector('.tab[data-tab="summary"]').click();
     loadSummary();
     // Reset lineage to overview before reloading
@@ -3013,7 +3022,11 @@ function toggleCard(titleEl) {
 // STORY QUALITY
 // ════════════════════════════════════════════════════════════════
 
-let _qualityState = { domain: 'data_reporting', upload_id: null, teams: [], job_id: null };
+let _qualityState = { domain: 'data_reporting', teams: [], job_id: null };
+
+function getQualityUploadId() {
+    return parseInt(document.getElementById('analytics-upload-filter')?.value) || null;
+}
 let _qualityPollTimer = null;
 let _qualityAllTeams = [];   // [{name, count}] for current upload
 let _qualityResults = [];
@@ -3044,63 +3057,29 @@ async function loadQualityRubric() {
 async function loadQualityTab() {
     loadQualityRubric();
 
-    // Restore upload + domain from localStorage; always start fresh with all teams selected
+    // Restore domain only; teams always start fresh
     try {
         const saved = JSON.parse(localStorage.getItem('waf_quality_state') || '{}');
         if (saved.domain) _qualityState.domain = saved.domain;
-        if (saved.upload_id) _qualityState.upload_id = saved.upload_id;
-        _qualityState.teams = [];   // always reset — don't carry prior team selections forward
+        _qualityState.teams = [];
     } catch(e) {}
 
-    await loadQualityUploads();
-
-    // If we have a saved upload, restore teams and load saved results
-    if (_qualityState.upload_id) {
-        const sel = document.getElementById('quality-upload');
-        if (sel) sel.value = _qualityState.upload_id;
-        await loadQualityTeams(_qualityState.upload_id);
+    const upload_id = getQualityUploadId();
+    if (upload_id) {
+        await loadQualityTeams(upload_id);
         await loadSavedQualityResults();
+    } else {
+        // No specific upload selected — show empty state
+        document.getElementById('quality-results-section').style.display = 'none';
+        document.getElementById('quality-empty').style.display = 'block';
+        document.getElementById('quality-teams-list').innerHTML = '';
+        updateQualityTeamsLabel();
     }
-
+    updateQualityScoreBtn();
     loadQualityHistory();
 }
 
-// ── Upload dropdown ───────────────────────────────────────────
-
-async function loadQualityUploads() {
-    try {
-        const res = await fetch('/api/quality/uploads');
-        const data = await res.json();
-        const sel = document.getElementById('quality-upload');
-        if (!sel) return;
-        const opts = data.uploads.map(u => {
-            const date = u.uploaded_at ? ' · ' + u.uploaded_at.slice(0,10) : '';
-            return `<option value="${u.upload_id}">${u.filename}${date} (${u.story_count} stories)</option>`;
-        }).join('');
-        sel.innerHTML = '<option value="">Select an upload…</option>' + opts;
-        if (_qualityState.upload_id) sel.value = _qualityState.upload_id;
-    } catch(e) { console.error('Quality uploads load failed', e); }
-}
-
-async function onQualityUploadChange() {
-    const upload_id = parseInt(document.getElementById('quality-upload').value) || null;
-    _qualityState.upload_id = upload_id;
-    _qualityState.teams = [];
-    _qualityResults = [];
-    document.getElementById('quality-results-section').style.display = 'none';
-    document.getElementById('quality-empty').style.display = 'block';
-    document.getElementById('quality-desc-warning').style.display = 'none';
-    saveQualityState();
-
-    if (!upload_id) {
-        document.getElementById('quality-teams-list').innerHTML = '';
-        updateQualityTeamsLabel();
-        updateQualityScoreBtn();
-        return;
-    }
-    await loadQualityTeams(upload_id);
-    await loadSavedQualityResults();
-}
+// Upload selector removed — quality tab reads from #analytics-upload-filter
 
 function onQualityDomainChange() {
     _qualityState.domain = document.getElementById('quality-domain').value;
@@ -3194,19 +3173,20 @@ function toggleQualityTeamsDropdown() {
 
 function updateQualityScoreBtn() {
     const btn = document.getElementById('quality-score-btn');
-    if (btn) btn.disabled = !_qualityState.upload_id;
+    if (btn) btn.disabled = !getQualityUploadId();
 }
 
 // ── Scoring ───────────────────────────────────────────────────
 
 async function startQualityScoring() {
-    if (!_qualityState.upload_id) return;
+    const upload_id = getQualityUploadId();
+    if (!upload_id) return;
 
-    // Get story count for warning
-    const sel = document.getElementById('quality-upload');
-    const optText = sel.options[sel.selectedIndex]?.text || '';
-    const match = optText.match(/\((\d+) stories\)/);
-    const count = match ? parseInt(match[1]) : '?';
+    // Get story count for warning from global data source selector
+    const gSel = document.getElementById('analytics-upload-filter');
+    const optText = gSel?.options[gSel.selectedIndex]?.text || '';
+    const match = optText.match(/(\d[\d,]+) saved/);
+    const count = match ? match[1] : '?';
 
     // Teams filter — if empty, all teams
     const teams = _qualityState.teams;
@@ -3229,7 +3209,7 @@ async function startQualityScoring() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                upload_id: _qualityState.upload_id,
+                upload_id: getQualityUploadId(),
                 teams: _qualityState.teams,
                 domain: _qualityState.domain,
             }),
@@ -3285,12 +3265,16 @@ function resetQualityProgress() {
 // ── Load saved results ────────────────────────────────────────
 
 async function loadSavedQualityResults() {
-    if (!_qualityState.upload_id) return;
+    const upload_id = getQualityUploadId();
+    if (!upload_id) return;
     try {
-        const teams = _qualityState.teams;
-        const qs = `upload_id=${_qualityState.upload_id}&domain=${_qualityState.domain}` +
-            (teams.length ? `&teams=${teams.map(encodeURIComponent).join(',')}` : '');
-        const res = await fetch(`/api/quality/results?${qs}`);
+        // Only surface results that have a history entry — orphaned scores stay hidden
+        const histRes = await fetch('/api/quality/history');
+        const histData = await histRes.json();
+        const run = (histData.runs || []).find(r => r.upload_id === upload_id);
+        if (!run) return;  // no recorded run for this upload → empty state
+
+        const res = await fetch(`/api/quality/results?run_id=${encodeURIComponent(run.run_id)}`);
         const data = await res.json();
         if (data.results && data.results.length > 0) {
             _qualityResults = data.results;
@@ -3411,9 +3395,10 @@ function toggleQualityRow(detailId, rowEl) {
 // ── Export ────────────────────────────────────────────────────
 
 function exportQualityCSV() {
-    if (!_qualityState.upload_id) return;
+    const upload_id = getQualityUploadId();
+    if (!upload_id) return;
     const teams = _qualityState.teams;
-    const qs = `upload_id=${_qualityState.upload_id}&domain=${_qualityState.domain}` +
+    const qs = `upload_id=${upload_id}&domain=${_qualityState.domain}` +
         (teams.length ? `&teams=${teams.map(encodeURIComponent).join(',')}` : '');
     window.location = `/api/quality/export?${qs}`;
 }
@@ -3423,8 +3408,6 @@ function exportQualityCSV() {
 function saveQualityState() {
     localStorage.setItem('waf_quality_state', JSON.stringify({
         domain: _qualityState.domain,
-        upload_id: _qualityState.upload_id,
-        teams: _qualityState.teams,
     }));
 }
 
