@@ -3015,9 +3015,10 @@ async function loadQualityUploads() {
         const data = await res.json();
         const sel = document.getElementById('quality-upload');
         if (!sel) return;
-        const opts = data.uploads.map(u =>
-            `<option value="${u.upload_id}">${u.filename} (${u.story_count} stories)</option>`
-        ).join('');
+        const opts = data.uploads.map(u => {
+            const date = u.uploaded_at ? ' · ' + u.uploaded_at.slice(0,10) : '';
+            return `<option value="${u.upload_id}">${u.filename}${date} (${u.story_count} stories)</option>`;
+        }).join('');
         sel.innerHTML = '<option value="">Select an upload…</option>' + opts;
         if (_qualityState.upload_id) sel.value = _qualityState.upload_id;
     } catch(e) { console.error('Quality uploads load failed', e); }
