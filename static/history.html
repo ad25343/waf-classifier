@@ -3182,11 +3182,12 @@ async function startQualityScoring() {
     const upload_id = getQualityUploadId();
     if (!upload_id) return;
 
-    // Get story count for warning from global data source selector
-    const gSel = document.getElementById('analytics-upload-filter');
-    const optText = gSel?.options[gSel.selectedIndex]?.text || '';
-    const match = optText.match(/(\d[\d,]+) saved/);
-    const count = match ? match[1] : '?';
+    // Compute story count from selected teams (or all teams if none filtered)
+    const selectedTeams = _qualityState.teams;
+    const relevantTeams = selectedTeams.length === 0
+        ? _qualityAllTeams
+        : _qualityAllTeams.filter(t => selectedTeams.includes(t.name));
+    const count = relevantTeams.reduce((s, t) => s + (t.count || 0), 0) || '?';
 
     // Teams filter — if empty, all teams
     const teams = _qualityState.teams;
