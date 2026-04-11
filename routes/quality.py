@@ -514,6 +514,56 @@ def delete_quality_run(run_id):
     return jsonify({"ok": True})
 
 
+@quality_bp.route("/api/quality/chat", methods=["POST"])
+def quality_chat():
+    data = request.json or {}
+    classification_id = data.get("classification_id")
+    domain = data.get("domain", "data_reporting")
+    messages = data.get("messages", [])   # [{role, content}, ...]
+
+    if not classification_id or not messages:
+        return jsonify({"error": "classification_id and messages required"}), 400
+
+    db = get_db()
+    row = db.execute(
+        "SELECT story_title, story_description FROM classifications WHERE id=?",
+        (classification_id,),
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "Story not found"}), 404
+
+    rubric = RUBRICS.get(domain, RUBRICS["data_reporting"])
+    criteria_names = [c["name"] for c in rubric["criteria"]]
+
+    system = f"""You are helping a scrum team refine a JIRA story for a Data, Reporting and Analytics team.
+
+ORIGINAL STORY:
+Title: {row["story_title"] or "(untitled)"}
+Description:
+{row["story_description"] or "(no description provided)"}
+
+DEFINITION OF READY CRITERIA:
+{", ".join(criteria_names)}
+
+You are in a collaborative editing session. When the user asks for changes, output the FULL updated story description (not just the changed section) so they can copy it directly into JIRA.
+Only use information present in or clearly inferable from the original story.
+Use [REQUIRED: ...] placeholders where the team must supply missing information.
+Keep responses focused — lead with the updated story, add a brief explanation only if needed."""
+
+    try:
+        client = _get_client()
+        resp = client.messages.create(
+            model=AI_MODEL,
+            max_tokens=1500,
+            system=system,
+            messages=messages,
+        )
+        reply = resp.content[0].text.strip()
+        return jsonify({"reply": reply})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @quality_bp.route("/api/quality/rewrite", methods=["POST"])
 def rewrite_story():
     data = request.json or {}
