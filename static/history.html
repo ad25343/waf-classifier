@@ -3179,7 +3179,9 @@ async function startQualityScoring() {
         const data = await res.json();
         if (data.error) { alert('Error: ' + data.error); resetQualityProgress(); return; }
         _qualityState.job_id = data.job_id;
+        _qualityState.job_number = data.job_number;
         saveQualityState();
+        document.getElementById('quality-progress-label').textContent = `Job #${data.job_number} — Preparing…`;
         pollQualityJob(data.job_id, data.total);
     } catch(e) {
         alert('Failed to start scoring: ' + e.message);
@@ -3197,8 +3199,9 @@ function pollQualityJob(jobId, total) {
             const pct = data.total > 0 ? Math.round(data.progress / data.total * 100) : 0;
             document.getElementById('quality-progress-bar').style.width = pct + '%';
             document.getElementById('quality-progress-pct').textContent = pct + '%';
+            const jobNum = data.job_number ? `Job #${data.job_number} — ` : '';
             document.getElementById('quality-progress-label').textContent =
-                `Scoring stories… ${data.progress} / ${data.total}`;
+                `${jobNum}Scoring stories… ${data.progress} / ${data.total}`;
 
             if (data.status === 'complete') {
                 _qualityResults = data.results || [];

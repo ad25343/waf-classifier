@@ -19,6 +19,7 @@ quality_bp = Blueprint("quality_bp", __name__)
 
 # In-memory job store: job_id -> {status, progress, total, results, error}
 _quality_jobs: dict = {}
+_quality_job_counter: int = 0
 
 BATCH_SIZE = 5  # stories per AI call
 
@@ -374,10 +375,15 @@ def start_scoring():
     if not rows:
         return jsonify({"error": "No stories found for the selected upload and teams"}), 404
 
+    global _quality_job_counter
+    _quality_job_counter += 1
+    job_number = _quality_job_counter
+
     classification_ids = [r["id"] for r in rows]
     job_id = str(uuid.uuid4())[:8]
     _quality_jobs[job_id] = {
         "status": "pending",
+        "job_number": job_number,
         "progress": 0,
         "total": len(classification_ids),
         "results": [],
@@ -393,7 +399,7 @@ def start_scoring():
         daemon=True,
     ).start()
 
-    return jsonify({"job_id": job_id, "total": len(classification_ids)})
+    return jsonify({"job_id": job_id, "job_number": job_number, "total": len(classification_ids)})
 
 
 @quality_bp.route("/api/quality/job/<job_id>", methods=["GET"])
@@ -403,6 +409,7 @@ def quality_job_status(job_id):
         return jsonify({"status": "not_found"}), 404
     return jsonify({
         "status": job["status"],
+        "job_number": job.get("job_number"),
         "progress": job["progress"],
         "total": job["total"],
         "results": job.get("results", []),
