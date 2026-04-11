@@ -115,6 +115,24 @@ def init_db():
     except sqlite3.OperationalError:
         pass
 
+    # Story quality scores table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS story_quality_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            scored_at TEXT NOT NULL,
+            classification_id INTEGER NOT NULL,
+            upload_id INTEGER,
+            domain TEXT DEFAULT 'data_reporting',
+            overall_score REAL DEFAULT 0,
+            passed_count INTEGER DEFAULT 0,
+            total_count INTEGER DEFAULT 9,
+            criteria_json TEXT DEFAULT '{}',
+            story_title TEXT DEFAULT '',
+            team TEXT DEFAULT '',
+            story_id TEXT DEFAULT ''
+        )
+    """)
+
     # FTS5 full-text search index — drop and recreate if schema is outdated
     fts_cols = {r[0] for r in conn.execute(
         "SELECT name FROM pragma_table_info('classifications_fts')"

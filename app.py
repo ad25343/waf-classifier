@@ -54,6 +54,9 @@ except ImportError:
 from routes.merge import merge_bp
 app.register_blueprint(merge_bp)
 
+from routes.quality import quality_bp
+app.register_blueprint(quality_bp)
+
 
 # ── Startup ──────────────────────────────────────────────────────
 def auto_load_sample_data():
