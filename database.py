@@ -129,9 +129,39 @@ def init_db():
             criteria_json TEXT DEFAULT '{}',
             story_title TEXT DEFAULT '',
             team TEXT DEFAULT '',
-            story_id TEXT DEFAULT ''
+            story_id TEXT DEFAULT '',
+            run_id TEXT DEFAULT '',
+            job_number INTEGER DEFAULT 0
         )
     """)
+
+    # Quality scoring run history
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS quality_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT NOT NULL UNIQUE,
+            job_number INTEGER DEFAULT 0,
+            scored_at TEXT NOT NULL,
+            upload_id INTEGER,
+            upload_filename TEXT DEFAULT '',
+            domain TEXT DEFAULT 'data_reporting',
+            teams_json TEXT DEFAULT '[]',
+            story_count INTEGER DEFAULT 0,
+            avg_score REAL DEFAULT 0,
+            ready_count INTEGER DEFAULT 0,
+            needs_work_count INTEGER DEFAULT 0,
+            not_ready_count INTEGER DEFAULT 0
+        )
+    """)
+
+    try:
+        conn.execute("ALTER TABLE story_quality_scores ADD COLUMN run_id TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE story_quality_scores ADD COLUMN job_number INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
 
     # FTS5 full-text search index — drop and recreate if schema is outdated
     fts_cols = {r[0] for r in conn.execute(

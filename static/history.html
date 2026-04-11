@@ -1066,6 +1066,62 @@
             <div style="font-size:13px;">Select an upload and teams above, then click <strong>Score Stories</strong>.</div>
         </div>
 
+        <!-- ── Scoring Run History ── -->
+        <div id="quality-history-section" style="margin-top:32px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div style="font-size:14px;font-weight:600;color:var(--text-primary);">Scoring Run History</div>
+            </div>
+            <div class="card" style="padding:0;">
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;font-size:13px;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;padding:8px 16px;white-space:nowrap;">Job #</th>
+                                <th style="text-align:left;padding:8px 12px;white-space:nowrap;">Scored</th>
+                                <th style="text-align:left;padding:8px 12px;">Upload</th>
+                                <th style="text-align:left;padding:8px 12px;">Teams</th>
+                                <th style="text-align:center;padding:8px 8px;white-space:nowrap;">Stories</th>
+                                <th style="text-align:center;padding:8px 8px;white-space:nowrap;">Avg Score</th>
+                                <th style="text-align:center;padding:8px 8px;white-space:nowrap;color:var(--success);">Ready</th>
+                                <th style="text-align:center;padding:8px 8px;white-space:nowrap;color:var(--warning);">Needs Work</th>
+                                <th style="text-align:center;padding:8px 8px;white-space:nowrap;color:var(--error);">Not Ready</th>
+                                <th style="text-align:center;padding:8px 12px;min-width:100px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="quality-history-tbody">
+                            <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">No scoring runs yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Rewrite Modal ── -->
+<div id="quality-rewrite-modal" onclick="if(event.target===this)closeRewriteModal()"
+     style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);z-index:1000;overflow:auto;padding:20px;">
+    <div style="max-width:700px;margin:40px auto;background:var(--bg-secondary);border-radius:12px;border:1px solid var(--border);overflow:hidden;">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:15px;font-weight:600;color:var(--text-primary);">Suggested Story Rewrite</div>
+            <button onclick="closeRewriteModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+        </div>
+        <div style="padding:20px;">
+            <div id="rewrite-story-title" style="font-size:12px;color:var(--text-muted);margin-bottom:14px;font-style:italic;"></div>
+            <div id="rewrite-loading" style="text-align:center;padding:48px 20px;color:var(--text-muted);">
+                <div style="font-size:24px;margin-bottom:10px;">✍</div>
+                Generating rewrite…
+            </div>
+            <textarea id="rewrite-output" style="display:none;width:100%;min-height:420px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:14px;color:var(--text-primary);font-size:12px;font-family:inherit;line-height:1.65;resize:vertical;box-sizing:border-box;" readonly></textarea>
+            <div id="rewrite-actions" style="display:none;margin-top:12px;display:flex;gap:10px;align-items:center;">
+                <button onclick="copyRewrite()" class="btn btn-primary" style="font-size:13px;">Copy to Clipboard</button>
+                <span id="rewrite-copy-feedback" style="font-size:12px;color:var(--success);display:none;">Copied!</span>
+            </div>
+            <div style="margin-top:14px;padding:10px 14px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:7px;font-size:12px;color:var(--text-secondary);line-height:1.6;">
+                ⚠ Rewrite is based only on what was in the original story. <strong>[REQUIRED: ...]</strong> placeholders mark information you must fill in before the story is sprint-ready.
+            </div>
+        </div>
     </div>
 </div>
 
@@ -3005,6 +3061,8 @@ async function loadQualityTab() {
         await loadQualityTeams(_qualityState.upload_id);
         await loadSavedQualityResults();
     }
+
+    loadQualityHistory();
 }
 
 // ── Upload dropdown ───────────────────────────────────────────
@@ -3329,7 +3387,13 @@ function renderQualityResults(results) {
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;">
                     ${criteriaRows}
                 </div>
-                <div style="margin-top:8px;font-size:11px;color:var(--text-muted);">Scored ${(r.scored_at||'').slice(0,16).replace('T',' ')}</div>
+                <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+                    <div style="font-size:11px;color:var(--text-muted);">Scored ${(r.scored_at||'').slice(0,16).replace('T',' ')}</div>
+                    <button onclick="event.stopPropagation();rewriteQualityStory(${r.classification_id},'${(r.story_title||'').replace(/'/g,"\\'")}',event)"
+                            class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 12px;">
+                        ✍ Suggest Rewrite
+                    </button>
+                </div>
             </td>
         </tr>`;
     }).join('');
@@ -3362,6 +3426,122 @@ function saveQualityState() {
         upload_id: _qualityState.upload_id,
         teams: _qualityState.teams,
     }));
+}
+
+// ── Scoring Run History ───────────────────────────────────────
+
+async function loadQualityHistory() {
+    try {
+        const res = await fetch('/api/quality/history');
+        const data = await res.json();
+        const tbody = document.getElementById('quality-history-tbody');
+        if (!tbody) return;
+        const runs = data.runs || [];
+        if (!runs.length) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">No scoring runs yet</td></tr>';
+            return;
+        }
+        tbody.innerHTML = runs.map(r => {
+            const avg = r.avg_score || 0;
+            const avgColor = avg >= 70 ? 'var(--success)' : avg >= 50 ? 'var(--warning)' : 'var(--error)';
+            const teams = (r.teams || []).join(', ') || '<span style="color:var(--text-muted)">All</span>';
+            const scored = (r.scored_at || '').slice(0,16).replace('T',' ');
+            return `<tr style="border-top:1px solid var(--border);">
+                <td style="padding:10px 16px;font-weight:600;color:var(--text-primary);">#${r.job_number}</td>
+                <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);white-space:nowrap;">${scored}</td>
+                <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.upload_filename||''}">${r.upload_filename || '—'}</td>
+                <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">${teams}</td>
+                <td style="text-align:center;padding:10px 8px;font-size:13px;font-weight:600;">${r.story_count}</td>
+                <td style="text-align:center;padding:10px 8px;font-size:13px;font-weight:600;color:${avgColor};">${avg}%</td>
+                <td style="text-align:center;padding:10px 8px;font-size:13px;color:var(--success);">${r.ready_count}</td>
+                <td style="text-align:center;padding:10px 8px;font-size:13px;color:var(--warning);">${r.needs_work_count}</td>
+                <td style="text-align:center;padding:10px 8px;font-size:13px;color:var(--error);">${r.not_ready_count}</td>
+                <td style="text-align:center;padding:10px 12px;">
+                    <button onclick="loadQualityRun('${r.run_id}')" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px;margin-right:4px;">Load</button>
+                    <button onclick="deleteQualityRun('${r.run_id}',this)" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px;color:var(--error);border-color:var(--error);">Delete</button>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch(e) { console.error('Quality history load failed', e); }
+}
+
+async function loadQualityRun(runId) {
+    try {
+        const res = await fetch(`/api/quality/results?run_id=${encodeURIComponent(runId)}`);
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+            _qualityResults = data.results;
+            renderQualityResults(_qualityResults);
+            // Scroll up to results
+            document.getElementById('quality-results-section')?.scrollIntoView({behavior:'smooth', block:'start'});
+        }
+    } catch(e) { console.error('Load quality run failed', e); }
+}
+
+async function deleteQualityRun(runId, btn) {
+    if (!confirm('Delete this scoring run? This cannot be undone.')) return;
+    try {
+        if (btn) { btn.disabled = true; btn.textContent = '…'; }
+        await fetch(`/api/quality/history/${encodeURIComponent(runId)}`, {method:'DELETE'});
+        await loadQualityHistory();
+    } catch(e) {
+        console.error('Delete quality run failed', e);
+        if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+    }
+}
+
+// ── Story Rewrite ─────────────────────────────────────────────
+
+async function rewriteQualityStory(classificationId, storyTitle) {
+    const modal = document.getElementById('quality-rewrite-modal');
+    const loading = document.getElementById('rewrite-loading');
+    const output = document.getElementById('rewrite-output');
+    const actions = document.getElementById('rewrite-actions');
+    const titleEl = document.getElementById('rewrite-story-title');
+
+    // Reset and show
+    loading.style.display = 'block';
+    output.style.display = 'none';
+    actions.style.display = 'none';
+    output.value = '';
+    titleEl.textContent = storyTitle || '';
+    modal.style.display = 'block';
+
+    try {
+        const res = await fetch('/api/quality/rewrite', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                classification_id: classificationId,
+                domain: _qualityState.domain || 'data_reporting',
+            }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        loading.style.display = 'none';
+        output.value = data.rewritten || '';
+        output.style.display = 'block';
+        actions.style.display = 'flex';
+    } catch(e) {
+        loading.textContent = 'Error: ' + (e.message || 'Rewrite failed');
+    }
+}
+
+function closeRewriteModal() {
+    document.getElementById('quality-rewrite-modal').style.display = 'none';
+}
+
+function copyRewrite() {
+    const output = document.getElementById('rewrite-output');
+    if (!output) return;
+    output.select();
+    document.execCommand('copy');
+    const fb = document.getElementById('rewrite-copy-feedback');
+    if (fb) {
+        fb.style.display = 'inline';
+        setTimeout(() => { fb.style.display = 'none'; }, 2000);
+    }
 }
 
 // ── Tab click hook ────────────────────────────────────────────
