@@ -811,3 +811,229 @@ Copy the merged file (minus rejected rows) into the upload pipeline and return f
 | `rejected_ids` | string | JSON array of story IDs to exclude (optional, default `"[]"`). |
 
 **Response:** Same shape as `POST /api/bulk-verify/preview` — includes `preview_id`, `suggested_mappings`, `target_fields`, `sample_rows`, `total_rows`. Frontend stores in `sessionStorage` and redirects to `/history`, which auto-triggers the column mapping step.
+
+---
+
+## Story Quality
+
+### GET /api/quality/rubric
+
+Return the Definition of Ready rubric for a given domain.
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `domain` | string | Optional. Default: `data_reporting`. |
+
+**Response:**
+```json
+{
+  "rubric": {
+    "id": "data_reporting",
+    "name": "Data & Reporting",
+    "full_name": "Data, Reporting & Analytics — Definition of Ready",
+    "source": "GSE-MF Story Excellence Playbook v1.0",
+    "criteria": [
+      {
+        "id": "narrative",
+        "name": "Narrative Format",
+        "description": "Story uses 'As a / I need / So that' format",
+        "why": "Anchors work to a stakeholder need and measurable outcome.",
+        "good_example": "As a Senior Risk Analyst / I need a portfolio delinquency dashboard / So that ...",
+        "fix": "Rewrite as: As a [role] / I need [capability] / So that [outcome]"
+      }
+    ]
+  },
+  "domains": [{ "id": "data_reporting", "name": "Data & Reporting" }]
+}
+```
+
+### GET /api/quality/uploads
+
+List uploads eligible for quality scoring (must have at least one saved classification).
+
+**Response:**
+```json
+{
+  "uploads": [
+    {
+      "upload_id": 3,
+      "filename": "sprint-backlog.csv",
+      "uploaded_at": "2026-04-03T10:00:00",
+      "story_count": 99,
+      "team_count": 5
+    }
+  ]
+}
+```
+
+### GET /api/quality/teams
+
+List teams and story counts for a specific upload.
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `upload_id` | int | **Required.** |
+
+**Response:**
+```json
+{ "teams": [{ "name": "Data Services", "count": 5 }] }
+```
+
+### POST /api/quality/score
+
+Start a background scoring job for the given upload and teams.
+
+**Request:**
+```json
+{
+  "upload_id": 3,
+  "teams": ["Data Services"],
+  "domain": "data_reporting"
+}
+```
+
+`teams` — optional array; omit or pass `[]` to score all teams.
+
+**Response:**
+```json
+{ "job_id": "a3f2c1b4", "job_number": 1, "total": 5 }
+```
+
+### GET /api/quality/job/\<job_id\>
+
+Poll status of a running scoring job.
+
+**Response:**
+```json
+{
+  "status": "running",
+  "job_number": 1,
+  "progress": 3,
+  "total": 5,
+  "results": [...],
+  "error": null
+}
+```
+
+`status` values: `pending`, `running`, `complete`, `error`
+
+### GET /api/quality/results
+
+Fetch scored story results. Use either `upload_id` (latest scores for that upload) or `run_id` (exact run).
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `upload_id` | int | Filter by upload (required unless `run_id` provided) |
+| `run_id` | string | Load results from a specific run |
+| `domain` | string | Default: `data_reporting` |
+| `teams` | string | Comma-separated team names (optional filter) |
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "classification_id": 42,
+      "story_title": "Build delinquency dashboard",
+      "team": "Data Services",
+      "story_id": "STR-001",
+      "overall_score": 66.7,
+      "passed_count": 6,
+      "total_count": 9,
+      "criteria": {
+        "narrative": { "pass": true },
+        "source_data": { "pass": false, "fix": "Add the source table name and owning system" }
+      },
+      "scored_at": "2026-04-03T10:15:00",
+      "description_empty": false
+    }
+  ],
+  "count": 1
+}
+```
+
+### GET /api/quality/export
+
+Download scored results as CSV.
+
+**Query Parameters:** Same as `/api/quality/results` (requires `upload_id`).
+
+Returns `text/csv` with columns: Story ID, Story Title, Team, Score %, Passed, Total, one column per criterion (PASS or FAIL: fix text), Scored At.
+
+### GET /api/quality/history
+
+List all scoring runs in reverse chronological order.
+
+**Response:**
+```json
+{
+  "runs": [
+    {
+      "run_id": "a3f2c1b4",
+      "job_number": 1,
+      "scored_at": "2026-04-03T10:15:00",
+      "upload_id": 3,
+      "upload_filename": "sprint-backlog.csv",
+      "domain": "data_reporting",
+      "teams": ["Data Services"],
+      "story_count": 5,
+      "avg_score": 44.4,
+      "ready_count": 0,
+      "needs_work_count": 2,
+      "not_ready_count": 3
+    }
+  ]
+}
+```
+
+### DELETE /api/quality/history/\<run_id\>
+
+Delete a scoring run and all its associated story scores.
+
+**Response:** `{ "ok": true }`
+
+### POST /api/quality/rewrite
+
+Generate an initial AI story rewrite addressing failing DoR criteria. Only uses information present in the original story; missing information is marked with `[REQUIRED: ...]` placeholders.
+
+**Request:**
+```json
+{
+  "classification_id": 42,
+  "domain": "data_reporting"
+}
+```
+
+**Response:**
+```json
+{
+  "rewritten": "**As a** Senior Risk Analyst\n**I need** ...",
+  "title": "Build delinquency dashboard"
+}
+```
+
+### POST /api/quality/chat
+
+Continue an iterative story rewrite session. Sends the full conversation history to the AI with the original story as fixed context.
+
+**Request:**
+```json
+{
+  "classification_id": 42,
+  "domain": "data_reporting",
+  "messages": [
+    { "role": "assistant", "content": "**As a** Senior Risk Analyst..." },
+    { "role": "user", "content": "The source table is dw.loan_performance in EDW" }
+  ]
+}
+```
+
+`messages` — full conversation array in `[{role, content}]` format. The original story is provided via system prompt, not in messages.
+
+**Response:**
+```json
+{ "reply": "**As a** Senior Risk Analyst\n**I need** ...\n\n**Source Data**\ndw.loan_performance, EDW, nightly refresh..." }
+```

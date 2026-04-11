@@ -2,6 +2,60 @@
 
 ---
 
+## v3.4.0 — April 2026
+
+Story Quality scoring, iterative rewrite chat, and data source unification.
+
+### New Features
+
+- **Story Quality tab** — New tab in Analytics (`/history`) for scoring uploaded stories against the Definition of Ready rubric from the GSE-MF Story Excellence Playbook v1.0. Select a data source and teams, click Score Stories, and the app AI-scores every story across 9 criteria in the background.
+- **9-criterion DoR rubric — Data & Reporting domain:**
+  1. Narrative Format (As a / I need / So that)
+  2. Source Data Identified (table, system, refresh schedule)
+  3. Business Rules Documented (calculations, definitions, edge cases)
+  4. Output Artifact Defined (dashboard/report/table/file with schema)
+  5. Acceptance Criteria (binary, independently testable AC1, AC2…)
+  6. Data Quality Checks (row count tolerance, null checks, ref integrity)
+  7. Traceability Tag (Source → Transform → Output → Consumer)
+  8. Story Pointed (estimated in story points)
+  9. Dependencies Flagged (upstream data, downstream consumers)
+- **Collapsible rubric reference** — Inline rubric table in the tab: criterion, what it checks, good example, fix if missing.
+- **Scoring thresholds:** Ready ≥ 8/9 (≥89%), Needs Work 5–7/9 (56–88%), Not Ready < 5/9 (< 56%).
+- **Per-story detail** — Expand any story row to see pass/fail per criterion with prescriptive one-line fix suggestions for each failure.
+- **Story Points scored locally** — Checked directly from the `story_points` DB field; does not consume an AI call.
+- **Background job with progress bar** — Scoring runs as a background thread. Job # assigned sequentially. Progress bar tracks batch progress with label `Job #N — Scoring stories… X / Y`.
+- **Scoring Run History** — Sub-section at the bottom of the Story Quality tab. Every completed run is recorded: Job #, timestamp, upload, teams, story count, avg score, Ready / Needs Work / Not Ready counts. **Load** replays any run's results; **Delete** removes the run and its scores.
+- **Suggest Rewrite + Chat** — Each scored story has a "✍ Suggest Rewrite" button that opens a chat modal. The AI drafts a full story rewrite based only on what the original story contained; missing information is marked with `[REQUIRED: ...]` placeholders. The user can then iterate in the chat (e.g. "The source table is dw.loan_performance" or "Make AC2 more specific") and the AI responds with a full updated story each turn. **Copy latest** button captures the most recent AI response for pasting into JIRA.
+- **CSV export** — Export all scored stories for the current selection as a flat CSV with pass/fail and fix text per criterion.
+
+### UX Improvements
+
+- **Unified Data Source** — Story Quality tab removed its own Upload/Data Source picker. It now reads from the global Data Source selector at the top of the Analytics page. Changing the data source while on the Story Quality tab reloads quality state rather than navigating away.
+- **Teams always start fresh** — Team selections are never persisted across tab visits. The dropdown always opens with all teams checked, preventing stale team filters from carrying into new runs.
+- **Results gated on history** — Saved results only auto-display on tab load if a corresponding Scoring Run History entry exists. Orphaned scores (from before a restart) are not surfaced.
+
+### API Changes
+
+- `GET /api/quality/rubric` — Return DoR rubric definition and available domains
+- `GET /api/quality/uploads` — List uploads with story and team counts (used to populate quality filters)
+- `GET /api/quality/teams?upload_id=N` — List teams for a given upload with story counts
+- `POST /api/quality/score` — Start a background scoring job; returns `job_id` and `job_number`
+- `GET /api/quality/job/<job_id>` — Poll job status, progress, and live results
+- `GET /api/quality/results` — Fetch scored results; accepts `upload_id`+`domain`+`teams` or `run_id`
+- `GET /api/quality/export` — Download scores as CSV
+- `GET /api/quality/history` — List all scoring runs ordered by date
+- `DELETE /api/quality/history/<run_id>` — Delete a scoring run and all its story scores
+- `POST /api/quality/rewrite` — Generate initial AI story rewrite (uses original story + failing criteria context)
+- `POST /api/quality/chat` — Continue an iterative rewrite session; accepts full `messages` array + original story context
+
+### Database
+
+- New table `story_quality_scores` — per-story scores per run: `run_id`, `job_number`, `overall_score`, `passed_count`, `total_count`, `criteria_json`, `story_title`, `team`, `story_id`
+- New table `quality_runs` — run-level summaries: `run_id`, `job_number`, `upload_filename`, `teams_json`, `story_count`, `avg_score`, `ready_count`, `needs_work_count`, `not_ready_count`
+- Schema migration runs automatically on startup
+
+---
+
 ## v3.3.1 — March 2026
 
 File Merger validation panel, per-story reject, Start Over button, timestamp in filenames, Job Name with time.

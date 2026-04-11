@@ -117,6 +117,37 @@ Click any result to navigate to that team's detail view.
 
 ---
 
+## Score Story Quality
+
+The Story Quality tab in Analytics scores your uploaded stories against the Definition of Ready (DoR) rubric from the GSE-MF Story Excellence Playbook.
+
+1. Go to **Analytics** and select a specific upload from the **Data Source** dropdown at the top
+2. Click the **Story Quality** tab
+3. Optionally filter to specific teams using the Teams dropdown (all teams selected by default)
+4. Click **Score Stories** — the app AI-scores every story in the background
+5. Results appear with KPI cards (Ready / Needs Work / Not Ready) and a per-story table
+6. Click any story row to expand it and see pass/fail for all 9 criteria with fix suggestions
+7. Click **✍ Suggest Rewrite** on any story to open the rewrite chat:
+   - The AI drafts a complete rewrite using only the original story content
+   - `[REQUIRED: ...]` placeholders mark information the team must supply
+   - Type follow-up messages to iterate: *"The source table is dw.loan_performance"* or *"Tighten AC2"*
+   - Click **Copy latest** to paste the current version into JIRA
+   - Keep iterating until the story is sprint-ready
+8. Click **⬇ Export CSV** to download scores for all stories in the current view
+
+**Scoring Run History** (bottom of the tab) lists every past run. Click **Load** to replay any run's results, or **Delete** to remove it.
+
+**Scoring thresholds:**
+| Status | Criteria met |
+|--------|-------------|
+| Ready | 8–9 of 9 (≥ 89%) |
+| Needs Work | 5–7 of 9 (56–88%) |
+| Not Ready | < 5 of 9 (< 56%) |
+
+> **Note:** Restart the app (`python app.py`) after first install to ensure the quality scoring tables are created. New scoring runs will not appear in history until after a restart.
+
+---
+
 ## Dark / Light Mode
 
 Click the **moon/sun icon** in the top-right nav bar to toggle between dark and light mode. Your preference is saved across page navigation and browser sessions.
