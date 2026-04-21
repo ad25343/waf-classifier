@@ -573,11 +573,13 @@
                 <div class="kpi-mini-value" style="color:var(--error)" id="sum-mismatches">—</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to view details</div>
             </div>
-            <div class="kpi-mini">
+            <a href="/settings" style="text-decoration:none;">
+            <div class="kpi-mini kpi-clickable" title="Go to Settings to manage ground truth">
                 <div class="kpi-mini-label">Ground Truth Examples</div>
                 <div class="kpi-mini-value" style="color:var(--purple)" id="sum-gt">—</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Calibration data</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to manage →</div>
             </div>
+            </a>
             <div class="kpi-mini kpi-clickable" onclick="summaryDrillDown('run_change','Run')" title="Click to view Run stories">
                 <div class="kpi-mini-label">Run</div>
                 <div class="kpi-mini-value" style="color:#e8944a" id="sum-run">—</div>
@@ -1632,6 +1634,7 @@ function sortDrillDown(col) {
 let verifyResults = [];
 let verifyResultsFull = [];
 let verifyUploadId = null;
+let _verifyKpiFilter = 'all';   // 'all' | 'match' | 'mismatch' | 'untagged'
 let verifySortCol = null;
 let verifySortDir = 'asc';
 let _uploadPollInterval = null; // guard against duplicate upload-progress polls
@@ -1950,21 +1953,25 @@ function showReviewStep(data) {
 
     // KPIs
     document.getElementById('verify-kpis').innerHTML = `
-        <div class="kpi-mini">
+        <div class="kpi-mini kpi-clickable" onclick="filterVerifyByStatus('all')" title="Show all stories">
             <div class="kpi-mini-label">Total Stories</div>
             <div class="kpi-mini-value" style="color:var(--accent)">${data.total}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to show all</div>
         </div>
-        <div class="kpi-mini">
+        <div class="kpi-mini kpi-clickable" onclick="filterVerifyByStatus('match')" title="Show matches only">
             <div class="kpi-mini-label">Matches</div>
             <div class="kpi-mini-value" style="color:var(--success)">${data.matches}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to filter</div>
         </div>
-        <div class="kpi-mini">
+        <div class="kpi-mini kpi-clickable" onclick="filterVerifyByStatus('mismatch')" title="Show mismatches only">
             <div class="kpi-mini-label">Mismatches</div>
             <div class="kpi-mini-value" style="color:var(--error)">${data.mismatches}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to filter</div>
         </div>
-        <div class="kpi-mini">
+        <div class="kpi-mini kpi-clickable" onclick="filterVerifyByStatus('untagged')" title="Show untagged only">
             <div class="kpi-mini-label">Untagged</div>
             <div class="kpi-mini-value" style="color:var(--warning)">${data.untagged}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to filter</div>
         </div>
     `;
 
@@ -1982,6 +1989,26 @@ function onVerifyFilter() {
         function(r) { return r.is_match === true ? 'match' : r.is_match === false ? 'mismatch' : 'new'; }
     ];
     verifyResults = applyColumnFilters(verifyResultsFull, 'verify-filters', verifyFieldMap);
+    renderVerifyTable();
+}
+
+function filterVerifyByStatus(status) {
+    _verifyKpiFilter = status;
+    // Highlight active KPI card
+    document.querySelectorAll('#verify-kpis .kpi-mini').forEach((el, i) => {
+        const statuses = ['all', 'match', 'mismatch', 'untagged'];
+        el.classList.toggle('active', statuses[i] === status);
+    });
+    const base = verifyResultsFull;
+    if (status === 'all') {
+        verifyResults = base.slice();
+    } else if (status === 'match') {
+        verifyResults = base.filter(r => r.is_match === true);
+    } else if (status === 'mismatch') {
+        verifyResults = base.filter(r => r.is_match === false);
+    } else if (status === 'untagged') {
+        verifyResults = base.filter(r => !r.user_submitted_waf || r.user_submitted_waf.trim() === '');
+    }
     renderVerifyTable();
 }
 
@@ -2304,14 +2331,17 @@ function linGetFilteredStories() {
     return stories;
 }
 
+let _linDetailStories = [];   // global ref for onclick handlers
+
 function linRenderStoryTable() {
     const stories = linGetFilteredStories();
+    _linDetailStories = stories;   // store for onclick
     const tbody = document.getElementById('lin-story-tbody');
     if (stories.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No stories match this filter.</td></tr>';
         return;
     }
-    tbody.innerHTML = stories.map(s => {
+    tbody.innerHTML = stories.map((s, idx) => {
         const dot = WAF_COLORS_MAP[s.color] || '#e8944a';
         const confClass = (s.confidence||'').toLowerCase();
         const isMismatch = s.mismatch;
@@ -2321,7 +2351,7 @@ function linRenderStoryTable() {
         const title = esc(s.title.length > 50 ? s.title.substring(0,50)+'...' : s.title);
         const feat = esc(s.feature.length > 25 ? s.feature.substring(0,25)+'...' : s.feature);
         const ogTag = esc(s.original_tag || '—');
-        return '<tr class="' + (isMismatch ? 'lin-mismatch-row' : '') + '">' +
+        return '<tr class="' + (isMismatch ? 'lin-mismatch-row' : '') + '" style="cursor:pointer;" onclick="showStoryDetail(_linDetailStories[' + idx + '])">' +
             '<td style="padding:0;width:6px;background:' + dot + ';"></td>' +
             '<td style="color:var(--text-primary)" title="' + esc(s.title) + '">' + title + '</td>' +
             '<td style="color:var(--text-muted);" title="' + esc(s.feature) + '">' + feat + '</td>' +
@@ -3340,15 +3370,33 @@ function renderQualityResults(results) {
     const avgScore = results.length ? Math.round(results.reduce((a, r) => a + r.overall_score, 0) / results.length) : 0;
 
     document.getElementById('quality-kpis').innerHTML = `
-        <div class="kpi-mini"><div class="kpi-mini-value">${results.length}</div><div class="kpi-mini-label">Stories Scored</div></div>
-        <div class="kpi-mini"><div class="kpi-mini-value" style="color:${avgScore >= 70 ? 'var(--success)' : avgScore >= 50 ? 'var(--warning)' : 'var(--error)'}">${avgScore}%</div><div class="kpi-mini-label">Avg Score</div></div>
-        <div class="kpi-mini"><div class="kpi-mini-value" style="color:var(--success)">${ready}</div><div class="kpi-mini-label">Ready</div></div>
-        <div class="kpi-mini"><div class="kpi-mini-value" style="color:var(--warning)">${needsWork}</div><div class="kpi-mini-label">Needs Work</div></div>
-        <div class="kpi-mini"><div class="kpi-mini-value" style="color:var(--error)">${notReady}</div><div class="kpi-mini-label">Not Ready</div></div>
+        <div class="kpi-mini kpi-clickable" onclick="filterQualityResults('all')" title="Show all scored stories">
+            <div class="kpi-mini-value">${results.length}</div><div class="kpi-mini-label">Stories Scored</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to show all</div>
+        </div>
+        <div class="kpi-mini">
+            <div class="kpi-mini-value" style="color:${avgScore >= 70 ? 'var(--success)' : avgScore >= 50 ? 'var(--warning)' : 'var(--error)'}">${avgScore}%</div>
+            <div class="kpi-mini-label">Avg Score</div>
+        </div>
+        <div class="kpi-mini kpi-clickable" onclick="filterQualityResults('ready')" title="Show Ready stories">
+            <div class="kpi-mini-value" style="color:var(--success)">${ready}</div><div class="kpi-mini-label">Ready</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to filter</div>
+        </div>
+        <div class="kpi-mini kpi-clickable" onclick="filterQualityResults('needs_work')" title="Show Needs Work stories">
+            <div class="kpi-mini-value" style="color:var(--warning)">${needsWork}</div><div class="kpi-mini-label">Needs Work</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to filter</div>
+        </div>
+        <div class="kpi-mini kpi-clickable" onclick="filterQualityResults('not_ready')" title="Show Not Ready stories">
+            <div class="kpi-mini-value" style="color:var(--error)">${notReady}</div><div class="kpi-mini-label">Not Ready</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Click to filter</div>
+        </div>
     `;
 
     // Story table — worst first
-    const sorted = [...results].sort((a, b) => a.overall_score - b.overall_score);
+    _renderQualityStoryRows([...results].sort((a, b) => a.overall_score - b.overall_score));
+}
+
+function _renderQualityStoryRows(sorted) {
     const tbody = document.getElementById('quality-results-tbody');
     tbody.innerHTML = sorted.map((r, i) => {
         const badge = qualityBadge(r.overall_score);
@@ -3364,7 +3412,6 @@ function renderQualityResults(results) {
                 </div>
             </div>`;
         }).join('');
-
         return `
         <tr style="border-top:1px solid var(--border);" onclick="toggleQualityRow('${detailId}',this)" class="kpi-clickable">
             <td style="padding:10px 16px;">
@@ -3395,6 +3442,20 @@ function renderQualityResults(results) {
             </td>
         </tr>`;
     }).join('');
+}
+
+function filterQualityResults(status) {
+    // Highlight active KPI card (cards are: Stories Scored[0], Avg[1], Ready[2], Needs Work[3], Not Ready[4])
+    const kpiCards = document.querySelectorAll('#quality-kpis .kpi-mini');
+    const statusMap = { all: 0, ready: 2, needs_work: 3, not_ready: 4 };
+    kpiCards.forEach((el, i) => el.classList.toggle('active', i === statusMap[status]));
+
+    let filtered = _qualityResults;
+    if (status === 'ready')           filtered = _qualityResults.filter(r => r.overall_score >= 89);
+    else if (status === 'needs_work') filtered = _qualityResults.filter(r => r.overall_score >= 56 && r.overall_score < 89);
+    else if (status === 'not_ready')  filtered = _qualityResults.filter(r => r.overall_score < 56);
+
+    _renderQualityStoryRows([...filtered].sort((a, b) => a.overall_score - b.overall_score));
 }
 
 function toggleQualityRow(detailId, rowEl) {
@@ -3443,7 +3504,7 @@ async function loadQualityHistory() {
             const avgColor = avg >= 70 ? 'var(--success)' : avg >= 50 ? 'var(--warning)' : 'var(--error)';
             const teams = (r.teams || []).join(', ') || '<span style="color:var(--text-muted)">All</span>';
             const scored = (r.scored_at || '').slice(0,16).replace('T',' ');
-            return `<tr style="border-top:1px solid var(--border);">
+            return `<tr style="border-top:1px solid var(--border);cursor:pointer;" onclick="if(!event.target.closest('button'))loadQualityRun('${r.run_id}')" title="Click to load this run">
                 <td style="padding:10px 16px;font-weight:600;color:var(--text-primary);">#${r.job_number}</td>
                 <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);white-space:nowrap;">${scored}</td>
                 <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.upload_filename||''}">${r.upload_filename || '—'}</td>
