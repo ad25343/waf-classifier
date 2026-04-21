@@ -12,8 +12,14 @@ from flask import Blueprint, request, jsonify
 
 from state import waf_store, ground_truth_store
 from config import BASELINE_DIR, UPLOAD_FOLDER
-from database import get_db, get_setting, _refresh_settings_cache
+from database import get_db, get_setting, set_setting, _refresh_settings_cache
 from waf_core import parse_waf_file, parse_ground_truth
+
+# Sub-directories for named version files
+WAF_VER_DIR = os.path.join(BASELINE_DIR, "waf")
+GT_VER_DIR  = os.path.join(BASELINE_DIR, "gt")
+os.makedirs(WAF_VER_DIR, exist_ok=True)
+os.makedirs(GT_VER_DIR,  exist_ok=True)
 
 settings_bp = Blueprint("settings_bp", __name__)
 
@@ -267,3 +273,235 @@ def get_waf_definitions():
             "examples": str(row.get("Representative Examples", ""))
         })
     return jsonify({"definitions": defs, "loaded": True})
+
+
+# ── Version Library ────────────────────────────────────────────────────
+
+def _row_count_for_file(filepath):
+    """Best-effort row count for a CSV file (excludes header)."""
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            return max(0, sum(1 for _ in f) - 1)
+    except Exception:
+        return 0
+
+
+@settings_bp.route("/api/versions/waf", methods=["GET"])
+def list_waf_versions():
+    """List all saved WAF definition versions."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, name, author, notes, filename, created_at, is_default, row_count "
+        "FROM waf_versions ORDER BY is_default DESC, created_at DESC"
+    ).fetchall()
+    return jsonify({"versions": [dict(r) for r in rows]})
+
+
+@settings_bp.route("/api/versions/gt", methods=["GET"])
+def list_gt_versions():
+    """List all saved Ground Truth versions."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, name, author, notes, filename, created_at, is_default, row_count "
+        "FROM gt_versions ORDER BY is_default DESC, created_at DESC"
+    ).fetchall()
+    return jsonify({"versions": [dict(r) for r in rows]})
+
+
+@settings_bp.route("/api/versions/waf", methods=["POST"])
+def save_waf_version():
+    """Snapshot current WAF definitions as a named version."""
+    data = request.get_json(force=True) or {}
+    name   = data.get("name",   "").strip()
+    author = data.get("author", "").strip()
+    notes  = data.get("notes",  "").strip()
+
+    if not name:
+        return jsonify({"error": "Version name is required"}), 400
+    if not author:
+        return jsonify({"error": "Author name is required"}), 400
+
+    now = datetime.now()
+    ts  = now.strftime("%Y%m%d_%H%M%S")
+    safe = "".join(c if c.isalnum() or c in "-_ " else "_" for c in name)[:50].strip().replace(" ", "_")
+    filename = f"waf_{safe}_{ts}.csv"
+    filepath = os.path.join(WAF_VER_DIR, filename)
+
+    if waf_store["definitions"] is not None:
+        waf_store["definitions"].to_csv(filepath, index=False)
+    elif waf_store["filename"]:
+        src = os.path.join(UPLOAD_FOLDER, waf_store["filename"])
+        if os.path.exists(src):
+            shutil.copy2(src, filepath)
+        else:
+            return jsonify({"error": "Active WAF file not found on disk"}), 400
+    else:
+        return jsonify({"error": "No WAF definitions are currently loaded"}), 400
+
+    row_count = _row_count_for_file(filepath)
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO waf_versions (name, author, notes, filename, filepath, created_at, row_count) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (name, author, notes, filename, filepath, now.isoformat(), row_count)
+    )
+    db.commit()
+    return jsonify({"success": True, "id": cur.lastrowid, "name": name, "row_count": row_count})
+
+
+@settings_bp.route("/api/versions/gt", methods=["POST"])
+def save_gt_version():
+    """Snapshot current Ground Truth as a named version."""
+    data = request.get_json(force=True) or {}
+    name   = data.get("name",   "").strip()
+    author = data.get("author", "").strip()
+    notes  = data.get("notes",  "").strip()
+
+    if not name:
+        return jsonify({"error": "Version name is required"}), 400
+    if not author:
+        return jsonify({"error": "Author name is required"}), 400
+    if not ground_truth_store["examples"]:
+        return jsonify({"error": "No Ground Truth examples are currently loaded"}), 400
+
+    now = datetime.now()
+    ts  = now.strftime("%Y%m%d_%H%M%S")
+    safe = "".join(c if c.isalnum() or c in "-_ " else "_" for c in name)[:50].strip().replace(" ", "_")
+    filename = f"gt_{safe}_{ts}.csv"
+    filepath = os.path.join(GT_VER_DIR, filename)
+
+    col_map = {"title": "Story Title", "description": "Description",
+               "run_change": "Run/Change", "color": "WAF Color",
+               "category": "WAF Category", "subcategory": "WAF Sub-Category"}
+    gt_df = pd.DataFrame(ground_truth_store["examples"]).rename(columns=col_map)
+    gt_df.to_csv(filepath, index=False)
+
+    row_count = len(ground_truth_store["examples"])
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO gt_versions (name, author, notes, filename, filepath, created_at, row_count) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (name, author, notes, filename, filepath, now.isoformat(), row_count)
+    )
+    db.commit()
+    return jsonify({"success": True, "id": cur.lastrowid, "name": name, "row_count": row_count})
+
+
+@settings_bp.route("/api/versions/waf/<int:ver_id>", methods=["DELETE"])
+def delete_waf_version(ver_id):
+    """Delete a WAF version (protected: cannot delete the default)."""
+    db = get_db()
+    row = db.execute("SELECT * FROM waf_versions WHERE id=?", (ver_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Version not found"}), 404
+    if row["is_default"]:
+        return jsonify({"error": "The default baseline cannot be deleted"}), 400
+    try:
+        if os.path.exists(row["filepath"]):
+            os.remove(row["filepath"])
+    except Exception:
+        pass
+    db.execute("DELETE FROM waf_versions WHERE id=?", (ver_id,))
+    db.commit()
+    return jsonify({"success": True})
+
+
+@settings_bp.route("/api/versions/gt/<int:ver_id>", methods=["DELETE"])
+def delete_gt_version(ver_id):
+    """Delete a GT version (protected: cannot delete the default)."""
+    db = get_db()
+    row = db.execute("SELECT * FROM gt_versions WHERE id=?", (ver_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Version not found"}), 404
+    if row["is_default"]:
+        return jsonify({"error": "The default baseline cannot be deleted"}), 400
+    try:
+        if os.path.exists(row["filepath"]):
+            os.remove(row["filepath"])
+    except Exception:
+        pass
+    db.execute("DELETE FROM gt_versions WHERE id=?", (ver_id,))
+    db.commit()
+    return jsonify({"success": True})
+
+
+@settings_bp.route("/api/versions/waf/<int:ver_id>/preview", methods=["GET"])
+def preview_waf_version(ver_id):
+    """Return the first 10 rows of a WAF version file."""
+    db = get_db()
+    row = db.execute("SELECT * FROM waf_versions WHERE id=?", (ver_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Version not found"}), 404
+    if not os.path.exists(row["filepath"]):
+        return jsonify({"error": "Version file not found on disk"}), 404
+    try:
+        df = pd.read_csv(row["filepath"])
+        return jsonify({
+            "name": row["name"], "author": row["author"],
+            "created_at": row["created_at"], "notes": row["notes"],
+            "columns": list(df.columns),
+            "rows": df.head(10).fillna("").astype(str).to_dict(orient="records"),
+            "total_rows": len(df)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/api/versions/gt/<int:ver_id>/preview", methods=["GET"])
+def preview_gt_version(ver_id):
+    """Return the first 10 rows of a GT version file."""
+    db = get_db()
+    row = db.execute("SELECT * FROM gt_versions WHERE id=?", (ver_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Version not found"}), 404
+    if not os.path.exists(row["filepath"]):
+        return jsonify({"error": "Version file not found on disk"}), 404
+    try:
+        df = pd.read_csv(row["filepath"])
+        return jsonify({
+            "name": row["name"], "author": row["author"],
+            "created_at": row["created_at"], "notes": row["notes"],
+            "columns": list(df.columns),
+            "rows": df.head(10).fillna("").astype(str).to_dict(orient="records"),
+            "total_rows": len(df)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/api/versions/waf/<int:ver_id>/activate", methods=["POST"])
+def activate_waf_version(ver_id):
+    """Load a WAF version as the active global store."""
+    db = get_db()
+    row = db.execute("SELECT * FROM waf_versions WHERE id=?", (ver_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Version not found"}), 404
+    if not os.path.exists(row["filepath"]):
+        return jsonify({"error": "Version file not found on disk"}), 404
+    text, categories, df = parse_waf_file(row["filepath"], row["filename"])
+    waf_store["definitions"] = df
+    waf_store["raw_text"]    = text
+    waf_store["filename"]    = row["filename"]
+    waf_store["categories"]  = categories
+    set_setting("active_waf_path", row["filepath"])
+    return jsonify({"success": True, "name": row["name"], "categories": len(categories)})
+
+
+@settings_bp.route("/api/versions/gt/<int:ver_id>/activate", methods=["POST"])
+def activate_gt_version(ver_id):
+    """Load a GT version as the active global store."""
+    db = get_db()
+    row = db.execute("SELECT * FROM gt_versions WHERE id=?", (ver_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Version not found"}), 404
+    if not os.path.exists(row["filepath"]):
+        return jsonify({"error": "Version file not found on disk"}), 404
+    examples, stats, _ = parse_ground_truth(row["filepath"], row["filename"])
+    ground_truth_store["loaded"]        = True
+    ground_truth_store["filename"]      = row["filename"]
+    ground_truth_store["examples"]      = examples
+    ground_truth_store["example_count"] = len(examples)
+    ground_truth_store["stats"]         = stats
+    ground_truth_store["raw_text"]      = f"{len(examples)} examples across {len(stats)} categories"
+    set_setting("active_gt_path", row["filepath"])
+    return jsonify({"success": True, "name": row["name"], "example_count": len(examples)})

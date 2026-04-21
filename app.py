@@ -112,6 +112,57 @@ def auto_load_sample_data():
             shutil.copy2(gt_src, default_gt)
         print(f"  Default baseline saved to {BASELINE_DIR}")
 
+    # Seed the version library tables if they're empty (first launch)
+    import sqlite3 as _sqlite3
+    from datetime import datetime as _dt
+    _conn = _sqlite3.connect(DB_PATH)
+
+    waf_ver_dir = os.path.join(BASELINE_DIR, "waf")
+    gt_ver_dir  = os.path.join(BASELINE_DIR, "gt")
+    os.makedirs(waf_ver_dir, exist_ok=True)
+    os.makedirs(gt_ver_dir,  exist_ok=True)
+
+    waf_count = _conn.execute("SELECT COUNT(*) FROM waf_versions").fetchone()[0]
+    if waf_count == 0 and os.path.exists(default_waf):
+        # Copy into the versioned sub-dir so the path stays consistent
+        dest = os.path.join(waf_ver_dir, "waf_Default_Baseline.csv")
+        if not os.path.exists(dest):
+            shutil.copy2(default_waf, dest)
+        try:
+            import pandas as _pd
+            row_count = len(_pd.read_csv(dest))
+        except Exception:
+            row_count = 0
+        _conn.execute(
+            "INSERT INTO waf_versions (name, author, notes, filename, filepath, created_at, is_default, row_count) "
+            "VALUES (?, ?, ?, ?, ?, ?, 1, ?)",
+            ("Default Baseline", "System", "Auto-created on first launch",
+             "waf_Default_Baseline.csv", dest, _dt.now().isoformat(), row_count)
+        )
+        _conn.commit()
+        print("  Seeded default WAF version into version library")
+
+    gt_count = _conn.execute("SELECT COUNT(*) FROM gt_versions").fetchone()[0]
+    if gt_count == 0 and os.path.exists(default_gt):
+        dest = os.path.join(gt_ver_dir, "gt_Default_Baseline.csv")
+        if not os.path.exists(dest):
+            shutil.copy2(default_gt, dest)
+        try:
+            import pandas as _pd
+            row_count = len(_pd.read_csv(dest))
+        except Exception:
+            row_count = 0
+        _conn.execute(
+            "INSERT INTO gt_versions (name, author, notes, filename, filepath, created_at, is_default, row_count) "
+            "VALUES (?, ?, ?, ?, ?, ?, 1, ?)",
+            ("Default Baseline", "System", "Auto-created on first launch",
+             "gt_Default_Baseline.csv", dest, _dt.now().isoformat(), row_count)
+        )
+        _conn.commit()
+        print("  Seeded default GT version into version library")
+
+    _conn.close()
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

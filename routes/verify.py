@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename
 from state import verify_jobs, _preview_store, _PREVIEW_TTL, waf_store, ground_truth_store
 from config import AI_MODEL, UPLOAD_FOLDER
 from database import get_db, save_classification, get_setting
-from waf_core import get_client, build_system_prompt, normalize_waf_category, _check_rate_limit
+from waf_core import get_client, build_system_prompt, build_system_prompt_for_versions, normalize_waf_category, _check_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -171,12 +171,14 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
         return results
 
 
-def _run_verify_job(job_id, stories, filename, ext, row_count):
+def _run_verify_job(job_id, stories, filename, ext, row_count,
+                    system_prompt=None, waf_version_id=None, gt_version_id=None):
     """Background thread: classify stories using concurrent workers for speed."""
     job = verify_jobs[job_id]
 
     try:
-        system_prompt = build_system_prompt()
+        if system_prompt is None:
+            system_prompt = build_system_prompt()
         api_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
         batch_size = int(get_setting("async_batch_size", "50"))
@@ -225,9 +227,12 @@ def _run_verify_job(job_id, stories, filename, ext, row_count):
         db = sqlite3.connect(DB_PATH)
         db.row_factory = sqlite3.Row
         cursor = db.execute(
-            """INSERT INTO upload_history (uploaded_at, filename, row_count, imported_count, file_type, status, results_json)
-               VALUES (?, ?, ?, ?, ?, 'verified', ?)""",
-            (datetime.now().isoformat(), filename, row_count, len(results), ext, json.dumps(results))
+            """INSERT INTO upload_history
+               (uploaded_at, filename, row_count, imported_count, file_type, status, results_json,
+                waf_version_id, gt_version_id)
+               VALUES (?, ?, ?, ?, ?, 'verified', ?, ?, ?)""",
+            (datetime.now().isoformat(), filename, row_count, len(results), ext,
+             json.dumps(results), waf_version_id, gt_version_id)
         )
         verify_upload_id = cursor.lastrowid
         db.commit()
@@ -449,6 +454,22 @@ def bulk_verify():
         if not stories:
             return jsonify({"error": "No valid stories found in file"}), 400
 
+        # Read optional version overrides from the form
+        def _to_int_or_none(val):
+            try:
+                return int(val) if val else None
+            except (ValueError, TypeError):
+                return None
+
+        waf_version_id = _to_int_or_none(request.form.get("waf_version_id"))
+        gt_version_id  = _to_int_or_none(request.form.get("gt_version_id"))
+
+        # Build system prompt now (in the request context) using selected versions
+        if waf_version_id or gt_version_id:
+            system_prompt = build_system_prompt_for_versions(waf_version_id, gt_version_id)
+        else:
+            system_prompt = build_system_prompt()
+
         # All files process asynchronously with progress polling
         job_id = str(uuid.uuid4())
         verify_jobs[job_id] = {
@@ -459,6 +480,8 @@ def bulk_verify():
             "completed_batches": 0,
             "current_batch": 0,
             "filename": filename,
+            "waf_version_id": waf_version_id,
+            "gt_version_id": gt_version_id,
             "results": None,
             "error": None,
             "started_at": datetime.now().isoformat(),
@@ -466,7 +489,8 @@ def bulk_verify():
 
         thread = threading.Thread(
             target=_run_verify_job,
-            args=(job_id, stories, filename, ext, len(df)),
+            args=(job_id, stories, filename, ext, len(df),
+                  system_prompt, waf_version_id, gt_version_id),
             daemon=True
         )
         thread.start()

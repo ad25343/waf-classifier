@@ -1201,6 +1201,21 @@
             </div>
 
             <div class="chat-input-area">
+                <!-- Version selectors row -->
+                <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+                    <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">Using:</span>
+                    <select id="cls-waf-version"
+                        style="flex:1;padding:5px 8px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;cursor:pointer;"
+                        title="WAF Definition version">
+                        <option value="">★ Default Baseline (WAF)</option>
+                    </select>
+                    <select id="cls-gt-version"
+                        style="flex:1;padding:5px 8px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;cursor:pointer;"
+                        title="Ground Truth version">
+                        <option value="">★ Default Baseline (GT)</option>
+                    </select>
+                    <a href="/settings" style="font-size:11px;color:var(--accent);white-space:nowrap;text-decoration:none;" title="Manage versions in Settings">manage ↗</a>
+                </div>
                 <div style="display:flex;gap:8px;margin-bottom:6px;">
                     <input type="text" id="story-id-input" placeholder="Story Key (e.g. PROJ-123)"
                         style="flex:0 0 160px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;">
@@ -1304,10 +1319,17 @@
                 const parentFeature = document.getElementById("feature-input").value.trim();
                 const storyId = document.getElementById("story-id-input").value.trim();
                 const storyPoints = document.getElementById("story-points-input").value.trim();
+                const wafVersionId = document.getElementById("cls-waf-version")?.value || null;
+                const gtVersionId  = document.getElementById("cls-gt-version")?.value  || null;
                 const res = await fetch("/api/classify", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message, epic, parent_feature: parentFeature, story_id: storyId, story_points: storyPoints })
+                    body: JSON.stringify({
+                        message, epic, parent_feature: parentFeature,
+                        story_id: storyId, story_points: storyPoints,
+                        waf_version_id: wafVersionId ? parseInt(wafVersionId) : null,
+                        gt_version_id:  gtVersionId  ? parseInt(gtVersionId)  : null,
+                    })
                 });
                 const data = await res.json();
 
@@ -1808,6 +1830,37 @@ async function checkStatus() {
     } catch (e) { /* silent */ }
 }
 checkStatus();
+
+async function loadClassifyVersionDropdowns() {
+    try {
+        const [wafRes, gtRes] = await Promise.all([
+            fetch('/api/versions/waf'),
+            fetch('/api/versions/gt')
+        ]);
+        const wafData = await wafRes.json();
+        const gtData  = await gtRes.json();
+        const selWaf = document.getElementById('cls-waf-version');
+        const selGt  = document.getElementById('cls-gt-version');
+        if (!selWaf || !selGt) return;
+        selWaf.innerHTML = '<option value="">★ Default Baseline (WAF)</option>';
+        selGt.innerHTML  = '<option value="">★ Default Baseline (GT)</option>';
+        (wafData.versions || []).forEach(v => {
+            if (v.is_default) return;
+            const o = document.createElement('option');
+            o.value = v.id;
+            o.textContent = v.name + ' — ' + v.author + ' (' + v.created_at.slice(0, 10) + ')';
+            selWaf.appendChild(o);
+        });
+        (gtData.versions || []).forEach(v => {
+            if (v.is_default) return;
+            const o = document.createElement('option');
+            o.value = v.id;
+            o.textContent = v.name + ' — ' + v.author + ' (' + v.created_at.slice(0, 10) + ')';
+            selGt.appendChild(o);
+        });
+    } catch(e) { console.warn('Could not load classify version dropdowns:', e); }
+}
+loadClassifyVersionDropdowns();
 </script>
 <script>
 /* ── Global Search ──────────────────────────────────────── */

@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 from state import waf_store, ground_truth_store, chat_history
 from config import AI_MODEL, UPLOAD_FOLDER
 from database import get_db, save_classification, get_setting, set_setting
-from waf_core import parse_waf_file, parse_ground_truth, get_client, build_system_prompt
+from waf_core import parse_waf_file, parse_ground_truth, get_client, build_system_prompt, build_system_prompt_for_versions
 
 logger = logging.getLogger(__name__)
 
@@ -104,17 +104,31 @@ def classify():
     parent_feature = data.get("parent_feature", "")
     story_id = data.get("story_id", "")
     story_points = str(data.get("story_points", "")).strip()
+
+    # Optional version overrides — use a specific WAF/GT version for this call only
+    def _to_int_or_none(val):
+        try:
+            return int(val) if val else None
+        except (ValueError, TypeError):
+            return None
+
+    waf_version_id = _to_int_or_none(data.get("waf_version_id"))
+    gt_version_id  = _to_int_or_none(data.get("gt_version_id"))
+
     chat_history.append({"role": "user", "content": user_message})
     recent_history = chat_history[-20:]
 
-    print("Recent chat history:", recent_history)  # Debugging output
+    if waf_version_id or gt_version_id:
+        system = build_system_prompt_for_versions(waf_version_id, gt_version_id)
+    else:
+        system = build_system_prompt()
 
     try:
         client = get_client()
         response = client.messages.create(
             model=AI_MODEL,
             max_tokens=2000,
-            system=build_system_prompt(),
+            system=system,
             messages=recent_history
         )
 

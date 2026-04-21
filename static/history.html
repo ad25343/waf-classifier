@@ -807,6 +807,31 @@
                 <div class="import-status" id="import-status"></div>
             </div>
 
+            <!-- Classification Settings — version dropdowns -->
+            <div class="card" id="classification-settings-card">
+                <div class="card-title" style="margin-bottom:12px;">Classification Settings</div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+                    Choose which WAF Definition and Ground Truth version the AI uses for this analysis run.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--text-secondary);font-weight:500;margin-bottom:6px;">WAF Definition</label>
+                        <select id="sel-waf-version" style="width:100%;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:13px;cursor:pointer;">
+                            <option value="">★ Default Baseline</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--text-secondary);font-weight:500;margin-bottom:6px;">Ground Truth</label>
+                        <select id="sel-gt-version" style="width:100%;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:13px;cursor:pointer;">
+                            <option value="">★ Default Baseline</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top:8px;font-size:11px;color:var(--text-muted);">
+                    Manage versions in <a href="/settings" style="color:var(--accent);">Settings → Version Library</a>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-title">Expected File Format</div>
                 <table style="font-size:13px;">
@@ -1150,10 +1175,47 @@ function toggleTheme() {
     const icon = document.querySelector('.theme-icon');
     if (icon) icon.textContent = next === 'dark' ? '\u263E' : '\u2600';
 }
+async function loadVersionDropdowns() {
+    try {
+        const [wafRes, gtRes] = await Promise.all([
+            fetch('/api/versions/waf'),
+            fetch('/api/versions/gt')
+        ]);
+        const wafData = await wafRes.json();
+        const gtData  = await gtRes.json();
+
+        const selWaf = document.getElementById('sel-waf-version');
+        const selGt  = document.getElementById('sel-gt-version');
+        if (!selWaf || !selGt) return;
+
+        // Keep the default option, append non-default versions
+        selWaf.innerHTML = '<option value="">★ Default Baseline</option>';
+        selGt.innerHTML  = '<option value="">★ Default Baseline</option>';
+
+        (wafData.versions || []).forEach(v => {
+            if (v.is_default) return;
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.name + ' — ' + v.author + ' (' + v.created_at.slice(0, 10) + ')';
+            selWaf.appendChild(opt);
+        });
+        (gtData.versions || []).forEach(v => {
+            if (v.is_default) return;
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.name + ' — ' + v.author + ' (' + v.created_at.slice(0, 10) + ')';
+            selGt.appendChild(opt);
+        });
+    } catch(e) {
+        console.warn('Could not load version dropdowns:', e);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const theme = document.documentElement.getAttribute('data-theme') || 'dark';
     const icon = document.querySelector('.theme-icon');
     if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+    loadVersionDropdowns();
 
     // Resume any in-progress classification job (survives navigation away)
     const activeJob = localStorage.getItem('waf_active_job');
@@ -1856,6 +1918,12 @@ async function confirmMapping() {
     const formData = new FormData();
     formData.append('preview_id', _previewData.preview_id);
     formData.append('column_mappings', JSON.stringify(mappings));
+
+    // Append selected version IDs (empty string = use default/active)
+    const wafVerId = document.getElementById('sel-waf-version')?.value || '';
+    const gtVerId  = document.getElementById('sel-gt-version')?.value || '';
+    if (wafVerId) formData.append('waf_version_id', wafVerId);
+    if (gtVerId)  formData.append('gt_version_id',  gtVerId);
 
     try {
         const res = await fetch('/api/bulk-verify', { method: 'POST', body: formData });

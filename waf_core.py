@@ -205,13 +205,19 @@ def get_client():
     return _AnthropicBedrock(aws_region=aws_region)
 
 
-def build_ground_truth_section():
-    """Build the ground truth examples section for the system prompt."""
-    if not ground_truth_store["loaded"] or not ground_truth_store["examples"]:
-        return ""
+def build_ground_truth_section(examples=None, stats=None):
+    """Build the ground truth examples section for the system prompt.
 
-    examples = ground_truth_store["examples"]
-    stats = ground_truth_store["stats"]
+    If examples/stats not provided, reads from the global ground_truth_store.
+    """
+    if examples is None:
+        if not ground_truth_store["loaded"] or not ground_truth_store["examples"]:
+            return ""
+        examples = ground_truth_store["examples"]
+        stats = ground_truth_store["stats"]
+
+    if not examples:
+        return ""
 
     section = """
 
@@ -224,13 +230,13 @@ When classifying new stories, pattern-match against these examples for consisten
 
     # Show distribution
     section += "Category Distribution in Training Data:\n"
-    for cat, count in sorted(stats.items(), key=lambda x: -x[1]):
+    for cat, count in sorted((stats or {}).items(), key=lambda x: -x[1]):
         section += f"  - {cat}: {count} examples\n"
     section += "\n"
 
     # Show up to 50 examples (or all if fewer), grouped by category
     categories_shown = {}
-    max_per_category = max(3, 50 // max(len(stats), 1))
+    max_per_category = max(3, 50 // max(len(stats or {}), 1))
 
     for ex in examples:
         cat = ex.get("waf_category", "Unknown")
@@ -258,8 +264,19 @@ When classifying new stories, pattern-match against these examples for consisten
     return section
 
 
-def build_system_prompt():
-    """Build the system prompt with WAF definitions and ground truth context."""
+def build_system_prompt(waf_raw_text=None, waf_filename=None, waf_categories=None,
+                        gt_examples=None, gt_stats=None):
+    """Build the system prompt with WAF definitions and ground truth context.
+
+    All parameters are optional. When omitted the global waf_store /
+    ground_truth_store values are used (backward-compatible default).
+    Pass explicit values to override for a specific classification run
+    without mutating global state.
+    """
+    _waf_raw_text  = waf_raw_text  if waf_raw_text  is not None else waf_store["raw_text"]
+    _waf_filename  = waf_filename  if waf_filename  is not None else waf_store.get("filename", "")
+    _waf_categories = waf_categories if waf_categories is not None else waf_store["categories"]
+
     base = """You are a WAF (Work Alignment Framework) Classification Expert. Your job is to help agile teams correctly classify their JIRA stories/features into the right WAF category.
 
 You are precise, consistent, and always explain your reasoning by referencing the WAF definitions AND ground truth examples when available.
@@ -292,28 +309,28 @@ Format your response clearly with:
 - **Suggestion:** [optional — if the story text is vague, suggest how to improve it]
 """
 
-    if waf_store["raw_text"]:
+    if _waf_raw_text:
         base += f"""
 
 --- WAF CATEGORY DEFINITIONS ---
-Source file: {waf_store['filename']}
+Source file: {_waf_filename}
 
-{waf_store['raw_text']}
+{_waf_raw_text}
 
 --- END OF WAF DEFINITIONS ---
 
 Use ONLY the categories defined above. Do not invent new categories. If a story doesn't fit any category well, say so and explain why.
 """
-        if waf_store["categories"]:
-            base += f"\nAvailable categories: {', '.join(str(c) for c in waf_store['categories'])}\n"
+        if _waf_categories:
+            base += f"\nAvailable categories: {', '.join(str(c) for c in _waf_categories)}\n"
     else:
         base += """
 
 \u26a0\ufe0f No WAF definitions have been uploaded yet. Ask the user to upload their WAF category definitions file so you can provide accurate classifications.
 """
 
-    # Add ground truth section
-    gt_section = build_ground_truth_section()
+    # Add ground truth section (uses explicit examples/stats when provided)
+    gt_section = build_ground_truth_section(examples=gt_examples, stats=gt_stats)
     if gt_section:
         base += gt_section
     else:
@@ -323,6 +340,60 @@ Use ONLY the categories defined above. Do not invent new categories. If a story 
 """
 
     return base
+
+
+def build_system_prompt_for_versions(waf_version_id=None, gt_version_id=None):
+    """Build a system prompt using specific named version IDs.
+
+    Loads WAF definitions and/or ground truth from their saved version files
+    without touching global state. Falls back to global store for any version
+    ID that is None or cannot be resolved.
+    """
+    import sqlite3 as _sqlite3
+    from config import DB_PATH as _DB_PATH
+
+    waf_raw_text = waf_filename = waf_categories = gt_examples = gt_stats = None
+
+    if waf_version_id:
+        try:
+            conn = _sqlite3.connect(_DB_PATH)
+            conn.row_factory = _sqlite3.Row
+            row = conn.execute(
+                "SELECT * FROM waf_versions WHERE id=?", (waf_version_id,)
+            ).fetchone()
+            conn.close()
+            if row and os.path.exists(row["filepath"]):
+                text, cats, _df = parse_waf_file(row["filepath"], row["filename"])
+                waf_raw_text   = text
+                waf_filename   = row["name"]   # show human name in the prompt
+                waf_categories = cats
+                print(f"[VERSIONS] Using WAF version '{row['name']}' (id={waf_version_id})")
+        except Exception as e:
+            print(f"[VERSIONS] Could not load WAF version {waf_version_id}: {e} — falling back to active store")
+
+    if gt_version_id:
+        try:
+            conn = _sqlite3.connect(_DB_PATH)
+            conn.row_factory = _sqlite3.Row
+            row = conn.execute(
+                "SELECT * FROM gt_versions WHERE id=?", (gt_version_id,)
+            ).fetchone()
+            conn.close()
+            if row and os.path.exists(row["filepath"]):
+                examples, stats, _ = parse_ground_truth(row["filepath"], row["filename"])
+                gt_examples = examples
+                gt_stats    = stats
+                print(f"[VERSIONS] Using GT version '{row['name']}' (id={gt_version_id})")
+        except Exception as e:
+            print(f"[VERSIONS] Could not load GT version {gt_version_id}: {e} — falling back to active store")
+
+    return build_system_prompt(
+        waf_raw_text=waf_raw_text,
+        waf_filename=waf_filename,
+        waf_categories=waf_categories,
+        gt_examples=gt_examples,
+        gt_stats=gt_stats,
+    )
 
 
 def _check_rate_limit(ip: str) -> bool:

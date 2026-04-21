@@ -406,16 +406,16 @@
             </div>
         </div>
 
-        <!-- Baselines -->
-        <div class="scard">
-            <div class="scard-icon" style="background:rgba(74,222,128,0.15);">💾</div>
-            <h3>Baselines</h3>
-            <p class="desc">Save snapshots and restore anytime. A default baseline is always available.</p>
-            <div class="scard-status"><span class="dot green"></span><span id="bl-status">Loading...</span></div>
+        <!-- Version Library -->
+        <div class="scard" style="grid-column:span 2;">
+            <div class="scard-icon" style="background:rgba(74,222,128,0.15);">📚</div>
+            <h3>Version Library</h3>
+            <p class="desc">Save named snapshots of WAF Definitions and Ground Truth. Pick any version per analysis run — without changing what's actively loaded.</p>
+            <div class="scard-status"><span class="dot green"></span><span id="ver-status">Loading...</span></div>
             <div class="scard-actions">
-                <button class="btn btn-primary" onclick="saveBaseline()">Save Snapshot</button>
-                <button class="btn btn-outline" onclick="togglePanel('bl')">View All</button>
-                <button class="btn btn-outline" onclick="restoreBaseline('default')">Restore Default</button>
+                <button class="btn btn-primary" onclick="showSaveVerModal('waf')">Save WAF Version</button>
+                <button class="btn btn-primary" style="background:var(--purple);border-color:var(--purple);" onclick="showSaveVerModal('gt')">Save GT Version</button>
+                <button class="btn btn-outline" onclick="togglePanel('ver')">View All Versions</button>
             </div>
         </div>
 
@@ -452,14 +452,21 @@
             </div>
         </div>
 
-        <!-- Expand: Baselines -->
-        <div class="expand-panel" id="panel-bl">
-            <div class="panel-header"><h3>All Baselines</h3><button class="expand-close" onclick="closePanel('bl')">&times;</button></div>
-            <div class="list-search">
-                <input type="text" id="baseline-search" placeholder="Search baselines..." oninput="filterBaselineList()">
-                <button class="clear-btn" onclick="document.getElementById('baseline-search').value='';filterBaselineList();">&times;</button>
+        <!-- Expand: Version Library -->
+        <div class="expand-panel" id="panel-ver" style="grid-column:span 2;">
+            <div class="panel-header"><h3>Version Library</h3><button class="expand-close" onclick="closePanel('ver')">&times;</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                <!-- WAF Versions -->
+                <div>
+                    <h4 style="font-size:14px;color:var(--accent);margin-bottom:12px;font-weight:600;">WAF Definition Versions</h4>
+                    <div id="waf-ver-list"><div style="color:var(--text-muted);font-size:13px;">Loading…</div></div>
+                </div>
+                <!-- GT Versions -->
+                <div>
+                    <h4 style="font-size:14px;color:var(--purple);margin-bottom:12px;font-weight:600;">Ground Truth Versions</h4>
+                    <div id="gt-ver-list"><div style="color:var(--text-muted);font-size:13px;">Loading…</div></div>
+                </div>
             </div>
-            <div id="baseline-list"></div>
         </div>
 
         <!-- Expand: Config -->
@@ -662,9 +669,174 @@ function filterBaselineList() {
     });
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGTModal();if(_openPanel)closePanel(_openPanel);}});
-loadWafDefs();loadGT();loadBaselines();loadSettings();
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGTModal();closeSaveVerModal();if(_openPanel)closePanel(_openPanel);}});
+loadWafDefs();loadGT();loadVersions();loadSettings();
 </script>
+
+<!-- ── Version Library JS ─────────────────────────────────────────── -->
+<script>
+let _verType = 'waf';  // which type the save modal is for
+
+function showSaveVerModal(type) {
+    _verType = type;
+    const title = document.getElementById('save-ver-title');
+    if (title) title.textContent = type === 'waf' ? 'Save WAF Definition Version' : 'Save Ground Truth Version';
+    ['ver-name','ver-author','ver-notes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('save-ver-modal').style.display = 'flex';
+    document.getElementById('ver-name').focus();
+}
+function closeSaveVerModal() {
+    document.getElementById('save-ver-modal').style.display = 'none';
+}
+
+async function saveVersion() {
+    const name   = document.getElementById('ver-name').value.trim();
+    const author = document.getElementById('ver-author').value.trim();
+    const notes  = document.getElementById('ver-notes').value.trim();
+    if (!name)   { showToast('Version name is required', 'error'); return; }
+    if (!author) { showToast('Author name is required', 'error'); return; }
+    try {
+        const r = await fetch('/api/versions/' + _verType, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({name, author, notes})
+        });
+        const d = await r.json();
+        if (d.success) {
+            closeSaveVerModal();
+            loadVersions();
+            showToast('Version "' + d.name + '" saved (' + d.row_count + ' rows)', 'success');
+        } else {
+            showToast(d.error || 'Save failed', 'error');
+        }
+    } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+async function activateVersion(type, id) {
+    try {
+        const r = await fetch('/api/versions/' + type + '/' + id + '/activate', {method:'POST'});
+        const d = await r.json();
+        if (d.success) {
+            loadVersions();
+            if (type === 'waf') loadWafDefs();
+            else loadGT();
+            showToast('Activated "' + d.name + '"', 'success');
+        } else {
+            showToast(d.error || 'Activate failed', 'error');
+        }
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteVersion(type, id, name) {
+    if (!confirm('Delete version "' + name + '"? This cannot be undone.')) return;
+    try {
+        const r = await fetch('/api/versions/' + type + '/' + id, {method:'DELETE'});
+        const d = await r.json();
+        if (d.success) { loadVersions(); showToast('Deleted', 'success'); }
+        else showToast(d.error || 'Delete failed', 'error');
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function previewVersion(type, id) {
+    const rowId = 'ver-preview-' + type + '-' + id;
+    const existing = document.getElementById(rowId);
+    if (existing) { existing.remove(); return; }  // toggle off
+    try {
+        const r = await fetch('/api/versions/' + type + '/' + id + '/preview');
+        const d = await r.json();
+        if (d.error) { showToast(d.error, 'error'); return; }
+        // Find the row and insert preview below it
+        const row = document.getElementById('ver-row-' + type + '-' + id);
+        if (!row) return;
+        const preview = document.createElement('div');
+        preview.id = rowId;
+        preview.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:6px;font-size:12px;';
+        const meta = '<div style="color:var(--text-muted);margin-bottom:8px;">'
+            + esc(d.name) + ' · by ' + esc(d.author)
+            + ' · ' + d.created_at.slice(0, 16).replace('T', ' ')
+            + (d.notes ? ' · <em>' + esc(d.notes) + '</em>' : '')
+            + ' · ' + d.total_rows + ' rows</div>';
+        const cols = d.columns.slice(0, 5);  // show max 5 cols
+        const thead = '<tr>' + cols.map(c => '<th style="padding:3px 8px;text-align:left;color:var(--text-muted);">' + esc(c) + '</th>').join('') + '</tr>';
+        const tbody = d.rows.map(row => '<tr>' + cols.map(c => '<td style="padding:3px 8px;border-top:1px solid var(--border);">' + esc(row[c] || '') + '</td>').join('') + '</tr>').join('');
+        preview.innerHTML = meta + '<div style="overflow-x:auto;"><table style="width:100%;">' + thead + tbody + '</table></div>';
+        row.after(preview);
+    } catch(e) { showToast('Preview failed: ' + e.message, 'error'); }
+}
+
+function _renderVerList(containerId, versions, type, accentColor) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!versions || versions.length === 0) {
+        el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No versions saved yet.</div>';
+        return;
+    }
+    el.innerHTML = versions.map(v => {
+        const isDefault = v.is_default;
+        const date = v.created_at.slice(0, 10);
+        return `<div id="ver-row-${type}-${v.id}" style="border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;background:var(--bg-secondary);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span style="font-weight:600;color:var(--text-primary);font-size:13px;">${esc(v.name)}</span>
+                ${isDefault ? '<span style="font-size:10px;background:'+accentColor+';color:#fff;padding:1px 7px;border-radius:10px;font-weight:600;">DEFAULT</span>' : ''}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+                by ${esc(v.author)} · ${date} · ${v.row_count} rows${v.notes ? ' · <em>' + esc(v.notes) + '</em>' : ''}
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${!isDefault ? `<button class="btn btn-primary btn-sm" onclick="activateVersion('${type}',${v.id})">Activate</button>` : '<span style="font-size:12px;color:var(--success);padding:4px 0;">✓ Active default</span>'}
+                <button class="btn btn-outline btn-sm" onclick="previewVersion('${type}',${v.id})">Preview ▾</button>
+                ${!isDefault ? `<button class="btn btn-danger btn-sm" onclick="deleteVersion('${type}',${v.id},'${esc(v.name).replace(/'/g,"\\'")}')">Delete</button>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function loadVersions() {
+    try {
+        const [wafRes, gtRes] = await Promise.all([
+            fetch('/api/versions/waf'),
+            fetch('/api/versions/gt')
+        ]);
+        const wafData = await wafRes.json();
+        const gtData  = await gtRes.json();
+        const wafVers = wafData.versions || [];
+        const gtVers  = gtData.versions  || [];
+
+        _renderVerList('waf-ver-list', wafVers, 'waf', 'var(--accent)');
+        _renderVerList('gt-ver-list',  gtVers,  'gt',  'var(--purple)');
+
+        const st = document.getElementById('ver-status');
+        if (st) st.textContent = wafVers.length + ' WAF · ' + gtVers.length + ' GT versions';
+    } catch(e) { console.error(e); }
+}
+</script>
+
+<!-- Save Version Modal -->
+<div id="save-ver-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:14px;padding:28px;width:460px;max-width:92vw;">
+        <h3 id="save-ver-title" style="margin-bottom:18px;font-size:17px;">Save Version</h3>
+        <div class="form-group" style="margin-bottom:12px;">
+            <label for="ver-name">Version Name <span style="color:var(--error);">*</span></label>
+            <input type="text" id="ver-name" placeholder="e.g. Q2 2026 SOX Audit Release" style="width:100%;">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+            <label for="ver-author">Author <span style="color:var(--error);">*</span></label>
+            <input type="text" id="ver-author" placeholder="Your name" style="width:100%;">
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+            <label for="ver-notes">Notes <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+            <input type="text" id="ver-notes" placeholder="e.g. Added 3 new KTLO sub-categories per audit findings" style="width:100%;">
+        </div>
+        <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary" onclick="saveVersion()">Save Version</button>
+            <button class="btn btn-outline" onclick="closeSaveVerModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
 
 <script>
 async function checkStatus() {

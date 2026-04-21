@@ -154,6 +154,46 @@ def init_db():
         )
     """)
 
+    # WAF Definition Versions — named, auditable snapshots
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS waf_versions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            author TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            filename TEXT NOT NULL,
+            filepath TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            is_default INTEGER DEFAULT 0,
+            row_count INTEGER DEFAULT 0
+        )
+    """)
+
+    # Ground Truth Versions — named, auditable snapshots
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS gt_versions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            author TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            filename TEXT NOT NULL,
+            filepath TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            is_default INTEGER DEFAULT 0,
+            row_count INTEGER DEFAULT 0
+        )
+    """)
+
+    # Migration: track which versions were used for each upload batch
+    try:
+        conn.execute("ALTER TABLE upload_history ADD COLUMN waf_version_id INTEGER DEFAULT NULL")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE upload_history ADD COLUMN gt_version_id INTEGER DEFAULT NULL")
+    except sqlite3.OperationalError:
+        pass
+
     try:
         conn.execute("ALTER TABLE story_quality_scores ADD COLUMN run_id TEXT DEFAULT ''")
     except sqlite3.OperationalError:
