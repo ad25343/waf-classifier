@@ -275,6 +275,33 @@ def get_waf_definitions():
     return jsonify({"definitions": defs, "loaded": True})
 
 
+@settings_bp.route("/api/waf-definitions", methods=["PUT"])
+def update_waf_definitions():
+    """Apply inline edits to WAF definitions (updates in-memory store)."""
+    data = request.get_json(force=True)
+    defs = data.get("definitions", [])
+    if not defs:
+        return jsonify({"error": "No definitions provided"}), 400
+
+    records = []
+    for d in defs:
+        records.append({
+            "WAF Category":                  d.get("category", ""),
+            "WAF Color":                     d.get("color", ""),
+            "Run/Change":                    d.get("run_change", ""),
+            "What This Work Is":             d.get("description", ""),
+            "How to Decide (Tag Here If...)": d.get("decision_rule", ""),
+            "Representative Examples":       d.get("examples", ""),
+        })
+
+    df = pd.DataFrame(records)
+    waf_store["definitions"] = df
+    waf_store["categories"]  = [c for c in df["WAF Category"].dropna().tolist() if c]
+    waf_store["raw_text"]    = df.to_csv(index=False)
+    waf_store["filename"]    = waf_store.get("filename", "inline-edit")
+    return jsonify({"success": True, "count": len(records)})
+
+
 # ── Version Library ────────────────────────────────────────────────────
 
 def _row_count_for_file(filepath):
