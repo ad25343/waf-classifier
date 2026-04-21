@@ -2,6 +2,49 @@
 
 ---
 
+## v3.5.0 — April 2026
+
+Version Library, WAF Definition inline editing, and UX clickability fixes.
+
+### New Features
+
+- **Version Library (Settings)** — Save named snapshots of WAF Definitions and Ground Truth. Each version stores a Name, Author, and Notes field. Versions are listed in a two-column panel (WAF | GT) and can be previewed, activated, or deleted independently. The Default Baseline is auto-created on first launch and is protected from deletion.
+- **Per-run version selection** — Classify page and Analytics Upload tab both show "Using:" dropdowns for WAF Version and GT Version. Pick any saved version per run without changing what's globally loaded. Omit to use the active/default. Version IDs are stored in `upload_history` for full traceability.
+- **WAF Definitions inline editing** — The WAF Definitions table in Settings is now fully editable: Category (text input), Color (dropdown), Run/Change (dropdown), Description (resizable textarea). Editing any cell shows an amber **Unsaved Changes** banner with three actions:
+  - **Apply Changes** — writes edits to the in-memory store immediately (takes effect on next classification)
+  - **Save as New Version** — applies edits then opens the Version Library modal pre-named with today's date (e.g. "WAF Edit — Apr 21")
+  - **Discard** — reloads definitions from server, rolling back all changes
+- **Ground Truth save-as-version nudge** — After saving any inline GT row, a green banner appears offering "Save as New Version". Clicking opens the Version Library modal pre-named "GT Edit — Apr 21". Dismissible without saving.
+- **Story detail modal on Teams and Lineage pages** — Click any story row or story item to open a full-detail modal (title, description, WAF category, color, confidence, status, epic/feature/team, IDs). Dismiss with the × button, click outside, or press Escape.
+- **KPI card click-to-filter on Teams and Lineage pages** — Clickable KPI cards (styled with hover highlight) filter the story list: Total Stories → show all, Mismatch Rate / Mismatches → show mismatched stories only, WAF Aligned → show matched stories.
+
+### Bug Fixes
+
+- **WAF Definitions description truncation** — Description column had `white-space:nowrap; overflow:hidden; text-overflow:ellipsis` which silently cut off long descriptions and made text unselectable. Now wraps naturally with `word-break:break-word` and is fully selectable.
+- **Story rows not clickable after filter/sort on Teams page** — `renderStoryRows` and `renderEpicStoryRows` re-render the tbody on every sort/filter call. onclick attributes referencing stale indices broke after re-render. Fixed using `window._renderedStories[idx]` / `window._renderedEpicStories[idx]` pattern — onclick index always maps to the currently-rendered array.
+- **Story items not clickable after filter on Lineage page** — `.story-item` divs use DOM show/hide for the mismatch filter, but onclick was missing entirely. Fixed with `window._linStoriesFlat[flatIdx]` pattern — the flat index is assigned at render time and survives show/hide.
+
+### API Changes
+
+- `PUT /api/waf-definitions` — Apply inline edits to WAF definitions (in-memory only, instant effect)
+- `GET /api/versions/waf` — List saved WAF definition versions
+- `POST /api/versions/waf` — Save current WAF definitions as a named version
+- `DELETE /api/versions/waf/<id>` — Delete a WAF version (protected for Default Baseline)
+- `GET /api/versions/waf/<id>/preview` — Preview version content without activating
+- `POST /api/versions/waf/<id>/activate` — Activate a WAF version as the global default
+- Same 5 endpoints for GT: `/api/versions/gt` and `/api/versions/gt/<id>/*`
+- `POST /api/classify` — now accepts optional `waf_version_id` and `gt_version_id`
+- `POST /api/bulk-verify` — now accepts optional `waf_version_id` and `gt_version_id` form fields
+
+### Database
+
+- New table `waf_versions` — `id`, `name`, `author`, `notes`, `filename`, `filepath`, `created_at`, `is_default`, `row_count`
+- New table `gt_versions` — same schema as `waf_versions`
+- New columns on `upload_history`: `waf_version_id INTEGER DEFAULT NULL`, `gt_version_id INTEGER DEFAULT NULL`
+- Schema migration runs automatically on startup — no action needed for existing databases
+
+---
+
 ## v3.4.0 — April 2026
 
 Story Quality scoring, iterative rewrite chat, and data source unification.

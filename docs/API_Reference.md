@@ -63,6 +63,31 @@ Returns structured WAF framework definitions for the reference page.
 }
 ```
 
+### PUT /api/waf-definitions
+
+Apply inline edits to WAF definitions. Updates the in-memory store immediately — no file write. Changes take effect on the next classification.
+
+**Request:**
+```json
+{
+  "definitions": [
+    {
+      "category": "KTLO (Keep the Lights On)",
+      "color": "GRAY",
+      "run_change": "Run",
+      "description": "Non-discretionary, recurring work...",
+      "decision_rule": "Required to meet SLAs...",
+      "examples": "Emergency break-fix; Prod outages; ..."
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{ "success": true, "count": 8 }
+```
+
 ---
 
 ## Search
@@ -122,11 +147,24 @@ Classify a single story via chat.
   "epic": "Platform Reliability",
   "parent_feature": "Database Health",
   "story_id": "PROJ-123",
-  "story_points": "5"
+  "story_points": "5",
+  "waf_version_id": 3,
+  "gt_version_id": 2
 }
 ```
 
 All context fields (`epic`, `parent_feature`, `story_id`, `story_points`) are optional. When provided, they are saved alongside the AI classification in the database.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `message` | string | **Required.** The story text or classify prompt. |
+| `session_id` | string | Optional. Conversation session identifier. |
+| `epic` | string | Optional. Epic name for context. |
+| `parent_feature` | string | Optional. Parent feature name for context. |
+| `story_id` | string | Optional. Issue/ticket ID. |
+| `story_points` | string | Optional. Story point estimate. |
+| `waf_version_id` | int | Optional. Override the active WAF version for this call only. Omit to use the globally active version. |
+| `gt_version_id` | int | Optional. Override the active GT version for this call only. Omit to use the globally active version. |
 
 **Response:**
 ```json
@@ -335,7 +373,9 @@ List all previous upload batches with saved status.
       "imported_count": 120,
       "uploaded_at": "2026-03-01T10:00:00",
       "saved_count": 100,
-      "has_results": true
+      "has_results": true,
+      "waf_version_id": 3,
+      "gt_version_id": 2
     }
   ]
 }
@@ -343,6 +383,8 @@ List all previous upload batches with saved status.
 
 `saved_count` — actual stories saved to the classifications table (reliable saved/unsaved indicator).
 `has_results` — `true` if AI results are stored and can be recovered without re-running the AI.
+`waf_version_id` — nullable int. The WAF version used when this upload was classified, if overridden.
+`gt_version_id` — nullable int. The GT version used when this upload was classified, if overridden.
 
 ### POST /api/history/uploads/{upload_id}/reload
 
@@ -402,7 +444,7 @@ Upload a file and return column info for field mapping without starting AI class
 
 Upload a file and AI-classify every story. All uploads process asynchronously.
 
-**Request:** `multipart/form-data` with `file` field (CSV or XLSX). Optionally include `preview_id` and `column_mappings` (JSON) from the preview step.
+**Request:** `multipart/form-data` with `file` field (CSV or XLSX). Optionally include `preview_id` and `column_mappings` (JSON) from the preview step. Also accepts optional integer fields `waf_version_id` and `gt_version_id` to override the active WAF/GT version for this job only. Version IDs are stored in `upload_history` for traceability.
 
 **Rate limit:** Default 5 requests per IP per minute. Returns HTTP 429 if exceeded.
 
@@ -719,6 +761,124 @@ Restore WAF definitions and ground truth from a baseline.
 **Request:**
 ```json
 { "timestamp": "default" }
+```
+
+---
+
+## Version Library
+
+Named snapshots of WAF Definitions and Ground Truth. Multiple versions can be saved independently and activated per classification run without changing what's globally loaded.
+
+### GET /api/versions/waf
+
+List all saved WAF definition versions.
+
+**Response:**
+```json
+{
+  "versions": [
+    {
+      "id": 1,
+      "name": "Default Baseline",
+      "author": "System",
+      "notes": "Auto-created on first launch",
+      "filename": "waf_Default_Baseline.csv",
+      "created_at": "2026-04-01T10:00:00",
+      "is_default": true,
+      "row_count": 8
+    }
+  ]
+}
+```
+
+`is_default: true` — the Default Baseline; cannot be deleted.
+
+### POST /api/versions/waf
+
+Save the current active WAF definitions as a named version.
+
+**Request:**
+```json
+{
+  "name": "WAF Edit — Apr 21",
+  "author": "Jane Smith",
+  "notes": "Added clarification to KTLO description"
+}
+```
+
+**Response:**
+```json
+{ "success": true, "id": 3, "name": "WAF Edit — Apr 21" }
+```
+
+### DELETE /api/versions/waf/{id}
+
+Delete a WAF version. Returns 400 if the version is the Default Baseline (`is_default: true`).
+
+**Response:**
+```json
+{ "success": true }
+```
+
+### GET /api/versions/waf/{id}/preview
+
+Preview the content of a WAF version without activating it.
+
+**Response:**
+```json
+{
+  "id": 3,
+  "name": "WAF Edit — Apr 21",
+  "definitions": [
+    { "category": "KTLO (Keep the Lights On)", "color": "GRAY", "run_change": "Run", "description": "..." }
+  ]
+}
+```
+
+### POST /api/versions/waf/{id}/activate
+
+Load a WAF version into the active in-memory store. All subsequent classifications use this version until changed.
+
+**Response:**
+```json
+{ "success": true, "name": "WAF Edit — Apr 21", "categories": 8 }
+```
+
+### GET /api/versions/gt
+
+List all saved Ground Truth versions. Same response shape as `GET /api/versions/waf`.
+
+### POST /api/versions/gt
+
+Save the current active Ground Truth as a named version. Same request shape as `POST /api/versions/waf`.
+
+### DELETE /api/versions/gt/{id}
+
+Delete a GT version. Returns 400 for the Default Baseline.
+
+### GET /api/versions/gt/{id}/preview
+
+Preview GT version content.
+
+**Response:**
+```json
+{
+  "id": 2,
+  "name": "GT Edit — Apr 21",
+  "examples": [
+    { "title": "Fix prod DB", "category": "KTLO", "color": "GRAY", "run_change": "Run", "description": "..." }
+  ],
+  "count": 22
+}
+```
+
+### POST /api/versions/gt/{id}/activate
+
+Load a GT version into the active store. All subsequent classifications use this version.
+
+**Response:**
+```json
+{ "success": true, "name": "GT Edit — Apr 21", "count": 22 }
 ```
 
 ---

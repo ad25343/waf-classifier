@@ -16,7 +16,8 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 | **Epic Lineage** | Health scores, mismatch flags, story tree drill-down with collapsible feature sections and sort controls |
 | **Global Search** | FTS5 full-text search across all classifications with context-rich results (breadcrumb, badges, upload source) |
 | **WAF Reference** | Browse all 8 WAF categories — definitions, decision rules, color codes, and examples |
-| **Settings** | Manage WAF definitions, ground truth (view/edit/add/delete), baseline snapshots (save/restore), and batch size configuration |
+| **Version Library** | Save named snapshots of WAF Definitions and Ground Truth. Pick any version per classification run. Version IDs recorded in upload history for full traceability. |
+| **Settings** | Manage WAF definitions (inline editable), ground truth (inline edit/add/delete), Version Library (named WAF + GT snapshots), and batch size configuration |
 | **Dark/Light Mode** | Toggle in the nav bar; preference saved in localStorage |
 | **Story/Feature/Epic IDs** | Optional ID fields imported from CSV/Excel, displayed in Teams and Lineage views |
 | **Ground Truth Loop** | Approve correct mismatch classifications to continuously improve AI accuracy |
@@ -77,7 +78,7 @@ The app auto-loads WAF definitions and ground truth from `test-data/` on startup
 | `/lineage` | Epic Lineage | Epic health scores, WAF breakdowns, and story tree |
 | `/dashboard` | Dashboard | Real-time KPI cards and distribution charts |
 | `/waf-reference` | WAF Reference | Browse all 8 WAF categories with definitions and decision rules |
-| `/settings` | Settings | WAF definitions, ground truth, baselines, and processing configuration |
+| `/settings` | Settings | WAF definitions (inline editable), ground truth, Version Library, and processing configuration |
 
 ## Analytics Workflow
 
@@ -90,6 +91,8 @@ The app auto-loads WAF definitions and ground truth from `test-data/` on startup
 7. **History** — View, reload, or delete previous uploads.
 
 Each upload gets a unique ID. Use the Data Source selector to filter analytics to a specific upload or view all uploads combined.
+
+The **Classification Settings** card on the Upload tab lets you select a specific WAF Version and GT Version for that run. Both default to the active baseline. Version IDs are stored with the upload record for traceability.
 
 ## Teams Workflow
 
@@ -152,6 +155,8 @@ waf-classifier/
 ├── requirements.txt                # Python dependencies
 ├── waf_history.db                  # SQLite DB (auto-created)
 ├── baselines/                      # Saved baseline snapshots (auto-created)
+│   ├── waf/                        # Named WAF definition versions
+│   └── gt/                         # Named Ground Truth versions
 ├── static/
 │   ├── home.html                   # Home landing page
 │   ├── index.html                  # Classifier chat UI

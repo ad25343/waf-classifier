@@ -148,6 +148,30 @@ The Story Quality tab in Analytics scores your uploaded stories against the Defi
 
 ---
 
+## Manage WAF Definitions and Ground Truth Versions
+
+The **Version Library** in Settings lets you save named snapshots of your WAF Definitions and Ground Truth so you can experiment without losing your calibrated baselines.
+
+**Saving a version:**
+1. Go to **Settings** and click **Save WAF Version** or **Save GT Version**
+2. Enter a **Version Name** (e.g. `Q2 Calibration`), your **Author** name, and optional **Notes**
+3. Click **Save** — the version is stored in `baselines/waf/` or `baselines/gt/`
+
+**Editing WAF Definitions inline:**
+1. Click **View / Edit** on the WAF Definitions card
+2. Edit any cell directly — Category (text), Color (dropdown), Run/Change (dropdown), Description (textarea)
+3. An amber **Unsaved Changes** banner appears on first edit:
+   - **Apply Changes** — updates the in-memory store immediately; takes effect on next classification
+   - **Save as New Version** — applies edits and opens the Version Library modal (pre-named with today's date)
+   - **Discard** — reloads from server, rolling back all changes
+
+**After editing Ground Truth rows** a green nudge banner appears offering "Save as New Version" — click it to snapshot the current GT state before the changes get buried.
+
+**Selecting a version per run:**
+- On the **Classify** page: "Using:" dropdowns above the chat box let you pick a WAF Version and GT Version for that session
+- On the **Analytics Upload** tab: "Classification Settings" card has the same dropdowns — pick a version before clicking "Continue to AI Classification"
+- Both default to the active/Default Baseline; omit to use whatever is globally loaded
+
 ## Dark / Light Mode
 
 Click the **moon/sun icon** in the top-right nav bar to toggle between dark and light mode. Your preference is saved across page navigation and browser sessions.
@@ -182,7 +206,7 @@ Re-generate or modify test datasets using `test-data/generate_test_data.py`.
 - **Include ID columns.** Add `Issue key`, `Epic Link`, or `Feature ID` columns to your CSV/Excel file to track story IDs through the app.
 - **Select a specific upload.** Use the Data Source dropdown on Teams and Lineage pages to scope all views to a single upload batch. Dates shown in the dropdown (e.g. 3/27/2026) help distinguish multiple uploads of the same file.
 - **Use the Teams page for portfolio reviews.** Filter to a specific upload, then drill into each team's story table to review classifications before sharing.
-- **Save baselines.** Go to **Settings > Baselines** to snapshot your WAF definitions and ground truth. Restore anytime.
+- **Save versions.** After calibrating WAF Definitions or Ground Truth, use **Settings > Save WAF Version / Save GT Version** to snapshot the state. You can restore any version by activating it, or pick a specific version per upload run without changing the global active.
 
 ---
 
