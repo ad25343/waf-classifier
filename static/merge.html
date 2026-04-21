@@ -1412,7 +1412,7 @@ async function sendToClassifier() {
             sessionStorage.setItem('waf_pending_preview', JSON.stringify(data));
             const excluded = _rejectedIds.size > 0 ? ' (' + _rejectedIds.size + ' rejected rows excluded)' : '';
             status.textContent = 'Ready! Redirecting to classifier (' + data.total_rows + ' rows' + excluded + ')…';
-            setTimeout(() => { window.location.href = '/history'; }, 600);
+            setTimeout(() => { window.location.href=(window.APP_ROOT||'')+'/history'; }, 600);
         } else {
             status.style.color = 'var(--error)';
             status.textContent = data.error || 'Failed to prepare file.';
@@ -1489,7 +1489,7 @@ async function sendToClassifier() {
             if (r.epic_id || r.epic) crumbs.push(_esc((r.epic_id ? r.epic_id + ' ' : '') + (r.epic||'')).trim());
             if (r.feature_id || r.feature) crumbs.push(_esc((r.feature_id ? r.feature_id + ' ' : '') + (r.feature||'')).trim());
             if (r.story_id) crumbs.push(_esc(r.story_id));
-            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=\'/history\';">';
+            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+\'/history\';">';
             html += '<div class="search-result-title">' + _highlight(_esc(r.title), q) + '</div>';
             if (crumbs.length) html += '<div class="search-result-breadcrumb">' + crumbs.join('<span> \u203a </span>') + '</div>';
             html += '<div class="search-result-badges">';

@@ -49,6 +49,11 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 BASELINE_DIR = os.path.join(os.path.dirname(__file__), "baselines")
 os.makedirs(BASELINE_DIR, exist_ok=True)
 
+# ── Application Root (URL prefix for reverse-proxy deployments) ───────
+# Set APPLICATION_ROOT=/h591-wafui in .env to serve the app under a sub-path.
+# Leave unset (or empty) for root-path deployment (default, local dev).
+APPLICATION_ROOT = os.environ.get("APPLICATION_ROOT", "").rstrip("/")
+
 # ── Rate Limiting ─────────────────────────────────────────────────────
 MAX_BULK_JOBS_PER_MINUTE = 5  # Default; overridden by settings
 

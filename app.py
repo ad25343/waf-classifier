@@ -11,15 +11,39 @@ import shutil
 from flask import Flask, g
 
 # ── Foundation modules ────────────────────────────────────────────
-from config import AI_BACKEND, AI_MODEL, DB_PATH, BASELINE_DIR
+from config import AI_BACKEND, AI_MODEL, DB_PATH, BASELINE_DIR, APPLICATION_ROOT
 from database import init_db
 from state import waf_store, ground_truth_store
 from waf_core import parse_waf_file, parse_ground_truth
+
+# ── WSGI prefix middleware ────────────────────────────────────────
+class PrefixMiddleware:
+    """Strip APPLICATION_ROOT from PATH_INFO so Flask routing works normally.
+    Also sets SCRIPT_NAME so url_for() generates prefixed URLs.
+    Activated only when APPLICATION_ROOT is non-empty."""
+    def __init__(self, wsgi_app, prefix=""):
+        self.app = wsgi_app
+        self.prefix = prefix.rstrip("/")
+
+    def __call__(self, environ, start_response):
+        path = environ.get("PATH_INFO", "")
+        if self.prefix:
+            if path.startswith(self.prefix + "/") or path == self.prefix:
+                environ["PATH_INFO"] = path[len(self.prefix):] or "/"
+                environ["SCRIPT_NAME"] = self.prefix
+            else:
+                # Request is outside our prefix — return 404
+                start_response("404 Not Found", [("Content-Type", "text/plain")])
+                return [b"Not Found"]
+        return self.app(environ, start_response)
+
 
 # ── Flask app ─────────────────────────────────────────────────────
 app = Flask(__name__, static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max upload
 app.secret_key = os.urandom(24)
+if APPLICATION_ROOT:
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=APPLICATION_ROOT)
 
 
 @app.teardown_appcontext
@@ -166,10 +190,11 @@ def auto_load_sample_data():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
+    root = APPLICATION_ROOT or ""
     print(f"\n{'='*60}")
     print(f"  WAF Category Classifier")
-    print(f"  Running at: http://localhost:{port}")
-    print(f"  Analytics:  http://localhost:{port}/history")
+    print(f"  Running at: http://localhost:{port}{root}/")
+    print(f"  Analytics:  http://localhost:{port}{root}/history")
     if AI_BACKEND == "anthropic":
         print(f"  AI backend: Anthropic API (key configured)")
     else:
