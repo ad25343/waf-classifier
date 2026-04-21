@@ -18,6 +18,11 @@ Version Library, WAF Definition inline editing, and UX clickability fixes.
 - **Story detail modal on Teams and Lineage pages** — Click any story row or story item to open a full-detail modal (title, description, WAF category, color, confidence, status, epic/feature/team, IDs). Dismiss with the × button, click outside, or press Escape.
 - **KPI card click-to-filter on Teams and Lineage pages** — Clickable KPI cards (styled with hover highlight) filter the story list: Total Stories → show all, Mismatch Rate / Mismatches → show mismatched stories only, WAF Aligned → show matched stories.
 
+### Deployment
+
+- **`APPLICATION_ROOT` — reverse-proxy sub-path support** — Set `APPLICATION_ROOT=/your-prefix` in `.env` to serve the app under a URL prefix (e.g. `/h591-wafui`). Leave blank for root-path / local development (zero-change behaviour). Implemented via a `PrefixMiddleware` WSGI wrapper that strips the prefix before Flask routing and injects `window.APP_ROOT` into every page so all `fetch()` calls and nav links are automatically prefixed at runtime.
+- **`.env.example`** — New file in the repo root documents all 6 environment variables (`ANTHROPIC_API_KEY`, `PORT`, `APPLICATION_ROOT`, and the three Bedrock options) with usage notes. Copy to `.env` and fill in values to get started.
+
 ### Bug Fixes
 
 - **WAF Definitions description truncation** — Description column had `white-space:nowrap; overflow:hidden; text-overflow:ellipsis` which silently cut off long descriptions and made text unselectable. Now wraps naturally with `word-break:break-word` and is fully selectable.

@@ -45,8 +45,9 @@ cd waf-classifier
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Set your API key
-echo "ANTHROPIC_API_KEY=your-key-here" > .env
+# 3. Configure environment
+cp .env.example .env
+# Edit .env — set ANTHROPIC_API_KEY at minimum
 
 # 4. Run the server
 python app.py
@@ -56,6 +57,8 @@ open http://localhost:8080
 ```
 
 The app auto-loads WAF definitions and ground truth from `test-data/` on startup — no manual upload needed.
+
+**Environment variables** are documented in `.env.example`. The only required one is `ANTHROPIC_API_KEY` (or AWS Bedrock credentials). Set `APPLICATION_ROOT=/your-prefix` when deploying behind a reverse proxy.
 
 **Test datasets** are in `test-data/` — use these to explore all features:
 
@@ -151,7 +154,8 @@ waf-classifier/
 │   ├── verify.py                   # Bulk verify API + worker threads
 │   ├── lineage.py                  # Epic lineage API
 │   └── teams.py                    # Team report API
-├── .env                            # API key (not committed)
+├── .env                            # Local config — API key, port, prefix (not committed)
+├── .env.example                    # Template — copy to .env and fill in values
 ├── requirements.txt                # Python dependencies
 ├── waf_history.db                  # SQLite DB (auto-created)
 ├── baselines/                      # Saved baseline snapshots (auto-created)

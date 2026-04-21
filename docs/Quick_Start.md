@@ -15,13 +15,16 @@ Get up and running in under 5 minutes.
 git clone https://github.com/ad25343/waf-classifier.git
 cd waf-classifier
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
-Create a `.env` file in the project root:
+Edit `.env` — at minimum set your API key:
 
 ```
 ANTHROPIC_API_KEY=your-api-key-here
 ```
+
+All supported environment variables are documented in `.env.example`.
 
 ## Start the Server
 
@@ -242,6 +245,16 @@ Epic ID · Feature ID · Story ID · Epic · Parent Feature · Story Title · St
 | Issue Key | — (fallback for Story ID only) | e.g. PROJ-123 |
 
 ---
+
+## Deploying Under a Sub-Path
+
+If the app is served behind a reverse proxy at a URL prefix (e.g. `https://yourserver.com/h591-wafui/`), set one variable in `.env`:
+
+```
+APPLICATION_ROOT=/h591-wafui
+```
+
+Leave it blank (or omit it) for root-path / local development. No other changes are needed — the app patches all internal links and API calls at runtime.
 
 ## AWS Bedrock (Alternative AI Backend)
 

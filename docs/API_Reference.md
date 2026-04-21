@@ -2,6 +2,8 @@
 
 Base URL: `http://localhost:8080`
 
+If `APPLICATION_ROOT` is set in `.env` (e.g. `/h591-wafui`), all URLs are served under that prefix: `http://localhost:8080/h591-wafui/api/...`
+
 All endpoints return JSON unless otherwise noted. Error responses always return a generic message — full details are logged server-side only.
 
 ---
