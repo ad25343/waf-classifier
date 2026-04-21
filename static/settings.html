@@ -479,26 +479,7 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Edit GT Modal -->
-<div class="modal-overlay" id="gt-modal" onclick="if(event.target===this)closeGTModal()">
-    <div class="modal">
-        <div class="modal-header"><h3 id="gt-modal-title">Edit Ground Truth</h3><button onclick="closeGTModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">&times;</button></div>
-        <div class="modal-body">
-            <input type="hidden" id="gt-edit-idx">
-            <div class="form-group"><label>Title</label><input type="text" id="gt-edit-title"></div>
-            <div class="form-group"><label>Description</label><input type="text" id="gt-edit-desc"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div class="form-group"><label>WAF Category</label><select id="gt-edit-category"><option value="">Select...</option><option>KTLO (Keep the Lights On)</option><option>Business Maintenance</option><option>Technical Maintenance</option><option>Regulatory (Operational)</option><option>Regulatory Mandated Change</option><option>Enterprise Strategic Priority</option><option>Top Divisional Priority</option><option>Other Block Priority</option></select></div>
-                <div class="form-group"><label>WAF Color</label><select id="gt-edit-color"><option value="">Select...</option><option>GRAY</option><option>BLACK</option><option>RED</option><option>ORANGE</option><option>YELLOW</option><option>GREEN</option></select></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div class="form-group"><label>Run/Change</label><select id="gt-edit-rc"><option value="">Select...</option><option>Run</option><option>Change</option></select></div>
-                <div class="form-group"><label>Sub-Category</label><input type="text" id="gt-edit-subcat"></div>
-            </div>
-        </div>
-        <div class="modal-footer"><button class="btn btn-outline" onclick="closeGTModal()">Cancel</button><button class="btn btn-primary" onclick="saveGTRow()">Save</button></div>
-    </div>
-</div>
+<!-- GT inline edit — no modal needed -->
 
 <script>
 // Theme toggle
@@ -530,13 +511,128 @@ function closePanel(id){document.getElementById('panel-'+id).classList.remove('o
 async function loadWafDefs(){try{const[sR,dR]=await Promise.all([fetch('/api/status'),fetch('/api/waf-definitions')]);const st=await sR.json();const df=await dR.json();const dot=document.getElementById('waf-dot');const tx=document.getElementById('waf-status');if(st.waf_loaded){dot.className='dot green';tx.textContent=st.waf_categories.length+' categories loaded';}else{dot.className='dot yellow';tx.textContent='Not loaded';}const tb=document.getElementById('waf-table-body');if(df.definitions&&df.definitions.length>0){tb.innerHTML=df.definitions.map(d=>'<tr><td style="color:var(--text-primary);font-weight:500;">'+esc(d.category)+'</td><td>'+esc(d.color)+'</td><td><span class="badge '+(d.run_change||'').toLowerCase()+'">'+esc(d.run_change)+'</span></td><td style="font-size:12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(d.description)+'">'+esc(d.description)+'</td></tr>').join('');}else{tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">No WAF definitions loaded.</td></tr>';}}catch(e){console.error(e);}}
 async function uploadWaf(input){const f=input.files[0];if(!f)return;const fd=new FormData();fd.append('file',f);try{const r=await fetch('/api/upload-waf',{method:'POST',body:fd});const d=await r.json();if(d.success){loadWafDefs();showToast('WAF definitions uploaded.','success');}else{showToast(d.error||'Upload failed','error');}}catch(e){showToast('Upload failed: '+e.message,'error');}input.value='';}
 
-let _gtExamples=[];
-async function loadGT(){try{const r=await fetch('/api/ground-truth');const d=await r.json();const dot=document.getElementById('gt-dot');const tx=document.getElementById('gt-status');if(d.loaded){dot.className='dot green';tx.textContent=d.example_count+' examples loaded';}else{dot.className='dot yellow';tx.textContent='Not loaded';}_gtExamples=d.examples||[];const tb=document.getElementById('gt-table-body');if(_gtExamples.length>0){tb.innerHTML=_gtExamples.map((ex,i)=>'<tr><td style="color:var(--text-primary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(ex.title)+'">'+esc(ex.title)+'</td><td style="font-size:12px;">'+esc(ex.category)+'</td><td>'+esc(ex.color)+'</td><td><span class="badge '+(ex.run_change||'').toLowerCase()+'">'+esc(ex.run_change)+'</span></td><td style="text-align:center;white-space:nowrap;"><button class="btn btn-outline btn-sm" onclick="editGTRow('+i+')">Edit</button> <button class="btn btn-danger btn-sm" onclick="deleteGTRow('+i+')">Del</button></td></tr>').join('');}else{tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">No ground truth loaded.</td></tr>';}}catch(e){console.error(e);}}
+let _gtExamples = [];
+const _GT_CATS = ['KTLO (Keep the Lights On)','Business Maintenance','Technical Maintenance','Regulatory (Operational)','Regulatory Mandated Change','Enterprise Strategic Priority','Top Divisional Priority','Other Block Priority'];
+const _GT_COLORS = ['GRAY','BLACK','RED','ORANGE','YELLOW','GREEN'];
+
+function _gtOpts(list, sel) {
+    return '<option value="">Select…</option>' + list.map(v => `<option${v===sel?' selected':''}>${v}</option>`).join('');
+}
+
+function _gtInlineForm(i, ex) {
+    const fld = (label, id, html) => `<div>
+        <label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">${label}</label>
+        ${html}
+    </div>`;
+    const inp = (id, val) => `<input id="${id}" value="${esc(val||'')}" style="width:100%;padding:7px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:13px;box-sizing:border-box;">`;
+    const sel = (id, opts) => `<select id="${id}" style="width:100%;padding:7px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:13px;">${opts}</select>`;
+    return `<tr id="gt-detail-${i}" style="display:none;background:var(--bg-secondary);">
+        <td colspan="5" style="padding:14px 20px 18px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:12px;">
+                ${fld('Title *',    `gt-f-title-${i}`,   inp(`gt-f-title-${i}`,   ex?.title))}
+                ${fld('Description',`gt-f-desc-${i}`,    inp(`gt-f-desc-${i}`,    ex?.description))}
+                ${fld('WAF Category',`gt-f-cat-${i}`,   sel(`gt-f-cat-${i}`,     _gtOpts(_GT_CATS,  ex?.category)))}
+                ${fld('WAF Color',  `gt-f-color-${i}`,   sel(`gt-f-color-${i}`,   _gtOpts(_GT_COLORS,ex?.color)))}
+                ${fld('Run/Change', `gt-f-rc-${i}`,      sel(`gt-f-rc-${i}`,      _gtOpts(['Run','Change'],ex?.run_change)))}
+                ${fld('Sub-Category',`gt-f-subcat-${i}`, inp(`gt-f-subcat-${i}`,  ex?.subcategory))}
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button onclick="saveGTInline('${i}')" class="btn btn-primary btn-sm">Save</button>
+                <button onclick="closeGTInline('${i}')" class="btn btn-outline btn-sm">Cancel</button>
+            </div>
+        </td>
+    </tr>`;
+}
+
+function toggleGTEdit(i) {
+    const detail = document.getElementById('gt-detail-' + i);
+    if (!detail) return;
+    const isOpen = detail.style.display !== 'none';
+    // Collapse all open rows
+    document.querySelectorAll('[id^="gt-detail-"]').forEach(r => r.style.display = 'none');
+    document.querySelectorAll('[id^="gt-row-"]').forEach(r => r.classList.remove('active'));
+    if (!isOpen) {
+        detail.style.display = 'table-row';
+        document.getElementById('gt-row-' + i)?.classList.add('active');
+        document.getElementById('gt-f-title-' + i)?.focus();
+    }
+}
+
+function closeGTInline(i) {
+    const detail = document.getElementById('gt-detail-' + i);
+    if (detail) detail.style.display = 'none';
+    document.getElementById('gt-row-' + i)?.classList.remove('active');
+}
+
+async function saveGTInline(i) {
+    const g = id => document.getElementById(id)?.value || '';
+    const body = {
+        title:       g(`gt-f-title-${i}`),
+        description: g(`gt-f-desc-${i}`),
+        category:    g(`gt-f-cat-${i}`),
+        color:       g(`gt-f-color-${i}`),
+        run_change:  g(`gt-f-rc-${i}`),
+        subcategory: g(`gt-f-subcat-${i}`),
+    };
+    if (!body.title) { showToast('Title is required', 'error'); return; }
+    try {
+        const url = i === 'new' ? '/api/ground-truth/add' : '/api/ground-truth/' + i;
+        const r = await fetch(url, { method: i === 'new' ? 'POST' : 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const d = await r.json();
+        if (d.success) { loadGT(); showToast('Saved', 'success'); }
+        else showToast(d.error || 'Save failed', 'error');
+    } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+function showAddGTRow() {
+    // Collapse all, then show the "new" form row at the bottom
+    document.querySelectorAll('[id^="gt-detail-"]').forEach(r => r.style.display = 'none');
+    document.querySelectorAll('[id^="gt-row-"]').forEach(r => r.classList.remove('active'));
+    const d = document.getElementById('gt-detail-new');
+    if (d) {
+        d.style.display = 'table-row';
+        // Clear fields
+        ['gt-f-title-new','gt-f-desc-new','gt-f-cat-new','gt-f-color-new','gt-f-rc-new','gt-f-subcat-new']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('gt-f-title-new')?.focus();
+    }
+}
+
+// Kept for any legacy references
+function closeGTModal() { closeGTInline('new'); }
+async function loadGT() {
+    try {
+        const r = await fetch('/api/ground-truth');
+        const d = await r.json();
+        const dot = document.getElementById('gt-dot');
+        const tx  = document.getElementById('gt-status');
+        if (d.loaded) { dot.className = 'dot green'; tx.textContent = d.example_count + ' examples loaded'; }
+        else           { dot.className = 'dot yellow'; tx.textContent = 'Not loaded'; }
+        _gtExamples = d.examples || [];
+        const tb = document.getElementById('gt-table-body');
+        if (_gtExamples.length > 0) {
+            tb.innerHTML = _gtExamples.map((ex, i) =>
+                `<tr id="gt-row-${i}" style="cursor:pointer;" onclick="toggleGTEdit(${i})" title="Click to edit">
+                    <td style="color:var(--text-primary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(ex.title)}">${esc(ex.title)}</td>
+                    <td style="font-size:12px;">${esc(ex.category)}</td>
+                    <td>${esc(ex.color)}</td>
+                    <td><span class="badge ${(ex.run_change||'').toLowerCase()}">${esc(ex.run_change)}</span></td>
+                    <td style="text-align:center;white-space:nowrap;">
+                        <span style="font-size:11px;color:var(--text-muted);">▼ edit</span>
+                        <button class="btn btn-danger btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();deleteGTRow(${i})">Del</button>
+                    </td>
+                </tr>
+                ${_gtInlineForm(i, ex)}`
+            ).join('') +
+            // "New" form row always at the bottom, hidden until + Add is clicked
+            _gtInlineForm('new', null);
+        } else {
+            tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">No ground truth loaded.</td></tr>' +
+                           _gtInlineForm('new', null);
+        }
+    } catch(e) { console.error(e); }
+}
 async function uploadGT(input){const f=input.files[0];if(!f)return;const fd=new FormData();fd.append('file',f);try{const r=await fetch('/api/upload-ground-truth',{method:'POST',body:fd});const d=await r.json();if(d.success){loadGT();showToast('Ground truth uploaded.','success');}else{showToast(d.error||'Upload failed','error');}}catch(e){showToast('Upload failed: '+e.message,'error');}input.value='';}
-function editGTRow(i){const ex=_gtExamples[i];if(!ex)return;document.getElementById('gt-modal-title').textContent='Edit Ground Truth';document.getElementById('gt-edit-idx').value=i;document.getElementById('gt-edit-title').value=ex.title||'';document.getElementById('gt-edit-desc').value=ex.description||'';document.getElementById('gt-edit-category').value=ex.category||'';document.getElementById('gt-edit-color').value=ex.color||'';document.getElementById('gt-edit-rc').value=ex.run_change||'';document.getElementById('gt-edit-subcat').value=ex.subcategory||'';document.getElementById('gt-modal').classList.add('open');}
-function showAddGTRow(){document.getElementById('gt-modal-title').textContent='Add Ground Truth Example';document.getElementById('gt-edit-idx').value='new';['gt-edit-title','gt-edit-desc','gt-edit-category','gt-edit-color','gt-edit-rc','gt-edit-subcat'].forEach(id=>document.getElementById(id).value='');document.getElementById('gt-modal').classList.add('open');}
-function closeGTModal(){document.getElementById('gt-modal').classList.remove('open');}
-async function saveGTRow(){const idx=document.getElementById('gt-edit-idx').value;const body={title:document.getElementById('gt-edit-title').value,description:document.getElementById('gt-edit-desc').value,category:document.getElementById('gt-edit-category').value,color:document.getElementById('gt-edit-color').value,run_change:document.getElementById('gt-edit-rc').value,subcategory:document.getElementById('gt-edit-subcat').value};if(!body.title){alert('Title is required');return;}try{const url=idx==='new'?'/api/ground-truth/add':'/api/ground-truth/'+idx;const r=await fetch(url,{method:idx==='new'?'POST':'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(d.success){closeGTModal();loadGT();}else{alert(d.error||'Save failed');}}catch(e){alert('Save failed: '+e.message);}}
 async function deleteGTRow(i){if(!confirm('Delete this ground truth example?'))return;try{const r=await fetch('/api/ground-truth/'+i,{method:'DELETE'});const d=await r.json();if(d.success)loadGT();else alert(d.error);}catch(e){alert(e.message);}}
 
 async function loadBaselines(){try{const r=await fetch('/api/baseline/list');const d=await r.json();const el=document.getElementById('baseline-list');const st=document.getElementById('bl-status');if(!d.baselines||d.baselines.length===0){el.innerHTML='<div style="color:var(--text-muted);font-size:13px;">No baselines saved yet.</div>';st.textContent='No baselines';return;}st.textContent=d.baselines.length+' baseline'+(d.baselines.length!==1?'s':'')+' available';el.innerHTML='<table><thead><tr><th>Name</th><th>Contents</th><th style="text-align:center;">Actions</th></tr></thead><tbody>'+d.baselines.map(b=>{const ts=b.timestamp;const isDef=b.is_default;const label=isDef?'Default (Original)':ts.substring(0,4)+'-'+ts.substring(4,6)+'-'+ts.substring(6,8)+' '+ts.substring(9,11)+':'+ts.substring(11,13);const files=b.files.map(f=>esc(f.split('_baseline_')[0].replace(/-/g,' '))).join(', ');return'<tr><td style="color:var(--text-primary);font-weight:500;">'+esc(label)+(isDef?' <span style="font-size:10px;background:var(--accent);color:#fff;padding:1px 6px;border-radius:6px;">DEFAULT</span>':'')+'</td><td style="font-size:12px;">'+files+'</td><td style="text-align:center;"><button class="btn btn-primary btn-sm" onclick="restoreBaseline(\''+esc(ts)+'\')">Restore</button></td></tr>';}).join('')+'</tbody></table>';}catch(e){console.error(e);}}
