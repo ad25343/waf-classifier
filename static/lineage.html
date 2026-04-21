@@ -964,9 +964,14 @@ function sortStories(stories) {
 }
 
 function renderTreeSorted(epic) {
+    // Build flat index of all stories for onclick handlers — survives DOM show/hide filters
+    window._linStoriesFlat = [];
+
     const treeHtml = epic.features.map((feat, fi) => {
         const sortedStories = sortStories(feat.stories);
         const storiesHtml = sortedStories.map(s => {
+            const flatIdx = window._linStoriesFlat.length;
+            window._linStoriesFlat.push(s);
             const dotColor = WAF_COLORS_MAP[s.color] || '#e8944a';
             const confClass = (s.confidence || '').toLowerCase();
             const title = s.title.length > 60 ? s.title.substring(0, 60) + '...' : s.title;
@@ -1008,7 +1013,9 @@ function renderTreeSorted(epic) {
 
             const ptsTag = s.story_points ? `<span title="Story Points" style="font-size:10px;font-weight:600;color:var(--accent);background:rgba(232,148,74,0.12);border:1px solid rgba(232,148,74,0.3);padding:1px 5px;border-radius:3px;">${s.story_points} pts</span>` : '';
 
-            return `<div class="story-item">
+            return `<div class="story-item" style="cursor:pointer;" title="Click to view story details"
+                    data-mismatch="${s.mismatch ? 'true' : 'false'}"
+                    onclick="showStoryDetail(window._linStoriesFlat[${flatIdx}])">
                 <span class="color-dot" style="background:${dotColor}" title="${s.color || ''}"></span>${colorCheckTag(s.category, s.color)}
                 <span class="story-title" title="${s.title}">${title}</span>
                 ${ptsTag}
@@ -1095,8 +1102,9 @@ function filterLineageStories() {
 
 function renderEpicDetail(epic) {
     // KPIs
+    const kpiStyle = 'cursor:pointer;transition:background 0.15s;border-radius:8px;padding:2px 4px;';
     document.getElementById('epic-kpis').innerHTML = `
-        <div class="kpi">
+        <div class="kpi kpi-clickable" style="${kpiStyle}" onclick="filterLineageByKpi('all')" title="Show all stories">
             <div class="kpi-label">Stories</div>
             <div class="kpi-value" style="color:var(--accent)">${epic.total_stories}</div>
         </div>
@@ -1112,15 +1120,15 @@ function renderEpicDetail(epic) {
             <div class="kpi-label">Features</div>
             <div class="kpi-value" style="color:var(--purple)">${epic.features.length}</div>
         </div>
-        <div class="kpi">
+        <div class="kpi kpi-clickable" style="${kpiStyle}" onclick="filterLineageByKpi('match')" title="Show only WAF-aligned stories">
             <div class="kpi-label">WAF Aligned</div>
             <div class="kpi-value" style="color:${epic.dominant_category_pct >= 70 ? 'var(--success)' : epic.dominant_category_pct >= 50 ? 'var(--warning)' : 'var(--error)'}">${epic.dominant_category_pct}%</div>
         </div>
-        <div class="kpi">
+        <div class="kpi kpi-clickable" style="${kpiStyle}" onclick="filterLineageByKpi('mismatch')" title="Show only mismatch stories">
             <div class="kpi-label">Mismatches</div>
             <div class="kpi-value" style="color:var(--error)">${epic.mismatches}</div>
         </div>
-        <div class="kpi">
+        <div class="kpi kpi-clickable" style="${kpiStyle}" onclick="filterLineageByKpi('mismatch')" title="Show only mismatch stories">
             <div class="kpi-label">Mismatch Rate</div>
             <div class="kpi-value" style="color:var(--warning)">${epic.mismatch_rate}%</div>
         </div>
@@ -1177,6 +1185,82 @@ function filterUploadDropdown(searchId, selectId) {
         opt.style.display = text.includes(q) ? '' : 'none';
     });
 }
+
+// ── KPI click-to-filter ───────────────────────────────────
+function filterLineageByKpi(type) {
+    // Highlight active KPI
+    document.querySelectorAll('#epic-kpis .kpi-clickable').forEach(el => {
+        el.style.background = '';
+    });
+    const items = document.querySelectorAll('#tree-container .story-item');
+    items.forEach(item => {
+        const isMismatch = item.getAttribute('data-mismatch') === 'true';
+        if (type === 'all') {
+            item.style.display = '';
+        } else if (type === 'mismatch') {
+            item.style.display = isMismatch ? '' : 'none';
+        } else if (type === 'match') {
+            item.style.display = !isMismatch ? '' : 'none';
+        }
+    });
+    // Auto-open feature sections that have visible stories
+    document.querySelectorAll('#tree-container .tree-feature').forEach(feat => {
+        const visible = feat.querySelectorAll('.story-item:not([style*="display: none"])');
+        const list = feat.querySelector('.story-list');
+        if (list && type !== 'all' && visible.length > 0) list.classList.add('open');
+    });
+    // Scroll to tree
+    document.getElementById('tree-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Story detail modal ────────────────────────────────────
+const _SD_COLORS = { GRAY:'#6b7280', BLACK:'#1f2937', RED:'#dc2626', ORANGE:'#ea580c', YELLOW:'#ca8a04', GREEN:'#16a34a' };
+
+function showStoryDetail(data) {
+    if (!data) return;
+    function _e(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function fld(label, value, full) {
+        return `<div style="${full ? 'grid-column:1/-1;' : ''}">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">${label}</div>
+            <div style="font-size:14px;color:var(--text-primary);word-break:break-word;">${value || '<span style="color:var(--text-muted)">—</span>'}</div>
+        </div>`;
+    }
+    const title     = data.title || data.story_title || '';
+    const desc      = data.description || data.story_description || '';
+    const origWAF   = data.original_tag || data.user_submitted_waf || '';
+    const aiWAF     = data.category || data.waf_category || data.ai_suggested_waf || '';
+    const color     = (data.color || data.waf_color || data.ai_color || '').toUpperCase();
+    const dotHex    = _SD_COLORS[color] || 'var(--text-muted)';
+    const conf      = (data.confidence || data.ai_confidence || '').replace(/confidence:\s*/i, '');
+    const isMismatch = data.mismatch === true || data.was_mismatch === true || data.is_match === false;
+    const isMatch    = data.mismatch === false || data.was_mismatch === false || data.is_match === true;
+    const statusHtml = isMismatch ? '<span class="badge mismatch">Mismatch</span>' :
+                       (isMatch   ? '<span class="badge high">Match</span>' : '<span class="badge medium">—</span>');
+    const dotHtml = `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${dotHex};vertical-align:middle;margin-right:6px;"></span>`;
+
+    document.getElementById('story-detail-body').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;">
+            ${fld('Title', _e(title), true)}
+            ${desc ? fld('Description', _e(desc), true) : ''}
+            ${fld('User Submitted WAF', _e(origWAF) || '<span style="color:var(--text-muted)">Not tagged</span>')}
+            ${fld('AI Suggested WAF', _e(aiWAF))}
+            ${fld('WAF Color', dotHtml + _e(color || '—'))}
+            ${fld('Status', statusHtml)}
+            ${conf ? fld('Confidence', `<span class="badge ${conf.toLowerCase()}">${_e(conf)}</span>`) : ''}
+            ${data.story_points ? fld('Story Points', `<span style="font-weight:700;font-size:16px;color:var(--accent);">${_e(String(data.story_points))}</span>`) : ''}
+            ${data.epic    ? fld('Epic',    _e(data.epic))    : ''}
+            ${(data.parent_feature || data.feature) ? fld('Feature', _e(data.parent_feature || data.feature)) : ''}
+            ${(data._team || data.team) ? fld('Team', _e(data._team || data.team)) : ''}
+            ${data.story_id   ? fld('Story ID',   `<code style="font-size:12px;background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;">${_e(data.story_id)}</code>`)   : ''}
+            ${data.feature_id ? fld('Feature ID', `<code style="font-size:12px;background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;">${_e(data.feature_id)}</code>`) : ''}
+            ${data.epic_id    ? fld('Epic ID',    `<code style="font-size:12px;background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;">${_e(data.epic_id)}</code>`)    : ''}
+        </div>`;
+    document.getElementById('story-detail-overlay').style.display = 'flex';
+}
+function closeStoryDetail() {
+    document.getElementById('story-detail-overlay').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStoryDetail(); });
 
 // ── Initialize ──
 loadUploadFilter();
@@ -1284,5 +1368,16 @@ checkStatus();
     }
 })();
 </script>
+<!-- Story Detail Modal -->
+<div id="story-detail-overlay" onclick="if(event.target===this)closeStoryDetail()"
+     style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;max-width:720px;width:92%;max-height:85vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,0.5);">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:16px;font-weight:700;color:var(--text-primary);">Story Details</span>
+            <button onclick="closeStoryDetail()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px 8px;">&times;</button>
+        </div>
+        <div id="story-detail-body" style="padding:24px;"></div>
+    </div>
+</div>
 </body>
 </html>
