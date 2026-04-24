@@ -171,13 +171,13 @@
 
         /* Sidebar */
         .sidebar {
-            width: 340px;
+            width: 260px;
             background: var(--bg-secondary);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
         .sidebar-section {
@@ -674,6 +674,28 @@
         .send-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
+        }
+
+        .clear-btn {
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            title: "Clear chat";
+        }
+        .clear-btn:hover {
+            border-color: var(--error);
+            color: var(--error);
+            background: rgba(220,38,38,0.06);
         }
 
         .input-hint {
@@ -1187,23 +1209,10 @@
                 <div class="categories-list" id="categories-list"></div>
             </div>
 
-            <!-- Classify -->
-            <div class="sidebar-section">
-                <h3>Classify Stories</h3>
-                <div class="mode-toggle">
-                    <button class="mode-btn active" data-mode="single" onclick="setMode('single')">Single Story</button>
-                    <button class="mode-btn" data-mode="batch" onclick="setMode('batch')">Batch Review</button>
-                </div>
-
-                <div class="batch-area" id="batch-area">
-                    <textarea class="batch-textarea" id="batch-input" placeholder="Paste stories (one per line):&#10;Story Title | Description | Current WAF Tag&#10;&#10;Example:&#10;Add SSO login | Enable SAML-based SSO for enterprise | New Feature"></textarea>
-                    <p class="batch-hint">Format: Title | Description | Current WAF (pipe-separated)</p>
-                    <button class="btn btn-primary" onclick="batchClassify()">Classify All</button>
-                </div>
-            </div>
-
-            <div class="sidebar-actions">
-                <button class="btn btn-ghost" onclick="clearChat()">Clear Chat</button>
+            <!-- Classify mode (hidden — single story mode only for now) -->
+            <div id="batch-area" style="display:none;">
+                <textarea class="batch-textarea" id="batch-input" placeholder="Paste stories (one per line):&#10;Story Title | Description | Current WAF Tag"></textarea>
+                <button class="btn btn-primary" onclick="batchClassify()">Classify All</button>
             </div>
         </div>
 
@@ -1285,6 +1294,7 @@
                         placeholder="Paste a JIRA story title and description to classify..."
                         rows="3"
                         onkeydown="handleKeyDown(event)"></textarea>
+                    <button class="clear-btn" onclick="clearChat()" title="Clear chat">↺</button>
                     <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
                 </div>
                 <div class="input-hint">
