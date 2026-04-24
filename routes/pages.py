@@ -97,3 +97,8 @@ def teams_page():
 @pages_bp.route("/merge")
 def merge_page():
     return _serve("merge.html")
+
+
+@pages_bp.route("/disputes")
+def disputes_page():
+    return _serve("disputes.html")

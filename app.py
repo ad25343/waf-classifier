@@ -81,6 +81,9 @@ app.register_blueprint(merge_bp)
 from routes.quality import quality_bp
 app.register_blueprint(quality_bp)
 
+from routes.disputes import disputes_bp
+app.register_blueprint(disputes_bp)
+
 
 # ── Startup ──────────────────────────────────────────────────────
 def auto_load_sample_data():

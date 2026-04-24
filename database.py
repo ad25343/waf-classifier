@@ -283,6 +283,59 @@ def init_db():
             updated_at TEXT
         )
     """)
+
+    # Classification Disputes table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS disputes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            story_title TEXT DEFAULT '',
+            story_description TEXT DEFAULT '',
+            ai_category TEXT DEFAULT '',
+            ai_color TEXT DEFAULT '',
+            ai_confidence TEXT DEFAULT '',
+            ai_reasoning TEXT DEFAULT '',
+            user_comment TEXT DEFAULT '',
+            suggested_category TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            reviewed_at TEXT DEFAULT NULL,
+            reviewer_notes TEXT DEFAULT '',
+            resolved_category TEXT DEFAULT '',
+            resolved_color TEXT DEFAULT '',
+            gt_updated INTEGER DEFAULT 0,
+            waf_flagged INTEGER DEFAULT 0,
+            team TEXT DEFAULT '',
+            epic TEXT DEFAULT '',
+            story_id TEXT DEFAULT '',
+            pi_number TEXT DEFAULT ''
+        )
+    """)
+    # Migrations for disputes table columns (for existing DBs)
+    for _col, _defn in [
+        ("story_title", "TEXT DEFAULT ''"),
+        ("story_description", "TEXT DEFAULT ''"),
+        ("ai_category", "TEXT DEFAULT ''"),
+        ("ai_color", "TEXT DEFAULT ''"),
+        ("ai_confidence", "TEXT DEFAULT ''"),
+        ("ai_reasoning", "TEXT DEFAULT ''"),
+        ("user_comment", "TEXT DEFAULT ''"),
+        ("suggested_category", "TEXT DEFAULT ''"),
+        ("status", "TEXT DEFAULT 'pending'"),
+        ("reviewed_at", "TEXT DEFAULT NULL"),
+        ("reviewer_notes", "TEXT DEFAULT ''"),
+        ("resolved_category", "TEXT DEFAULT ''"),
+        ("resolved_color", "TEXT DEFAULT ''"),
+        ("gt_updated", "INTEGER DEFAULT 0"),
+        ("waf_flagged", "INTEGER DEFAULT 0"),
+        ("team", "TEXT DEFAULT ''"),
+        ("epic", "TEXT DEFAULT ''"),
+        ("story_id", "TEXT DEFAULT ''"),
+        ("pi_number", "TEXT DEFAULT ''"),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE disputes ADD COLUMN {_col} {_defn}")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
     # Default settings
     defaults = {
         "sync_batch_size": "25",

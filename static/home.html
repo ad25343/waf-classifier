@@ -143,6 +143,7 @@
         .menu-card.teams::before { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
         .menu-card.merge::before { background: linear-gradient(90deg, var(--teal), #22d3ee); }
         .menu-card.settings::before { background: linear-gradient(90deg, #475569, #64748b); }
+        .menu-card.disputes::before { background: linear-gradient(90deg, #f43f5e, #e11d48); }
 
         .card-icon {
             width: 48px; height: 48px;
@@ -159,6 +160,7 @@
         .teams .card-icon { background: rgba(96,165,250,0.15); }
         .merge .card-icon { background: rgba(45,212,191,0.15); }
         .settings .card-icon { background: rgba(156,160,176,0.15); }
+        .disputes .card-icon { background: rgba(244,63,94,0.15); }
 
         .menu-card h2 {
             font-size: 18px; font-weight: 600;
@@ -185,6 +187,7 @@
         .import .card-badge { background: rgba(251,191,36,0.15); color: var(--warning); }
         .teams .card-badge { background: rgba(96,165,250,0.15); color: #60a5fa; }
         .merge .card-badge { background: rgba(45,212,191,0.15); color: var(--teal); }
+        .disputes .card-badge { background: rgba(244,63,94,0.15); color: #f43f5e; }
 
         .status-bar {
             background: var(--bg-primary);
@@ -415,6 +418,7 @@
             <a href="/history"  class="nav-dropdown-item">Analytics</a>
             <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
             <a href="/teams"    class="nav-dropdown-item">Teams</a>
+            <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
         </div>
     </div>
     <div class="nav-dropdown">
@@ -500,6 +504,13 @@
             <h2>Teams</h2>
             <p>Team-level WAF analytics, epic assignments, and cross-team reporting</p>
             <span class="card-badge">PMOs &amp; Leadership</span>
+        </a>
+
+        <a href="/disputes" class="menu-card disputes">
+            <div class="card-icon">🚩</div>
+            <h2>Classification Disputes</h2>
+            <p>Review AI classifications flagged as incorrect. Dismiss, accept into Ground Truth, or escalate for WAF definition review.</p>
+            <span class="card-badge">Reviewers</span>
         </a>
 
         <a href="/merge" class="menu-card merge">

@@ -729,6 +729,87 @@
         }
         .new-story-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+        .flag-btn {
+            padding: 6px 14px;
+            border: 1px solid rgba(244,63,94,0.35);
+            background: transparent;
+            color: rgba(244,63,94,0.7);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .flag-btn:hover { border-color: #f43f5e; color: #f43f5e; background: rgba(244,63,94,0.07); }
+
+        .dispute-form {
+            margin-top: 10px;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid rgba(244,63,94,0.25);
+            border-radius: 8px;
+            display: none;
+        }
+        .dispute-form.open { display: block; }
+        .dispute-form label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .dispute-form textarea {
+            width: 100%;
+            min-height: 60px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            padding: 8px 10px;
+            resize: vertical;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .dispute-form textarea:focus { outline: none; border-color: rgba(244,63,94,0.5); }
+        .dispute-form input[type="text"] {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            padding: 7px 10px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .dispute-form input[type="text"]:focus { outline: none; border-color: rgba(244,63,94,0.5); }
+        .dispute-form-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+        .dispute-submit-btn {
+            padding: 6px 14px;
+            background: rgba(244,63,94,0.15);
+            color: #f43f5e;
+            border: 1px solid rgba(244,63,94,0.35);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .dispute-submit-btn:hover { background: rgba(244,63,94,0.25); }
+        .dispute-cancel-btn {
+            padding: 6px 12px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .dispute-cancel-btn:hover { color: var(--text-primary); }
+
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -1024,6 +1105,7 @@
             <a href="/history"  class="nav-dropdown-item">Analytics</a>
             <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
             <a href="/teams"    class="nav-dropdown-item">Teams</a>
+            <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
         </div>
     </div>
     <div class="nav-dropdown">
@@ -1219,6 +1301,8 @@
         });
 
         let currentMode = "single";
+        let _lastStoryText = "";       // the user's story message sent for classification
+        let _lastClassifResp = "";     // the AI's last classification response text
 
         // Auto-resize textarea
         const chatInput = document.getElementById("chat-input");
@@ -1244,6 +1328,7 @@
             const welcome = document.getElementById("welcome");
             if (welcome) welcome.style.display = "none";
 
+            _lastStoryText = message;
             addMessage(message, "user");
             input.value = "";
             input.style.height = "auto";
@@ -1352,16 +1437,94 @@
             bubble.className = "message-bubble";
             bubble.innerHTML = formatMessage(text);
 
-            // Add "New Story" button after each AI classification response
+            // Add action buttons after each AI classification response
             if (role === "assistant" && isClassificationResponse(text)) {
+                _lastClassifResp = text;
+
                 const approveBar = document.createElement("div");
                 approveBar.className = "approve-bar";
+
                 const newStoryBtn = document.createElement("button");
                 newStoryBtn.className = "new-story-btn";
                 newStoryBtn.innerHTML = "&#8617; New Story";
                 newStoryBtn.onclick = () => clearChat();
+
+                const flagBtn = document.createElement("button");
+                flagBtn.className = "flag-btn";
+                flagBtn.innerHTML = "🚩 Flag as Incorrect";
+                flagBtn.onclick = () => {
+                    disputeForm.classList.toggle("open");
+                };
+
                 approveBar.appendChild(newStoryBtn);
+                approveBar.appendChild(flagBtn);
+
+                // Inline dispute form
+                const disputeForm = document.createElement("div");
+                disputeForm.className = "dispute-form";
+                disputeForm.innerHTML = `
+                    <label>Why is this classification wrong? (optional)</label>
+                    <textarea placeholder="e.g. This is a platform enablement initiative, not KTLO..." rows="2"></textarea>
+                    <label style="margin-top:8px;">What should it be? (optional)</label>
+                    <input type="text" placeholder="e.g. Strategic, Platform Investment…">
+                    <div class="dispute-form-row">
+                        <button class="dispute-submit-btn">Submit Flag</button>
+                        <button class="dispute-cancel-btn">Cancel</button>
+                        <span class="dispute-confirm" style="font-size:12px;color:#22c55e;display:none;margin-left:6px;">✓ Flagged for review</span>
+                    </div>
+                `;
+
+                const [commentEl, suggestEl] = disputeForm.querySelectorAll("textarea, input");
+                const [submitBtn, cancelBtn] = disputeForm.querySelectorAll("button");
+                const confirmEl = disputeForm.querySelector(".dispute-confirm");
+
+                cancelBtn.onclick = () => {
+                    disputeForm.classList.remove("open");
+                    commentEl.value = "";
+                    suggestEl.value = "";
+                };
+
+                submitBtn.onclick = async () => {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "Flagging…";
+
+                    // Build story_title: first line of story text, capped at 120 chars
+                    const lines = _lastStoryText.split("\n").map(l => l.trim()).filter(Boolean);
+                    const storyTitle = (lines[0] || _lastStoryText).slice(0, 120);
+
+                    const payload = {
+                        story_title: storyTitle,
+                        story_description: _lastStoryText,
+                        ai_category:   extractField(_lastClassifResp, "WAF Category") || extractField(_lastClassifResp, "Recommended WAF Category"),
+                        ai_color:      extractField(_lastClassifResp, "Color"),
+                        ai_confidence: extractField(_lastClassifResp, "Confidence"),
+                        ai_reasoning:  extractField(_lastClassifResp, "Reasoning"),
+                        user_comment:      commentEl.value.trim(),
+                        suggested_category: suggestEl.value.trim(),
+                        team:     document.getElementById("team-input")?.value?.trim() || "",
+                        epic:     document.getElementById("epic-input")?.value?.trim() || "",
+                        story_id: document.getElementById("story-id-input")?.value?.trim() || "",
+                        pi_number: document.getElementById("pi-number-input")?.value?.trim() || "",
+                    };
+
+                    try {
+                        await fetch("/api/disputes", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload),
+                        });
+                        confirmEl.style.display = "inline";
+                        submitBtn.style.display = "none";
+                        cancelBtn.textContent = "Close";
+                    } catch (e) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "Submit Flag";
+                        alert("Could not submit flag: " + e.message);
+                    }
+                };
+
                 bubble.appendChild(approveBar);
+                bubble.appendChild(disputeForm);
             }
 
             msgDiv.appendChild(label);

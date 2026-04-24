@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Classifier | Classification Disputes</title>
+    <style>
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
+            --bg-primary: #111318;
+            --bg-secondary: #1a1c25;
+            --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1;
+            --text-secondary: #9ca0b0;
+            --text-muted: #6c7086;
+            --accent: #e8944a;
+            --accent-hover: #d4832f;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
+            --purple: #c084fc;
+            --teal: #0d9488;
+            --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8888a0;
+            --accent: #d4722a;
+            --accent-hover: #c0611e;
+            --success: #16a34a;
+            --warning: #d97706;
+            --error: #dc2626;
+            --purple: #9333ea;
+            --teal: #0d9488;
+            --radius: 12px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover { background: var(--border); }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        .logo {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), #d4722a);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: white;
+        }
+
+        .content { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 14px; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;
+        }
+
+        /* KPI mini cards */
+        .kpi-mini-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-mini {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            text-align: center;
+        }
+
+        .kpi-mini-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-mini-value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+
+        .btn-sm { padding: 5px 11px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        .btn-dismiss { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-dismiss:hover { background: var(--border); color: var(--text-primary); }
+        .btn-accept { background: rgba(74,222,128,0.15); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
+        .btn-accept:hover { background: rgba(74,222,128,0.25); }
+        .btn-flag { background: rgba(192,132,252,0.15); color: var(--purple); border: 1px solid rgba(192,132,252,0.3); }
+        .btn-flag:hover { background: rgba(192,132,252,0.25); }
+        .btn-delete { background: rgba(248,113,113,0.12); color: var(--error); border: 1px solid rgba(248,113,113,0.25); }
+        .btn-delete:hover { background: rgba(248,113,113,0.22); }
+
+        /* Tables */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary); white-space: nowrap;
+        }
+        td { padding: 12px 12px; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--bg-tertiary); }
+
+        .color-dot {
+            display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; flex-shrink: 0;
+        }
+
+        /* Status badges */
+        .badge {
+            padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap;
+        }
+        .badge-pending { background: rgba(251,191,36,0.15); color: var(--warning); }
+        .badge-accepted { background: rgba(74,222,128,0.15); color: var(--success); }
+        .badge-dismissed { background: rgba(108,112,134,0.20); color: var(--text-muted); }
+        .badge-flagged_waf { background: rgba(13,148,136,0.15); color: var(--teal); }
+
+        /* Confidence badge */
+        .conf-badge {
+            padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 500; display: inline-block; margin-top: 4px;
+        }
+        .conf-high { background: rgba(74,222,128,0.12); color: var(--success); }
+        .conf-medium { background: rgba(251,191,36,0.12); color: var(--warning); }
+        .conf-low { background: rgba(248,113,113,0.12); color: var(--error); }
+
+        /* Story tags */
+        .story-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+        .story-tag {
+            padding: 1px 7px; border-radius: 4px; font-size: 10px; font-weight: 500;
+            background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border);
+        }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+        }
+        .status-tabs { display: flex; gap: 4px; }
+        .status-tab {
+            padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+            background: none; font-size: 13px; font-weight: 500; color: var(--text-muted);
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .status-tab:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .status-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        .search-wrap { position: relative; margin-left: auto; }
+        .search-input {
+            width: 240px; padding: 7px 12px 7px 32px;
+            font-size: 13px; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text-primary); outline: none; transition: border-color 0.2s, width 0.2s;
+        }
+        .search-input:focus { border-color: var(--accent); width: 300px; }
+        .search-input::placeholder { color: var(--text-muted); }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); pointer-events: none; }
+
+        /* Nav */
+        .top-nav {
+            justify-content: flex-end;
+            display: flex;
+            gap: 4px;
+            padding: 8px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .top-nav-link {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .top-nav-link:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .top-nav-link.active { background: var(--accent); color: #fff; }
+
+        .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
+        .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
+        .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
+        .nav-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown-menu {
+            display: none; position: absolute; top: calc(100% + 6px); left: 0;
+            min-width: 190px; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 10px; padding: 6px; z-index: 1000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+        .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+        .nav-dropdown-item {
+            display: block; padding: 8px 12px; border-radius: 7px;
+            font-size: 13px; font-weight: 500; color: var(--text-secondary);
+            text-decoration: none; white-space: nowrap; transition: background 0.12s, color 0.12s;
+        }
+        .nav-dropdown-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-dropdown-item.active { color: var(--accent); background: rgba(232,148,74,0.10); }
+
+        /* Status bar */
+        .status-bar {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 8px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .status-pills { display: flex; gap: 12px; }
+        .status-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-muted);
+            transition: background 0.15s, color 0.15s;
+        }
+        .status-pill:hover { background: var(--border); color: var(--text-primary); cursor: pointer; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.green { background: var(--success); }
+        .status-dot.yellow { background: var(--warning); }
+        .status-dot.red { background: var(--error); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; padding: 24px;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius); width: 100%; max-width: 560px;
+            max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+        }
+        .modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .modal-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+        .modal-close {
+            background: none; border: none; color: var(--text-muted); font-size: 20px;
+            cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1;
+            transition: color 0.15s;
+        }
+        .modal-close:hover { color: var(--text-primary); }
+        .modal-body { padding: 20px 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block; }
+        .form-select, .form-textarea {
+            width: 100%; padding: 9px 12px;
+            background: var(--bg-tertiary); color: var(--text-primary);
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 13px; outline: none; font-family: inherit;
+        }
+        .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+        .form-textarea { resize: vertical; min-height: 90px; }
+
+        .detail-block {
+            background: var(--bg-tertiary); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;
+        }
+        .detail-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 4px; }
+        .detail-value { font-size: 13px; color: var(--text-primary); line-height: 1.5; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 72px 24px; color: var(--text-muted);
+        }
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .empty-state-text { font-size: 13px; line-height: 1.6; max-width: 480px; margin: 0 auto; }
+
+        /* Loading / error */
+        .loading-row td { text-align: center; color: var(--text-muted); padding: 48px; }
+
+        /* Actions cell — no wrap */
+        .actions-cell { white-space: nowrap; display: flex; gap: 6px; flex-wrap: nowrap; }
+
+        /* Page title area */
+        .page-header { margin-bottom: 20px; }
+        .page-header h1 { font-size: 22px; font-weight: 700; }
+        .page-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+        /* Pagination */
+        .pagination { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+        .page-btn {
+            padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+            background: none; color: var(--text-secondary); font-size: 13px; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .page-btn:hover:not(:disabled) { background: var(--bg-tertiary); color: var(--text-primary); }
+        .page-btn:disabled { opacity: 0.4; cursor: default; }
+        .page-info { font-size: 12px; color: var(--text-muted); }
+
+        @media (max-width: 900px) {
+            .kpi-mini-row { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; align-items: flex-start; }
+            .search-wrap { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/" class="header-left" style="text-decoration:none;color:inherit;">
+        <div class="logo">W</div>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Work Alignment Framework — Classify, Analyze, Align</p>
+        </div>
+    </a>
+</div>
+
+<nav class="top-nav">
+    <a href="/" class="top-nav-link">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <div class="nav-dropdown">
+        <span class="top-nav-link active nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/history"   class="nav-dropdown-item">Analytics</a>
+            <a href="/lineage"   class="nav-dropdown-item">Epic Lineage</a>
+            <a href="/teams"     class="nav-dropdown-item">Teams</a>
+            <a href="/disputes"  class="nav-dropdown-item active">Classification Disputes</a>
+        </div>
+    </div>
+    <div class="nav-dropdown">
+        <span class="top-nav-link nav-dropdown-btn">Tools <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/merge"         class="nav-dropdown-item">File Merger</a>
+            <a href="/waf-reference" class="nav-dropdown-item">WAF Reference</a>
+        </div>
+    </div>
+    <a href="/settings" class="top-nav-link">Settings</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" style="margin-left:8px;">
+        <span class="theme-icon"></span>
+    </button>
+</nav>
+
+<div class="status-bar">
+    <div class="status-pills">
+        <a class="status-pill" href="/settings" title="API Configuration">
+            <div class="status-dot" id="api-dot"></div>
+            <span id="api-status">Checking...</span>
+        </a>
+        <a class="status-pill" href="/settings" title="Manage WAF Definitions">
+            <div class="status-dot" id="waf-dot"></div>
+            <span id="waf-status">WAF Definitions</span>
+        </a>
+        <a class="status-pill" href="/settings" title="Manage Ground Truth">
+            <div class="status-dot" id="gt-dot"></div>
+            <span id="gt-status">Ground Truth</span>
+        </a>
+        <a class="status-pill" href="/history" title="View Upload History">
+            <div class="status-dot" id="db-dot"></div>
+            <span id="db-status">History DB</span>
+        </a>
+    </div>
+    <div id="version-info">v3.2.3</div>
+</div>
+
+<div class="content">
+    <div class="page-header">
+        <h1>Classification Disputes</h1>
+        <p>Review stories where users flagged the AI classification as incorrect. Accept to update ground truth, or flag the WAF definition for review.</p>
+    </div>
+
+    <!-- KPI Bar -->
+    <div class="kpi-mini-row" id="kpi-row">
+        <div class="kpi-mini">
+            <div class="kpi-mini-label">Pending</div>
+            <div class="kpi-mini-value" id="kpi-pending" style="color:var(--warning);">—</div>
+        </div>
+        <div class="kpi-mini">
+            <div class="kpi-mini-label">Accepted → GT</div>
+            <div class="kpi-mini-value" id="kpi-accepted" style="color:var(--success);">—</div>
+        </div>
+        <div class="kpi-mini">
+            <div class="kpi-mini-label">Dismissed</div>
+            <div class="kpi-mini-value" id="kpi-dismissed" style="color:var(--text-muted);">—</div>
+        </div>
+        <div class="kpi-mini">
+            <div class="kpi-mini-label">WAF Flagged</div>
+            <div class="kpi-mini-value" id="kpi-flagged" style="color:var(--teal);">—</div>
+        </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+        <div class="status-tabs" id="status-tabs">
+            <button class="status-tab active" data-status="">All</button>
+            <button class="status-tab" data-status="pending">Pending</button>
+            <button class="status-tab" data-status="accepted">Accepted</button>
+            <button class="status-tab" data-status="dismissed">Dismissed</button>
+            <button class="status-tab" data-status="flagged_waf">WAF Flagged</button>
+        </div>
+        <div class="search-wrap">
+            <span class="search-icon">&#128269;</span>
+            <input class="search-input" id="search-input" type="text" placeholder="Search story titles…" oninput="applySearch()">
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card" style="padding:0;overflow:hidden;">
+        <div class="table-wrap">
+            <table id="disputes-table">
+                <thead>
+                    <tr>
+                        <th style="width:110px;">Date</th>
+                        <th>Story</th>
+                        <th style="width:180px;">AI Classification</th>
+                        <th>User Comment</th>
+                        <th style="width:110px;">Status</th>
+                        <th style="width:190px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="disputes-tbody">
+                    <tr class="loading-row"><td colspan="6">Loading disputes…</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none;">
+            <div class="empty-state-icon">&#128203;</div>
+            <div class="empty-state-title">No classification disputes yet</div>
+            <div class="empty-state-text">When users flag an AI classification as incorrect on the Classify page, it will appear here for review.</div>
+        </div>
+        <div class="pagination" id="pagination" style="padding:12px 16px;display:none;">
+            <span class="page-info" id="page-info"></span>
+            <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>&#8592; Prev</button>
+            <button class="page-btn" id="next-btn" onclick="changePage(1)">Next &#8594;</button>
+        </div>
+    </div>
+</div>
+
+<!-- Resolve Modal -->
+<div class="modal-overlay hidden" id="resolve-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title">Resolve Dispute</span>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body">
+            <!-- filled dynamically -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-sm btn-dismiss" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-sm btn-primary" id="modal-confirm-btn" onclick="confirmResolve()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Theme ──────────────────────────────────────────────────────────
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('waf-theme', next);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = next === 'dark' ? '\u263E' : '\u2600';
+}
+
+// ── WAF Reference Data ─────────────────────────────────────────────
+const WAF_CATEGORIES = [
+    'KTLO (Keep the Lights On)',
+    'Enterprise Strategic Priority',
+    'Technical Maintenance',
+    'Business Maintenance',
+    'Regulatory (Operational)',
+    'Regulatory Mandated Change',
+    'Top Divisional Priority',
+    'Other Block Priority'
+];
+
+const WAF_COLORS = ['GRAY', 'BLACK', 'RED', 'ORANGE', 'YELLOW', 'GREEN', 'BLUE', 'PURPLE'];
+
+const WAF_COLOR_MAP = {
+    GRAY:   '#6b7280',
+    BLACK:  '#1f2937',
+    RED:    '#dc2626',
+    ORANGE: '#ea580c',
+    YELLOW: '#ca8a04',
+    GREEN:  '#16a34a',
+    BLUE:   '#2563eb',
+    PURPLE: '#9333ea'
+};
+
+// ── State ──────────────────────────────────────────────────────────
+let allDisputes = [];       // raw from API (current page/filter)
+let filteredDisputes = [];  // after client-side search
+let currentStatus = '';
+let currentPage = 1;
+const PER_PAGE = 50;
+let totalCount = 0;
+
+let pendingAction = null;   // { id, action, dispute }
+
+// ── Boot ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+
+    loadStatusBar();
+    loadKpis();
+    loadDisputes();
+
+    // Status tab clicks
+    document.querySelectorAll('.status-tab').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.status-tab').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            currentStatus = btn.dataset.status;
+            currentPage = 1;
+            document.getElementById('search-input').value = '';
+            loadDisputes();
+        });
+    });
+
+    // Close modal on overlay click
+    document.getElementById('resolve-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // ESC closes modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+});
+
+// ── Status Bar ────────────────────────────────────────────────────
+async function loadStatusBar() {
+    try {
+        const res = await fetch('/api/status');
+        if (!res.ok) return;
+        const d = await res.json();
+        setDot('api-dot', 'api-status', d.api_configured ? 'green' : 'red', d.api_configured ? 'API Ready' : 'No API Key');
+        setDot('waf-dot', 'waf-status', d.waf_definitions ? 'green' : 'yellow', 'WAF Definitions');
+        setDot('gt-dot', 'gt-status', d.ground_truth ? 'green' : 'yellow', 'Ground Truth');
+        setDot('db-dot', 'db-status', 'green', 'History DB');
+    } catch(e) {
+        setDot('api-dot', 'api-status', 'yellow', 'Unknown');
+    }
+}
+function setDot(dotId, labelId, color, label) {
+    const dot = document.getElementById(dotId);
+    const lbl = document.getElementById(labelId);
+    if (dot) { dot.className = 'status-dot ' + color; }
+    if (lbl) lbl.textContent = label;
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────
+async function loadKpis() {
+    try {
+        const statuses = ['pending', 'accepted', 'dismissed', 'flagged_waf'];
+        const counts = await Promise.all(statuses.map(function(s) {
+            return fetch('/api/disputes?status=' + s + '&page=1&per_page=1')
+                .then(function(r) { return r.json(); })
+                .then(function(d) { return d.total || 0; })
+                .catch(function() { return 0; });
+        }));
+        document.getElementById('kpi-pending').textContent   = counts[0];
+        document.getElementById('kpi-accepted').textContent  = counts[1];
+        document.getElementById('kpi-dismissed').textContent = counts[2];
+        document.getElementById('kpi-flagged').textContent   = counts[3];
+    } catch(e) {
+        console.warn('KPI load failed:', e);
+    }
+}
+
+// ── Load Disputes ─────────────────────────────────────────────────
+async function loadDisputes() {
+    const tbody = document.getElementById('disputes-tbody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Loading…</td></tr>';
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('pagination').style.display = 'none';
+
+    try {
+        let url = '/api/disputes?page=' + currentPage + '&per_page=' + PER_PAGE;
+        if (currentStatus) url += '&status=' + encodeURIComponent(currentStatus);
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        allDisputes = data.disputes || data.items || data || [];
+        totalCount = data.total || allDisputes.length;
+
+        applySearch();
+    } catch(e) {
+        console.error('Failed to load disputes:', e);
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="6" style="color:var(--error);">Failed to load disputes. Make sure the API server is running.</td></tr>';
+    }
+}
+
+// ── Client-side search ────────────────────────────────────────────
+function applySearch() {
+    const q = (document.getElementById('search-input').value || '').toLowerCase().trim();
+    if (q) {
+        filteredDisputes = allDisputes.filter(function(d) {
+            return (d.story_title || '').toLowerCase().includes(q);
+        });
+    } else {
+        filteredDisputes = allDisputes.slice();
+    }
+    renderTable();
+}
+
+// ── Render Table ──────────────────────────────────────────────────
+function renderTable() {
+    const tbody = document.getElementById('disputes-tbody');
+    const emptyState = document.getElementById('empty-state');
+    const paginationEl = document.getElementById('pagination');
+
+    if (filteredDisputes.length === 0 && allDisputes.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        paginationEl.style.display = 'none';
+        return;
+    }
+
+    if (filteredDisputes.length === 0) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="6">No disputes match your search.</td></tr>';
+        paginationEl.style.display = 'none';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tbody.innerHTML = filteredDisputes.map(function(d) {
+        return renderRow(d);
+    }).join('');
+
+    // Pagination
+    if (totalCount > PER_PAGE) {
+        paginationEl.style.display = 'flex';
+        const totalPages = Math.ceil(totalCount / PER_PAGE);
+        document.getElementById('page-info').textContent = 'Page ' + currentPage + ' of ' + totalPages + ' (' + totalCount + ' total)';
+        document.getElementById('prev-btn').disabled = currentPage <= 1;
+        document.getElementById('next-btn').disabled = currentPage >= totalPages;
+    } else {
+        paginationEl.style.display = 'none';
+    }
+}
+
+function renderRow(d) {
+    const date = formatDate(d.created_at);
+
+    // Story cell
+    const title = truncate(d.story_title || '(Untitled)', 60);
+    const tags = [];
+    if (d.team)      tags.push('<span class="story-tag">' + esc(d.team) + '</span>');
+    if (d.epic)      tags.push('<span class="story-tag">' + esc(truncate(d.epic, 30)) + '</span>');
+    if (d.pi_number) tags.push('<span class="story-tag">PI ' + esc(d.pi_number) + '</span>');
+    const tagsHtml = tags.length ? '<div class="story-tags">' + tags.join('') + '</div>' : '';
+
+    // AI Classification cell
+    const catName = d.ai_category || d.category || '—';
+    const catColor = d.ai_color || d.color || '';
+    const dotColor = WAF_COLOR_MAP[catColor] || '#6b7280';
+    const confLevel = confidenceLevel(d.ai_confidence || d.confidence);
+    const confPct = d.ai_confidence != null ? Math.round((d.ai_confidence || 0) * 100) + '%' : (d.confidence ? Math.round(d.confidence) + '%' : '');
+    const confBadge = confPct ? '<div><span class="conf-badge conf-' + confLevel + '">' + confPct + ' ' + confLevel + '</span></div>' : '';
+
+    // User Comment cell
+    const comment = truncate(d.user_comment || '', 120);
+    const suggested = d.suggested_category
+        ? '<div style="margin-top:4px;font-size:11px;color:var(--text-muted);">&#8594; suggested: <strong style="color:var(--text-secondary);">' + esc(d.suggested_category) + '</strong></div>'
+        : '';
+
+    // Status badge
+    const statusKey = d.status || 'pending';
+    const statusBadge = '<span class="badge badge-' + statusKey + '">' + statusLabel(statusKey) + '</span>';
+
+    // Actions (only for pending)
+    let actionsHtml = '<td><div class="actions-cell">—</div></td>';
+    if (statusKey === 'pending') {
+        actionsHtml = `<td><div class="actions-cell">
+            <button class="btn btn-sm btn-dismiss" onclick="openModal(${d.id}, 'dismiss')">Dismiss</button>
+            <button class="btn btn-sm btn-accept"  onclick="openModal(${d.id}, 'accept')">Accept → GT</button>
+            <button class="btn btn-sm btn-flag"    onclick="openModal(${d.id}, 'flag_waf')">Flag WAF</button>
+        </div></td>`;
+    }
+
+    return `<tr>
+        <td style="color:var(--text-muted);font-size:12px;white-space:nowrap;">${date}</td>
+        <td>
+            <div style="font-weight:500;color:var(--text-primary);">${esc(title)}</div>
+            ${tagsHtml}
+        </td>
+        <td>
+            <div style="display:flex;align-items:center;">
+                <span class="color-dot" style="background:${dotColor};"></span>
+                <span style="color:var(--text-primary);font-weight:500;">${esc(catName)}</span>
+            </div>
+            ${confBadge}
+        </td>
+        <td>
+            <div style="color:var(--text-secondary);">${esc(comment) || '<span style="color:var(--text-muted);font-style:italic;">No comment</span>'}</div>
+            ${suggested}
+        </td>
+        <td>${statusBadge}</td>
+        ${actionsHtml}
+    </tr>`;
+}
+
+// ── Pagination ────────────────────────────────────────────────────
+function changePage(delta) {
+    currentPage += delta;
+    loadDisputes();
+    window.scrollTo(0, 0);
+}
+
+// ── Modal ─────────────────────────────────────────────────────────
+function openModal(id, action) {
+    const dispute = allDisputes.find(function(d) { return d.id === id; });
+    if (!dispute) return;
+
+    pendingAction = { id: id, action: action, dispute: dispute };
+
+    const modal = document.getElementById('resolve-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+
+    const catName = dispute.ai_category || dispute.category || '—';
+    const catColor = dispute.ai_color || dispute.color || '';
+    const dotColor = WAF_COLOR_MAP[catColor] || '#6b7280';
+
+    // Story detail block
+    const storyDetail = `
+        <div class="detail-block" style="margin-bottom:16px;">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:0;">
+                    <div class="detail-label">Story</div>
+                    <div class="detail-value">${esc(dispute.story_title || '(Untitled)')}</div>
+                </div>
+            </div>
+            ${dispute.story_description ? `<div style="margin-top:10px;"><div class="detail-label">Description</div><div class="detail-value" style="font-size:12px;color:var(--text-muted);">${esc(truncate(dispute.story_description, 200))}</div></div>` : ''}
+            <div style="margin-top:10px;">
+                <div class="detail-label">AI Classification</div>
+                <div class="detail-value" style="display:flex;align-items:center;gap:6px;">
+                    <span class="color-dot" style="background:${dotColor};width:12px;height:12px;"></span>
+                    <strong>${esc(catName)}</strong>
+                    ${catColor ? `<span style="font-size:11px;color:var(--text-muted);">(${esc(catColor)})</span>` : ''}
+                </div>
+            </div>
+            ${dispute.user_comment ? `<div style="margin-top:10px;"><div class="detail-label">User Comment</div><div class="detail-value" style="font-size:12px;">${esc(dispute.user_comment)}</div></div>` : ''}
+            ${dispute.suggested_category ? `<div style="margin-top:10px;"><div class="detail-label">User Suggested</div><div class="detail-value">${esc(dispute.suggested_category)}</div></div>` : ''}
+        </div>`;
+
+    if (action === 'accept') {
+        modalTitle.textContent = 'Accept → Update Ground Truth';
+        confirmBtn.textContent = 'Accept & Add to GT';
+        confirmBtn.className = 'btn btn-sm btn-accept';
+        confirmBtn.style.cssText = 'background:var(--success);color:#000;font-weight:600;';
+
+        const catOptions = WAF_CATEGORIES.map(function(c) {
+            const sel = c === catName ? ' selected' : '';
+            return '<option value="' + esc(c) + '"' + sel + '>' + esc(c) + '</option>';
+        }).join('');
+
+        const colorOptions = WAF_COLORS.map(function(c) {
+            const sel = c === catColor ? ' selected' : '';
+            return '<option value="' + c + '"' + sel + '>' + c + '</option>';
+        }).join('');
+
+        modalBody.innerHTML = storyDetail +
+            `<div class="form-group">
+                <label class="form-label">Resolved Category</label>
+                <select class="form-select" id="modal-category">${catOptions}</select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Resolved Color</label>
+                <select class="form-select" id="modal-color">${colorOptions}</select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Reviewer Notes</label>
+                <textarea class="form-textarea" id="modal-notes" placeholder="Why is this the correct classification?"></textarea>
+            </div>`;
+
+    } else if (action === 'flag_waf') {
+        modalTitle.textContent = 'Flag WAF Definition for Review';
+        confirmBtn.textContent = 'Flag WAF';
+        confirmBtn.style.cssText = 'background:var(--teal);color:#fff;font-weight:600;';
+
+        modalBody.innerHTML = storyDetail +
+            `<div class="form-group">
+                <label class="form-label">What aspect of the WAF definition is ambiguous or unclear?</label>
+                <textarea class="form-textarea" id="modal-notes" placeholder="e.g. The boundary between 'Technical Maintenance' and 'KTLO' is unclear when…" style="min-height:120px;"></textarea>
+            </div>`;
+
+    } else {
+        // dismiss
+        modalTitle.textContent = 'Dismiss Dispute';
+        confirmBtn.textContent = 'Dismiss';
+        confirmBtn.style.cssText = 'background:var(--text-muted);color:#fff;font-weight:600;';
+
+        modalBody.innerHTML = storyDetail +
+            `<div class="form-group">
+                <label class="form-label">Reviewer Notes (optional)</label>
+                <textarea class="form-textarea" id="modal-notes" placeholder="Why is the AI classification correct?"></textarea>
+            </div>`;
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('resolve-modal').classList.add('hidden');
+    pendingAction = null;
+}
+
+async function confirmResolve() {
+    if (!pendingAction) return;
+
+    const { id, action, dispute } = pendingAction;
+    const notesEl = document.getElementById('modal-notes');
+    const notes = notesEl ? notesEl.value.trim() : '';
+
+    const body = { action: action, reviewer_notes: notes };
+
+    if (action === 'accept') {
+        const catEl = document.getElementById('modal-category');
+        const colorEl = document.getElementById('modal-color');
+        body.resolved_category = catEl ? catEl.value : '';
+        body.resolved_color    = colorEl ? colorEl.value : '';
+    }
+
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+    const origText = confirmBtn.textContent;
+    confirmBtn.textContent = 'Saving…';
+    confirmBtn.disabled = true;
+
+    try {
+        const res = await fetch('/api/disputes/' + id + '/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(function() { return {}; });
+            throw new Error(err.message || err.error || 'HTTP ' + res.status);
+        }
+
+        closeModal();
+        loadKpis();
+        loadDisputes();
+    } catch(e) {
+        console.error('Resolve failed:', e);
+        alert('Failed to resolve dispute: ' + e.message);
+        confirmBtn.textContent = origText;
+        confirmBtn.disabled = false;
+    }
+}
+
+async function deleteDispute(id) {
+    if (!confirm('Permanently delete this dispute? This cannot be undone.')) return;
+    try {
+        const res = await fetch('/api/disputes/' + id, { method: 'DELETE' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        loadKpis();
+        loadDisputes();
+    } catch(e) {
+        alert('Failed to delete: ' + e.message);
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function truncate(str, n) {
+    if (!str) return '';
+    return str.length > n ? str.slice(0, n) + '…' : str;
+}
+
+function esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function formatDate(iso) {
+    if (!iso) return '—';
+    try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch(e) { return iso.slice(0, 10); }
+}
+
+function confidenceLevel(val) {
+    if (val == null) return 'medium';
+    const n = val > 1 ? val / 100 : val;
+    if (n >= 0.8) return 'high';
+    if (n >= 0.5) return 'medium';
+    return 'low';
+}
+
+function statusLabel(s) {
+    const map = { pending: 'Pending', accepted: 'Accepted', dismissed: 'Dismissed', flagged_waf: 'WAF Flagged' };
+    return map[s] || s;
+}
+</script>
+</body>
+</html>
