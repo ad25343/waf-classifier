@@ -212,6 +212,25 @@
             background: var(--accent);
             color: #fff;
         }
+        /* ── Dropdown nav ─────────────────────────────────────── */
+        .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
+        .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
+        .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
+        .nav-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown-menu {
+            display: none; position: absolute; top: calc(100% + 6px); left: 0;
+            min-width: 160px; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 10px; padding: 6px; z-index: 1000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+        .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+        .nav-dropdown-item {
+            display: block; padding: 8px 12px; border-radius: 7px;
+            font-size: 13px; font-weight: 500; color: var(--text-secondary);
+            text-decoration: none; white-space: nowrap; transition: background 0.12s, color 0.12s;
+        }
+        .nav-dropdown-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-dropdown-item.active { color: var(--accent); background: rgba(232,148,74,0.10); }
 
         @media (max-width: 700px) {
             .category-card { grid-template-columns: 1fr; }
@@ -375,11 +394,21 @@
 <nav class="top-nav">
     <a href="/" class="top-nav-link">Home</a>
     <a href="/classify" class="top-nav-link">Classify</a>
-    <a href="/history" class="top-nav-link">Analytics</a>
-    <a href="/lineage" class="top-nav-link">Epic Lineage</a>
-    <a href="/teams" class="top-nav-link">Teams</a>
-    <a href="/merge" class="top-nav-link">File Merger</a>
-    <a href="/waf-reference" class="top-nav-link active">WAF Reference</a>
+    <div class="nav-dropdown">
+        <span class="top-nav-link nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/history"  class="nav-dropdown-item">Analytics</a>
+            <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
+            <a href="/teams"    class="nav-dropdown-item">Teams</a>
+        </div>
+    </div>
+    <div class="nav-dropdown">
+        <span class="top-nav-link active nav-dropdown-btn">Tools <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/merge"          class="nav-dropdown-item">File Merger</a>
+            <a href="/waf-reference"  class="nav-dropdown-item active">WAF Reference</a>
+        </div>
+    </div>
     <a href="/settings" class="top-nav-link">Settings</a>
         <div class="global-search-wrap" id="global-search-wrap">
         <span class="global-search-icon">&#128269;</span>
