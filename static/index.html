@@ -1181,17 +1181,6 @@
 
         <!-- Sidebar -->
         <div class="sidebar">
-            <!-- Status -->
-            <div class="sidebar-section">
-                <h3>Status</h3>
-                <div id="sidebar-status" style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
-                    Loading...
-                </div>
-                <div style="margin-top:10px;">
-                    <a href="/settings" style="font-size:12px;color:var(--accent);text-decoration:none;">Manage in Settings →</a>
-                </div>
-            </div>
-
             <!-- Detected Categories -->
             <div class="sidebar-section" id="categories-section" style="display:none;">
                 <h3>Detected Categories</h3>
@@ -1764,24 +1753,6 @@
                     gtText.textContent = "No ground truth";
                 }
 
-                // Update sidebar status
-                const statusEl = document.getElementById("sidebar-status");
-                if (statusEl) {
-                    let html = '';
-                    html += '<div style="display:flex;align-items:center;gap:6px;">';
-                    html += '<span style="width:8px;height:8px;border-radius:50%;background:' + (data.api_key_configured ? 'var(--success)' : 'var(--error)') + ';"></span>';
-                    html += data.api_key_configured ? 'API Connected' : 'API Key Missing';
-                    html += '</div>';
-                    html += '<div style="display:flex;align-items:center;gap:6px;">';
-                    html += '<span style="width:8px;height:8px;border-radius:50%;background:' + (data.waf_loaded ? 'var(--success)' : 'var(--warning)') + ';"></span>';
-                    html += data.waf_loaded ? 'WAF: ' + data.waf_categories.length + ' categories' : 'WAF: Not loaded';
-                    html += '</div>';
-                    html += '<div style="display:flex;align-items:center;gap:6px;">';
-                    html += '<span style="width:8px;height:8px;border-radius:50%;background:' + (data.ground_truth_loaded ? 'var(--success)' : 'var(--warning)') + ';"></span>';
-                    html += data.ground_truth_loaded ? 'GT: ' + data.ground_truth_count + ' examples' : 'GT: Not loaded';
-                    html += '</div>';
-                    statusEl.innerHTML = html;
-                }
             } catch (err) {
                 console.error("Status check failed:", err);
             }
@@ -1818,34 +1789,6 @@
 </script>
 
 <script>
-async function checkStatus() {
-    try {
-        const [statusRes, dashRes] = await Promise.all([
-            fetch('/api/status'),
-            fetch('/api/dashboard/summary')
-        ]);
-        const status = await statusRes.json();
-        const dash = await dashRes.json();
-        const apiDot = document.getElementById('api-dot');
-        const apiText = document.getElementById('api-status');
-        if (status.api_key_configured) { apiDot.className = 'status-dot green'; apiText.textContent = 'API Connected'; }
-        else { apiDot.className = 'status-dot red'; apiText.textContent = 'API Key Missing'; }
-        const wafDot = document.getElementById('waf-dot');
-        const wafText = document.getElementById('waf-status');
-        if (status.waf_loaded) { wafDot.className = 'status-dot green'; wafText.textContent = 'WAF: ' + status.waf_categories.length + ' categories'; }
-        else { wafDot.className = 'status-dot yellow'; wafText.textContent = 'WAF: Not loaded'; }
-        const gtDot = document.getElementById('gt-dot');
-        const gtText = document.getElementById('gt-status');
-        if (status.ground_truth_loaded) { gtDot.className = 'status-dot green'; gtText.textContent = 'GT: ' + status.ground_truth_count + ' examples'; }
-        else { gtDot.className = 'status-dot yellow'; gtText.textContent = 'GT: Not loaded'; }
-        const dbDot = document.getElementById('db-dot');
-        const dbText = document.getElementById('db-status');
-        dbDot.className = 'status-dot green';
-        dbText.textContent = 'History: ' + dash.total_classifications + ' records';
-    } catch (e) { /* silent */ }
-}
-checkStatus();
-
 async function loadClassifyVersionDropdowns() {
     try {
         const [wafRes, gtRes] = await Promise.all([
