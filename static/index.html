@@ -705,7 +705,7 @@
             margin: 6px 0;
         }
 
-        /* Approve button */
+        /* New story button bar */
         .approve-bar {
             display: flex;
             gap: 8px;
@@ -714,51 +714,6 @@
             border-top: 1px solid var(--border);
             align-items: center;
         }
-
-        .approve-btn {
-            padding: 6px 14px;
-            border: 1px solid var(--success);
-            background: var(--success-dim);
-            color: var(--success);
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .approve-btn:hover {
-            background: var(--success);
-            color: white;
-        }
-
-        .approve-btn.approved {
-            background: var(--success);
-            color: white;
-            cursor: default;
-            opacity: 0.8;
-        }
-
-        .approve-hint {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .correct-btn {
-            padding: 6px 14px;
-            border: 1px solid var(--warning);
-            background: transparent;
-            color: var(--warning);
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .correct-btn:hover { background: rgba(217,119,6,0.15); }
 
         .new-story-btn {
             padding: 6px 14px;
@@ -773,53 +728,6 @@
             margin-left: auto;
         }
         .new-story-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-        .correction-form {
-            display: none;
-            margin-top: 12px;
-            padding: 14px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--warning);
-            border-radius: 8px;
-            gap: 10px;
-            flex-direction: column;
-        }
-        .correction-form.open { display: flex; }
-        .correction-form label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
-            margin-bottom: 3px;
-            display: block;
-        }
-        .correction-form select,
-        .correction-form textarea {
-            width: 100%;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 13px;
-            font-family: inherit;
-            padding: 7px 10px;
-            box-sizing: border-box;
-        }
-        .correction-form textarea { resize: vertical; min-height: 60px; }
-        .correction-form-row { display: flex; gap: 10px; }
-        .correction-form-row > div { flex: 1; }
-        .correction-save-btn {
-            align-self: flex-start;
-            padding: 7px 18px;
-            background: var(--warning);
-            color: #000;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .correction-save-btn:hover { opacity: 0.85; }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
@@ -1211,7 +1119,7 @@
                         </div>
                         <div class="setup-step">
                             <div class="num">3</div>
-                            <div class="step-text"><strong>Approve &amp; save</strong> — Approve correct classifications to build your ground truth</div>
+                            <div class="step-text"><strong>Classify &amp; refine</strong> — Ask follow-up questions, challenge the reasoning, start a new story when done</div>
                         </div>
                         <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">WAF definitions and ground truth are managed in <a href="/settings" style="color:var(--accent);">Settings</a>.</p>
                     </div>
@@ -1444,98 +1352,16 @@
             bubble.className = "message-bubble";
             bubble.innerHTML = formatMessage(text);
 
-            // Add approve + correct buttons for assistant classification responses
+            // Add "New Story" button after each AI classification response
             if (role === "assistant" && isClassificationResponse(text)) {
                 const approveBar = document.createElement("div");
                 approveBar.className = "approve-bar";
-
-                const approveBtn = document.createElement("button");
-                approveBtn.className = "approve-btn";
-                approveBtn.innerHTML = "&#10003; Approve &amp; Save to Ground Truth";
-                approveBtn.onclick = () => approveClassification(text, approveBtn);
-
-                const correctBtn = document.createElement("button");
-                correctBtn.className = "correct-btn";
-                correctBtn.innerHTML = "&#9998; Correct this";
-                correctBtn.onclick = () => toggleCorrectionForm(correctBtn, correctionForm);
-
-                const hint = document.createElement("span");
-                hint.className = "approve-hint";
-                hint.textContent = "AI wrong? Override and save the correct answer";
-
                 const newStoryBtn = document.createElement("button");
                 newStoryBtn.className = "new-story-btn";
                 newStoryBtn.innerHTML = "&#8617; New Story";
                 newStoryBtn.onclick = () => clearChat();
-
-                approveBar.appendChild(approveBtn);
-                approveBar.appendChild(correctBtn);
-                approveBar.appendChild(hint);
                 approveBar.appendChild(newStoryBtn);
                 bubble.appendChild(approveBar);
-
-                // ── Color/category validation ───────────────────────────
-                const CATEGORY_COLOR_MAP = {
-                    "ktlo (keep the lights on)": "GRAY", "business maintenance": "BLACK",
-                    "technical maintenance": "BLACK", "regulatory (operational)": "RED",
-                    "regulatory mandated change": "RED", "enterprise strategic priority": "ORANGE",
-                    "top divisional priority": "YELLOW", "other block priority": "GREEN",
-                };
-                function expectedColor(cat) { if (!cat) return null; const lc = cat.toLowerCase().trim(); if (CATEGORY_COLOR_MAP[lc]) return CATEGORY_COLOR_MAP[lc]; if (lc.includes('ktlo') || (lc.includes('keep') && lc.includes('lights') && lc.includes('on'))) return 'GRAY'; return null; }
-                function colorOk(cat, col) { const e = expectedColor(cat); return (!e || !col) ? true : e === col.toUpperCase().trim(); }
-
-                // ── Inline correction form ──────────────────────────────
-                const WAF_CATS = [
-                    "KTLO (Keep the Lights On)", "Business Maintenance",
-                    "Technical Maintenance", "Regulatory (Operational)",
-                    "Regulatory Mandated Change", "Enterprise Strategic Priority",
-                    "Top Divisional Priority", "Other Block Priority"
-                ];
-                const WAF_COLORS = ["GRAY","BLACK","RED","ORANGE","YELLOW","GREEN","BLUE","PURPLE"];
-
-                // Pre-fill from AI response
-                const aiCat   = extractField(text, "Recommended WAF Category") || extractField(text, "WAF Category") || "";
-                const aiColor = extractField(text, "WAF Color") || "";
-
-                // Color/category mismatch warning
-                if (aiCat && aiColor && !colorOk(aiCat, aiColor)) {
-                    const expCol = expectedColor(aiCat);
-                    const colorWarn = document.createElement("div");
-                    colorWarn.style.cssText = "font-size:11px;color:var(--warning);margin-top:6px;padding:4px 8px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:6px;";
-                    colorWarn.innerHTML = `⚠ Color mismatch: AI suggested <strong>${aiColor}</strong> but <strong>${expCol}</strong> is expected for <em>${aiCat}</em>`;
-                    bubble.appendChild(colorWarn);
-                }
-
-                const correctionForm = document.createElement("div");
-                correctionForm.className = "correction-form";
-                correctionForm.innerHTML = `
-                    <div style="font-size:12px;font-weight:600;color:var(--warning);">&#9998; Provide the correct classification</div>
-                    <div class="correction-form-row">
-                        <div>
-                            <label>Correct WAF Category</label>
-                            <select id="corr-cat-${Date.now()}">
-                                ${WAF_CATS.map(c => `<option value="${c}" ${c === aiCat ? 'selected' : ''}>${c}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div>
-                            <label>Correct WAF Color</label>
-                            <select id="corr-col-${Date.now()}">
-                                ${WAF_COLORS.map(c => `<option value="${c}" ${c === aiColor ? 'selected' : ''}>${c}</option>`).join('')}
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label>Your rationale (why is this the correct category?)</label>
-                        <textarea placeholder="e.g. This is planned tech debt reduction, not reactive support — should be Technical Maintenance not KTLO"></textarea>
-                    </div>
-                    <button class="correction-save-btn">Save Correction to Ground Truth</button>
-                `;
-
-                // Wire up save button
-                correctionForm.querySelector('.correction-save-btn').onclick = () =>
-                    saveCorrection(text, correctionForm, correctBtn);
-
-                bubble.appendChild(correctionForm);
             }
 
             msgDiv.appendChild(label);
@@ -1563,132 +1389,7 @@
             return "";
         }
 
-        function toggleCorrectionForm(btn, form) {
-            const open = form.classList.toggle('open');
-            btn.innerHTML = open ? '&#10005; Cancel' : '&#9998; Correct this';
-        }
 
-        async function saveCorrection(responseText, form, correctBtn) {
-            const catEl   = form.querySelector('select:nth-of-type(1)');
-            const colorEl = form.querySelector('select:nth-of-type(2)');
-            const noteEl  = form.querySelector('textarea');
-
-            const category  = catEl.value;
-            const color     = colorEl.value;
-            const rationale = noteEl.value.trim();
-
-            if (!rationale) {
-                showToast("Please add a rationale before saving", "error");
-                noteEl.focus();
-                return;
-            }
-
-            const runCategories = ["KTLO", "Keep the Lights On", "Business Maintenance",
-                                   "Technical Maintenance", "Regulatory (Operational)"];
-            const runChange = runCategories.some(c => category.includes(c)) ? "Run" : "Change";
-
-            const messages = document.querySelectorAll(".message.user .message-bubble");
-            const lastUserMsg = messages.length > 0 ? messages[messages.length - 1].textContent.trim() : "";
-            let title = lastUserMsg.replace(/^(classify this story:|classify:|check this:)\s*/i, "").substring(0, 200);
-            const quoteMatch = lastUserMsg.match(/"([^"]+)"/);
-            if (quoteMatch) title = quoteMatch[1];
-
-            // Append rationale to description so it's captured in ground truth
-            const description = lastUserMsg + (rationale ? `\n\n[Correction note: ${rationale}]` : "");
-
-            try {
-                const saveBtn = form.querySelector('.correction-save-btn');
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'Saving…';
-
-                const res = await fetch("/api/approve-classification", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title, description, run_change: runChange,
-                                          waf_color: color, waf_category: category, waf_subcategory: "" })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    form.innerHTML = `<div style="color:var(--warning);font-size:13px;">&#10003; Correction saved — <strong>${category}</strong> / ${color}. Ground truth: ${data.example_count} examples.</div>`;
-                    form.style.borderColor = 'var(--success)';
-                    correctBtn.disabled = true;
-                    correctBtn.textContent = '✓ Corrected';
-                    showToast(`Correction saved: ${category}`, "success");
-                    updateStatus();
-                } else {
-                    showToast(data.error || "Failed to save correction", "error");
-                    form.querySelector('.correction-save-btn').disabled = false;
-                    form.querySelector('.correction-save-btn').textContent = 'Save Correction to Ground Truth';
-                }
-            } catch (e) {
-                showToast("Error saving correction: " + e.message, "error");
-            }
-        }
-
-        async function approveClassification(responseText, btn) {
-            if (btn.classList.contains("approved")) return;
-
-            const category = extractField(responseText, "Recommended WAF Category") ||
-                             extractField(responseText, "WAF Category");
-            const subCategory = extractField(responseText, "Recommended WAF Sub-Category") ||
-                                extractField(responseText, "WAF Sub-Category");
-            const color = extractField(responseText, "WAF Color");
-
-            if (!category) {
-                showToast("Could not extract WAF category from response", "error");
-                return;
-            }
-
-            // Determine Run/Change from the category
-            const runCategories = ["KTLO", "Keep the Lights On", "Business Maintenance",
-                                   "Technical Maintenance", "Regulatory (Operational)"];
-            const runChange = runCategories.some(c => category.includes(c)) ? "Run" : "Change";
-
-            // Get the user's last message as the story title/description
-            const messages = document.querySelectorAll(".message.user .message-bubble");
-            const lastUserMsg = messages.length > 0 ? messages[messages.length - 1].textContent.trim() : "";
-
-            // Try to split title from description
-            let title = lastUserMsg.substring(0, 200);
-            let description = lastUserMsg;
-
-            // Clean up common prefixes
-            title = title.replace(/^(classify this story:|classify:|check this:)\s*/i, "");
-
-            // If quoted, extract the quote as title
-            const quoteMatch = lastUserMsg.match(/"([^"]+)"/);
-            if (quoteMatch) {
-                title = quoteMatch[1];
-                description = lastUserMsg;
-            }
-
-            try {
-                const res = await fetch("/api/approve-classification", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        title: title,
-                        description: description,
-                        run_change: runChange,
-                        waf_color: color,
-                        waf_category: category,
-                        waf_subcategory: subCategory
-                    })
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    btn.classList.add("approved");
-                    btn.innerHTML = "&#10003; Saved to Ground Truth";
-                    showToast(`Saved! Ground truth now has ${data.example_count} examples`, "success");
-                    updateStatus();
-                } else {
-                    showToast(data.error || "Failed to save", "error");
-                }
-            } catch (err) {
-                showToast("Failed to save: " + err.message, "error");
-            }
-        }
 
         function formatMessage(text) {
             return text
