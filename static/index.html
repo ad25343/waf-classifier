@@ -810,6 +810,43 @@
         }
         .dispute-cancel-btn:hover { color: var(--text-primary); }
 
+        .dispute-ai-summary {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            background: var(--bg-tertiary); border-radius: 6px;
+            padding: 7px 10px; margin-bottom: 10px; font-size: 12px;
+        }
+        .dispute-ai-cat {
+            font-weight: 600; color: var(--text-primary);
+        }
+        .dispute-ai-color {
+            padding: 2px 8px; border-radius: 10px;
+            background: rgba(255,255,255,0.08); font-size: 11px;
+            color: var(--text-muted);
+        }
+        .dispute-hint {
+            font-size: 11px; color: var(--text-muted);
+            margin-bottom: 5px; line-height: 1.5;
+            font-style: italic;
+        }
+        .dispute-field-error {
+            color: #f43f5e; font-size: 11px; margin-top: 3px; display: none;
+        }
+        .dispute-form select {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            padding: 7px 10px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .dispute-form select:focus { outline: none; border-color: rgba(244,63,94,0.5); }
+        .dispute-form select option { background: var(--bg-secondary); }
+        .dispute-form .field-invalid textarea,
+        .dispute-form .field-invalid select { border-color: rgba(244,63,94,0.6); }
+
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -1460,13 +1497,33 @@
                 approveBar.appendChild(flagBtn);
 
                 // Inline dispute form
+                const aiCategory = extractField(text, "WAF Category") || extractField(text, "Recommended WAF Category") || "";
+                const aiColor    = extractField(text, "Color") || "";
+
                 const disputeForm = document.createElement("div");
                 disputeForm.className = "dispute-form";
                 disputeForm.innerHTML = `
-                    <label>Why is this classification wrong? (optional)</label>
-                    <textarea placeholder="e.g. This is a platform enablement initiative, not KTLO..." rows="2"></textarea>
-                    <label style="margin-top:8px;">What should it be? (optional)</label>
-                    <input type="text" placeholder="e.g. Strategic, Platform Investment…">
+                    <div class="dispute-ai-summary">
+                        <span style="color:var(--text-muted)">Disputing AI classification:</span>
+                        <span class="dispute-ai-cat">${aiCategory || "Unknown"}</span>
+                        ${aiColor ? `<span class="dispute-ai-color">${aiColor}</span>` : ""}
+                    </div>
+
+                    <label>Why is this classification incorrect? <span style="color:#f43f5e">*</span></label>
+                    <div class="dispute-hint">Be specific — what about this story does not fit "<em>${aiCategory || "this category"}</em>"? What in the description supports a different category?</div>
+                    <div class="comment-wrap">
+                        <textarea placeholder="e.g. This is a net-new data pipeline enabling a new revenue stream, not maintenance. The AI may be anchoring on the word 'pipeline' rather than the strategic outcome." rows="3"></textarea>
+                        <div class="dispute-field-error comment-error">Please explain specifically why the classification is incorrect (at least 30 characters).</div>
+                    </div>
+
+                    <label style="margin-top:12px;">What should the correct WAF category be? <span style="color:#f43f5e">*</span></label>
+                    <div class="category-wrap">
+                        <select>
+                            <option value="">— select a category —</option>
+                        </select>
+                        <div class="dispute-field-error category-error">Please select the correct category.</div>
+                    </div>
+
                     <div class="dispute-form-row">
                         <button class="dispute-submit-btn">Submit Flag</button>
                         <button class="dispute-cancel-btn">Cancel</button>
@@ -1474,17 +1531,73 @@
                     </div>
                 `;
 
-                const [commentEl, suggestEl] = disputeForm.querySelectorAll("textarea, input");
+                const commentEl  = disputeForm.querySelector("textarea");
+                const selectEl   = disputeForm.querySelector("select");
+                const commentErr = disputeForm.querySelector(".comment-error");
+                const categoryErr= disputeForm.querySelector(".category-error");
                 const [submitBtn, cancelBtn] = disputeForm.querySelectorAll("button");
-                const confirmEl = disputeForm.querySelector(".dispute-confirm");
+                const confirmEl  = disputeForm.querySelector(".dispute-confirm");
+                const MIN_CHARS  = 30;
+
+                // Populate category dropdown from current WAF definitions
+                const defaultCats = [
+                    "KTLO (Keep the Lights On)", "Business Maintenance", "Technical Maintenance",
+                    "Regulatory (Operational)", "Regulatory Mandated Change",
+                    "Enterprise Strategic Priority", "Top Divisional Priority", "Other Block Priority"
+                ];
+                fetch("/api/status").then(r => r.json()).then(d => {
+                    const cats = (d.waf_categories && d.waf_categories.length) ? d.waf_categories : defaultCats;
+                    cats.forEach(cat => {
+                        const opt = document.createElement("option");
+                        opt.value = cat; opt.textContent = cat;
+                        selectEl.appendChild(opt);
+                    });
+                }).catch(() => {
+                    defaultCats.forEach(cat => {
+                        const opt = document.createElement("option");
+                        opt.value = cat; opt.textContent = cat;
+                        selectEl.appendChild(opt);
+                    });
+                });
+
+                // Clear errors on input
+                commentEl.addEventListener("input", () => {
+                    if (commentEl.value.trim().length >= MIN_CHARS) {
+                        commentErr.style.display = "none";
+                        commentEl.style.borderColor = "";
+                    }
+                });
+                selectEl.addEventListener("change", () => {
+                    if (selectEl.value) {
+                        categoryErr.style.display = "none";
+                        selectEl.style.borderColor = "";
+                    }
+                });
 
                 cancelBtn.onclick = () => {
                     disputeForm.classList.remove("open");
                     commentEl.value = "";
-                    suggestEl.value = "";
+                    selectEl.selectedIndex = 0;
+                    commentErr.style.display = "none";
+                    categoryErr.style.display = "none";
                 };
 
                 submitBtn.onclick = async () => {
+                    // Validate both required fields
+                    let valid = true;
+                    const comment = commentEl.value.trim();
+                    if (comment.length < MIN_CHARS) {
+                        commentErr.style.display = "block";
+                        commentEl.style.borderColor = "rgba(244,63,94,0.6)";
+                        valid = false;
+                    }
+                    if (!selectEl.value) {
+                        categoryErr.style.display = "block";
+                        selectEl.style.borderColor = "rgba(244,63,94,0.6)";
+                        valid = false;
+                    }
+                    if (!valid) return;
+
                     submitBtn.disabled = true;
                     submitBtn.textContent = "Flagging…";
 
@@ -1493,14 +1606,14 @@
                     const storyTitle = (lines[0] || _lastStoryText).slice(0, 120);
 
                     const payload = {
-                        story_title: storyTitle,
-                        story_description: _lastStoryText,
-                        ai_category:   extractField(_lastClassifResp, "WAF Category") || extractField(_lastClassifResp, "Recommended WAF Category"),
-                        ai_color:      extractField(_lastClassifResp, "Color"),
-                        ai_confidence: extractField(_lastClassifResp, "Confidence"),
-                        ai_reasoning:  extractField(_lastClassifResp, "Reasoning"),
-                        user_comment:      commentEl.value.trim(),
-                        suggested_category: suggestEl.value.trim(),
+                        story_title:        storyTitle,
+                        story_description:  _lastStoryText,
+                        ai_category:        aiCategory,
+                        ai_color:           aiColor,
+                        ai_confidence:      extractField(_lastClassifResp, "Confidence"),
+                        ai_reasoning:       extractField(_lastClassifResp, "Reasoning"),
+                        user_comment:       comment,
+                        suggested_category: selectEl.value,
                         team:     document.getElementById("team-input")?.value?.trim() || "",
                         epic:     document.getElementById("epic-input")?.value?.trim() || "",
                         story_id: document.getElementById("story-id-input")?.value?.trim() || "",
@@ -1508,18 +1621,23 @@
                     };
 
                     try {
-                        await fetch("/api/disputes", {
+                        const resp = await fetch("/api/disputes", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(payload),
                         });
+                        if (!resp.ok) {
+                            const err = await resp.json();
+                            throw new Error(err.error || "Server error");
+                        }
                         confirmEl.style.display = "inline";
                         submitBtn.style.display = "none";
                         cancelBtn.textContent = "Close";
                     } catch (e) {
                         submitBtn.disabled = false;
                         submitBtn.textContent = "Submit Flag";
-                        alert("Could not submit flag: " + e.message);
+                        commentErr.textContent = "Could not submit: " + e.message;
+                        commentErr.style.display = "block";
                     }
                 };
 

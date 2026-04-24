@@ -441,6 +441,7 @@ Upload a file and return column info for field mapping without starting AI class
 | `feature_id` | Feature ID, Feature key, Parent ID, Parent key | e.g. F-C001 |
 | `epic_id` | Epic ID, Epic key, Epic link, Initiative ID | e.g. EP-C001 |
 | `story_points` | Story Points, story_points, Points, SP, Estimate | Numeric value stored as text |
+| `pi_number` | **PI Number** (priority), PI, PI #, Program Increment, PI_Number | Format `PI-YY-x` (e.g. `PI-25-1`). Stored as text. |
 
 ### POST /api/bulk-verify
 
@@ -973,6 +974,150 @@ Copy the merged file (minus rejected rows) into the upload pipeline and return f
 | `rejected_ids` | string | JSON array of story IDs to exclude (optional, default `"[]"`). |
 
 **Response:** Same shape as `POST /api/bulk-verify/preview` — includes `preview_id`, `suggested_mappings`, `target_fields`, `sample_rows`, `total_rows`. Frontend stores in `sessionStorage` and redirects to `/history`, which auto-triggers the column mapping step.
+
+---
+
+## Classification Disputes
+
+Workflow for flagging AI classifications that the user believes are incorrect. Users flag from the Classify page; reviewers triage and resolve on the `/disputes` page.
+
+**Dispute status lifecycle:** `pending` → `dismissed` | `accepted` | `flagged_waf`
+
+### POST /api/disputes
+
+Create a new classification dispute.
+
+**Request:**
+```json
+{
+  "story_title": "Migrate ETL pipeline to Spark",
+  "story_description": "Full story text as sent to the AI classifier...",
+  "ai_category": "KTLO (Keep the Lights On)",
+  "ai_color": "GRAY",
+  "ai_confidence": "HIGH",
+  "ai_reasoning": "Framed as a migration of existing infrastructure...",
+  "user_comment": "This is a net-new platform capability, not maintenance. The AI anchored on 'migrate' but the outcome is a strategic new data architecture.",
+  "suggested_category": "Enterprise Strategic Priority",
+  "team": "Data Platform",
+  "epic": "Cloud Data Platform",
+  "story_id": "PROJ-456",
+  "pi_number": "PI-25-2"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `story_title` | string | **Yes** | First line of the story (capped at 120 chars). |
+| `story_description` | string | No | Full story text as sent to the AI. |
+| `ai_category` | string | No | AI's suggested WAF category. |
+| `ai_color` | string | No | AI's suggested WAF color. |
+| `ai_confidence` | string | No | AI's confidence level (HIGH/MEDIUM/LOW). |
+| `ai_reasoning` | string | No | AI's reasoning text. |
+| `user_comment` | string | No | User's explanation of why the classification is wrong. UI enforces minimum 30 characters. |
+| `suggested_category` | string | No | User's suggested correct WAF category. |
+| `team`, `epic`, `story_id`, `pi_number` | string | No | Contextual fields from the classify page sidebar. |
+
+**Response:**
+```json
+{ "success": true, "id": 7 }
+```
+
+HTTP 201 on success.
+
+### GET /api/disputes
+
+List disputes with optional status filter and pagination.
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `status` | string | `pending` (default), `dismissed`, `accepted`, `flagged_waf`, or `all` |
+| `page` | int | Page number (default: 1) |
+| `per_page` | int | Results per page (default: 25, max: 200) |
+
+**Response:**
+```json
+{
+  "disputes": [
+    {
+      "id": 7,
+      "created_at": "2026-04-24T10:30:00",
+      "story_title": "Migrate ETL pipeline to Spark",
+      "story_description": "...",
+      "ai_category": "KTLO (Keep the Lights On)",
+      "ai_color": "GRAY",
+      "ai_confidence": "HIGH",
+      "ai_reasoning": "...",
+      "user_comment": "This is a net-new platform capability...",
+      "suggested_category": "Enterprise Strategic Priority",
+      "status": "pending",
+      "reviewed_at": null,
+      "reviewer_notes": "",
+      "resolved_category": "",
+      "resolved_color": "",
+      "gt_updated": 0,
+      "waf_flagged": 0,
+      "team": "Data Platform",
+      "epic": "Cloud Data Platform",
+      "story_id": "PROJ-456",
+      "pi_number": "PI-25-2"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "per_page": 25,
+  "total_pages": 1,
+  "counts": {
+    "pending": 1,
+    "dismissed": 3,
+    "accepted": 5,
+    "waf_flagged": 1
+  }
+}
+```
+
+Pending disputes always sort first, then by `created_at DESC`.
+
+### POST /api/disputes/{id}/resolve
+
+Resolve a dispute. Three actions available:
+
+| Action | Result | Notes |
+|--------|--------|-------|
+| `dismiss` | Status → `dismissed` | No GT or WAF change. |
+| `accept_gt` | Status → `accepted`, `gt_updated: 1` | Saves a corrected classification to the DB with `approved: true` and the resolved category/color. Requires `resolved_category`. |
+| `flag_waf` | Status → `flagged_waf`, `waf_flagged: 1` | Escalates to WAF definition owners. |
+
+**Request:**
+```json
+{
+  "action": "accept_gt",
+  "resolved_category": "Enterprise Strategic Priority",
+  "resolved_color": "BLACK",
+  "reviewer_notes": "Confirmed: net-new capability, not maintenance. Story description was ambiguous."
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `action` | string | **Yes** | `dismiss`, `accept_gt`, or `flag_waf` |
+| `resolved_category` | string | For `accept_gt` | Confirmed correct WAF category. |
+| `resolved_color` | string | No | Confirmed correct color. |
+| `reviewer_notes` | string | No | Reviewer's notes for the record. |
+
+**Response:**
+```json
+{ "success": true }
+```
+
+### DELETE /api/disputes/{id}
+
+Hard delete a dispute record. Returns 404 if not found.
+
+**Response:**
+```json
+{ "success": true }
+```
 
 ---
 

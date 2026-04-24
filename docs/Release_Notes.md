@@ -2,6 +2,60 @@
 
 ---
 
+## v3.6.0 — April 2026
+
+Classification Disputes workflow, PI Number field, ephemeral Classify page, and expanded trend data.
+
+### New Features
+
+- **Classification Disputes** — Full workflow for flagging AI classifications the user believes are wrong. When the AI returns a classification, a **🚩 Flag as Incorrect** button appears alongside "New Story". Clicking opens an inline form requiring:
+  - *Why is this classification incorrect?* — Free-text explanation (minimum 30 characters, required). Guidance text prompts users to be specific about what the AI got wrong and why the evidence points elsewhere.
+  - *What should the correct WAF category be?* — Required dropdown populated from the current active WAF definitions (fetched from `/api/status`). Falls back to default categories if the API is unavailable.
+  - Validation is inline — submission is blocked until both fields are complete. Error messages appear under each field.
+  - On submit, a dispute record is created in the DB with the full AI classification context (category, color, confidence, reasoning) and the user's story text — no re-entry needed.
+
+- **Classification Disputes review page (`/disputes`)** — Dedicated page for reviewers to triage flagged disputes:
+  - 4 KPI cards: Pending, Accepted→GT, Dismissed, WAF Flagged
+  - Status filter tabs (Pending / All / Accepted / Dismissed / WAF Flagged)
+  - Table view: Date, Story, AI Classification, User Explanation, Status, Actions
+  - **Resolve modal** — three resolution actions:
+    - **Dismiss** — marks dispute resolved, no change to GT or WAF
+    - **Accept into GT** — confirm/adjust category and color, saves corrected classification to DB with `approved: true`
+    - **Flag for WAF Review** — escalates to WAF definition owners with reviewer notes; marks `waf_flagged: true`
+  - Navigation: "Classification Disputes" added to Analyze dropdown on all 9 pages; Disputes card added to home page grid (🚩 red theme, "Reviewers" badge)
+
+- **PI Number field** — Program Increment tag added to the full data stack:
+  - New `pi_number TEXT DEFAULT ''` column in `classifications` and `disputes` tables
+  - Auto-detected from CSV/Excel columns matching `pi number`, `pi_number`, `pi #`, `program increment`, `pi`
+  - Input field on the single-story Classify page (between Story Points and Epic)
+  - Displayed as a teal chip in: verify table, story detail modal, all stories table (History), epic lineage tree, Teams story view, and Disputes table
+  - Included in FTS5 full-text search index
+  - Format: `PI-YY-x` (e.g. `PI-25-1`, `PI-25-2`, `PI-25-3`, `PI-25-4`)
+
+- **Classify page — ephemeral by design** — The "Approve & Save" and "Correct this" buttons have been removed from the Classify page. Classification is now a pure exploration tool — no story is saved to the DB from chat. The only path to saving classifications is through the bulk verify workflow (Analytics → Upload). This preserves data integrity: Ground Truth and WAF Definitions are managed exclusively through the Settings governance screen.
+
+### Test Data
+
+- **All team-specific files expanded to 8 PIs** — `multi-team-product-120.csv`, `platform-engineering-80.csv`, and `compliance-focus-60.csv` rebuilt with 8 PI spans (PI-23-3 → PI-25-2) for meaningful trend analysis.
+- **New `trend-analysis-480.csv`** — 480 stories, 5 consistent teams, 60 stories/PI, 8 PIs. Built-in trends: KTLO decreasing 35% → 19%, Strategic increasing 12% → 30%, mismatch rate improving 42% → 13%. Suitable for demonstrating PI-over-PI WAF shift analysis.
+- **PI Number format corrected** — All test data files updated from `PI-YYQx` format to `PI-YY-x` (e.g. `PI-25-1`).
+
+### API Changes
+
+- `POST /api/disputes` — Create a new classification dispute
+- `GET /api/disputes` — List disputes with status filter and pagination; returns per-status counts
+- `POST /api/disputes/<id>/resolve` — Resolve a dispute: `dismiss`, `accept_gt`, or `flag_waf`
+- `DELETE /api/disputes/<id>` — Hard delete a dispute record
+
+### Database
+
+- New table `disputes` — 21 columns: `id`, `created_at`, `story_title`, `story_description`, `ai_category`, `ai_color`, `ai_confidence`, `ai_reasoning`, `user_comment`, `suggested_category`, `status` (`pending`/`dismissed`/`accepted`/`flagged_waf`), `reviewed_at`, `reviewer_notes`, `resolved_category`, `resolved_color`, `gt_updated`, `waf_flagged`, `team`, `epic`, `story_id`, `pi_number`
+- New column `pi_number TEXT DEFAULT ''` on `classifications` table
+- FTS5 `classifications_fts` virtual table updated to include `pi_number`
+- Schema migration runs automatically on startup — no action needed for existing databases
+
+---
+
 ## v3.5.0 — April 2026
 
 Version Library, WAF Definition inline editing, and UX clickability fixes.
