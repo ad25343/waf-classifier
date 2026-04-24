@@ -116,6 +116,15 @@ def classify():
     waf_version_id = _to_int_or_none(data.get("waf_version_id"))
     gt_version_id  = _to_int_or_none(data.get("gt_version_id"))
 
+    # Prepend epic/feature context to the message so the model has strategic framing
+    context_parts = []
+    if epic:
+        context_parts.append(f"Epic: {epic}")
+    if parent_feature:
+        context_parts.append(f"Feature: {parent_feature}")
+    if context_parts:
+        user_message = "[Context — " + " | ".join(context_parts) + "]\n\n" + user_message
+
     chat_history.append({"role": "user", "content": user_message})
     recent_history = chat_history[-20:]
 

@@ -1248,19 +1248,10 @@
                     <a href="/settings" style="font-size:11px;color:var(--accent);white-space:nowrap;text-decoration:none;" title="Manage versions in Settings">manage ↗</a>
                 </div>
                 <div style="display:flex;gap:8px;margin-bottom:6px;">
-                    <input type="text" id="story-id-input" placeholder="Story Key (e.g. PROJ-123)"
-                        style="flex:0 0 160px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;">
-                    <input type="number" id="story-points-input" placeholder="Points"
-                        min="0" step="0.5"
-                        style="flex:0 0 80px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
-                        title="Story Points (optional)">
-                    <input type="text" id="pi-number-input" placeholder="PI (e.g. PI-24.4)"
-                        style="flex:0 0 120px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
-                        title="Program Increment (optional)">
-                    <input type="text" id="epic-input" placeholder="Epic (optional)"
+                    <input type="text" id="epic-input" placeholder="Epic Desc *"
                         style="flex:1;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
                         list="epic-suggestions">
-                    <input type="text" id="feature-input" placeholder="Parent Feature (optional)"
+                    <input type="text" id="feature-input" placeholder="Feature Desc *"
                         style="flex:1;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
                         list="feature-suggestions">
                     <datalist id="epic-suggestions"></datalist>
@@ -1275,7 +1266,7 @@
                     <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
                 </div>
                 <div class="input-hint">
-                    Press Enter to send · Shift+Enter for new line · Story Key, Points, PI, Epic &amp; Feature are optional — they link this story to its lineage
+                    Press Enter to send · Shift+Enter for new line · Epic Desc and Feature Desc are required — they give the AI context to classify accurately
                 </div>
             </div>
         </div>
@@ -1337,6 +1328,22 @@
             const input = document.getElementById("chat-input");
             const message = input.value.trim();
             if (!message) return;
+
+            const epicVal = document.getElementById("epic-input").value.trim();
+            const featureVal = document.getElementById("feature-input").value.trim();
+            if (!epicVal) {
+                document.getElementById("epic-input").style.borderColor = "rgba(244,63,94,0.7)";
+                document.getElementById("epic-input").focus();
+                return;
+            }
+            if (!featureVal) {
+                document.getElementById("feature-input").style.borderColor = "rgba(244,63,94,0.7)";
+                document.getElementById("feature-input").focus();
+                return;
+            }
+            // Reset borders if valid
+            document.getElementById("epic-input").style.borderColor = "";
+            document.getElementById("feature-input").style.borderColor = "";
 
             const welcome = document.getElementById("welcome");
             if (welcome) welcome.style.display = "none";
