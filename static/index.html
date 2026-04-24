@@ -265,14 +265,6 @@
         }
 
         /* Categories List */
-        .categories-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
         .category-tag {
             background: var(--bg-tertiary);
             color: var(--text-secondary);
@@ -1203,12 +1195,6 @@
 
         <!-- Sidebar -->
         <div class="sidebar">
-            <!-- Detected Categories -->
-            <div class="sidebar-section" id="categories-section" style="display:none;">
-                <h3>Detected Categories</h3>
-                <div class="categories-list" id="categories-list"></div>
-            </div>
-
             <!-- Classify mode (hidden — single story mode only for now) -->
             <div id="batch-area" style="display:none;">
                 <textarea class="batch-textarea" id="batch-input" placeholder="Paste stories (one per line):&#10;Story Title | Description | Current WAF Tag"></textarea>
@@ -1741,15 +1727,6 @@
                     wafPill.className = "pill active";
                     wafText.textContent = `WAF: ${data.waf_filename}`;
 
-                    // Show categories list
-                    if (data.waf_categories && data.waf_categories.length > 0) {
-                        const section = document.getElementById("categories-section");
-                        const list = document.getElementById("categories-list");
-                        section.style.display = "block";
-                        list.innerHTML = data.waf_categories.map(c =>
-                            `<span class="category-tag">${c}</span>`
-                        ).join("");
-                    }
                 } else {
                     wafPill.className = "pill inactive";
                     wafText.textContent = "No WAF loaded";
