@@ -102,16 +102,21 @@ def dashboard_summary():
 
 @analytics_bp.route("/api/dashboard/stories", methods=["GET"])
 def dashboard_stories():
-    """Get filtered story list for drill-down. Supports ?filter=mismatches|category|color|confidence&value=X&upload_id=Y"""
+    """Get filtered story list for drill-down.
+    Supports ?filter=mismatches|category|color|confidence&value=X&upload_id=Y&q=text
+    q= uses FTS5 when present; falls back to LIKE on story_title.
+    """
     db = get_db()
-    uid = request.args.get("upload_id", "")
-    filt = request.args.get("filter", "")
+    uid   = request.args.get("upload_id", "")
+    filt  = request.args.get("filter", "")
     value = request.args.get("value", "")
-    page = max(1, int(request.args.get("page", "1")))
+    q     = request.args.get("q", "").strip()
+    page     = max(1, int(request.args.get("page", "1")))
     per_page = min(500, max(1, int(request.args.get("per_page", "100"))))
 
     where_clauses = []
     params = []
+
     if uid:
         where_clauses.append("upload_id = ?")
         params.append(int(uid))
@@ -132,6 +137,58 @@ def dashboard_stories():
     elif filt == "run_change" and value:
         where_clauses.append("run_change = ?")
         params.append(value)
+
+    # Column-level keyword filters (q_title, q_epic, q_waf, q_ai, q_color, q_status)
+    col_filters = {
+        "q_title":  ("story_title",   False),
+        "q_epic":   ("epic",          False),
+        "q_waf":    ("original_tag",  False),
+        "q_ai":     ("waf_category",  False),
+        "q_color":  ("waf_color",     False),
+        "q_team":   ("team",          False),
+    }
+    for param_name, (col_name, _) in col_filters.items():
+        v = request.args.get(param_name, "").strip()
+        if v:
+            where_clauses.append(f"LOWER({col_name}) LIKE ?")
+            params.append(f"%{v.lower()}%")
+
+    q_status = request.args.get("q_status", "").strip().lower()
+    if q_status:
+        if "mismatch" in q_status:
+            where_clauses.append("was_mismatch = 1")
+        elif "match" in q_status or "correct" in q_status:
+            where_clauses.append("was_mismatch = 0")
+
+    # Full-text search via FTS5 (restricts to matching rowids)
+    fts_ids = None
+    if q:
+        try:
+            fts_term = q.replace('"', '""')
+            fts_rows = db.execute(
+                "SELECT rowid FROM classifications_fts WHERE classifications_fts MATCH ?",
+                [f'"{fts_term}"']
+            ).fetchall()
+            fts_ids = [r[0] for r in fts_rows]
+            if not fts_ids:
+                # Fallback: prefix match
+                fts_rows = db.execute(
+                    "SELECT rowid FROM classifications_fts WHERE classifications_fts MATCH ?",
+                    [fts_term + "*"]
+                ).fetchall()
+                fts_ids = [r[0] for r in fts_rows]
+        except Exception:
+            fts_ids = None
+
+    if fts_ids is not None:
+        if fts_ids:
+            placeholders = ",".join("?" * len(fts_ids))
+            where_clauses.append(f"id IN ({placeholders})")
+            params.extend(fts_ids)
+        else:
+            # No FTS matches — return empty result
+            return jsonify({"total": 0, "page": page, "per_page": per_page,
+                            "total_pages": 0, "stories": []})
 
     where = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 

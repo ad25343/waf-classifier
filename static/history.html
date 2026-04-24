@@ -656,10 +656,21 @@
             <div class="card">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
                     <div class="card-title" style="margin:0;">All Stories</div>
-                    <div id="recent-pagination" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);"></div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <div id="recent-active-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+                        <div style="position:relative;">
+                            <input type="text" id="recent-search" placeholder="🔍 Search stories…"
+                                oninput="debounceRecentSearch()"
+                                style="padding:5px 10px 5px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:7px;color:var(--text-primary);font-size:13px;width:220px;outline:none;transition:border-color 0.2s;"
+                                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+                        </div>
+                        <button onclick="clearRecentFilters()" id="recent-clear-btn" title="Clear all filters"
+                            style="display:none;background:none;border:1px solid var(--border);border-radius:7px;padding:5px 10px;color:var(--text-muted);font-size:12px;cursor:pointer;">✕ Clear</button>
+                        <div id="recent-pagination" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);"></div>
+                    </div>
                 </div>
                 <div style="overflow-x:auto;">
-                    <table>
+                    <table id="recent-table">
                         <thead>
                             <tr>
                                 <th class="sortable" style="text-align:left;cursor:pointer;user-select:none;" onclick="sortRecent('title')">Story <span id="recent-sort-title"></span></th>
@@ -668,6 +679,14 @@
                                 <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('category')">AI WAF <span id="recent-sort-category"></span></th>
                                 <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('color')">Color <span id="recent-sort-color"></span></th>
                                 <th class="sortable" style="text-align:center;cursor:pointer;user-select:none;" onclick="sortRecent('status')">Status <span id="recent-sort-status"></span></th>
+                            </tr>
+                            <tr class="col-filter-row" id="recent-col-filters">
+                                <td><input type="text" id="rcf-title"  placeholder="Filter story…"  oninput="debounceRecentColFilter()"></td>
+                                <td><input type="text" id="rcf-epic"   placeholder="Filter epic…"   oninput="debounceRecentColFilter()"></td>
+                                <td><input type="text" id="rcf-waf"    placeholder="Filter user WAF…" oninput="debounceRecentColFilter()"></td>
+                                <td><input type="text" id="rcf-ai"     placeholder="Filter AI WAF…" oninput="debounceRecentColFilter()"></td>
+                                <td><input type="text" id="rcf-color"  placeholder="Filter color…"  oninput="debounceRecentColFilter()"></td>
+                                <td><input type="text" id="rcf-status" placeholder="match / mismatch" oninput="debounceRecentColFilter()"></td>
                             </tr>
                         </thead>
                         <tbody id="sum-recent-table"></tbody>
@@ -2620,16 +2639,78 @@ function linToggleFeature(header) {
 }
 
 
-// ── Recent Classifications Table (sortable + paginated) ──
-let recentPage = 1;
+// ── Recent Classifications Table (sortable + paginated + searchable) ──
+let recentPage    = 1;
 let recentPerPage = 25;
 let recentSortCol = 'status';
-let recentSortDir = 'desc'; // mismatches first
+let recentSortDir = 'desc';
+let _recentSearchTimer = null;
+let _recentColFilterTimer = null;
+
+function _recentSearchParams() {
+    const q        = (document.getElementById('recent-search')?.value || '').trim();
+    const qTitle   = (document.getElementById('rcf-title')?.value   || '').trim();
+    const qEpic    = (document.getElementById('rcf-epic')?.value    || '').trim();
+    const qWaf     = (document.getElementById('rcf-waf')?.value     || '').trim();
+    const qAi      = (document.getElementById('rcf-ai')?.value      || '').trim();
+    const qColor   = (document.getElementById('rcf-color')?.value   || '').trim();
+    const qStatus  = (document.getElementById('rcf-status')?.value  || '').trim();
+    const parts = [];
+    if (q)       parts.push('q='       + encodeURIComponent(q));
+    if (qTitle)  parts.push('q_title=' + encodeURIComponent(qTitle));
+    if (qEpic)   parts.push('q_epic='  + encodeURIComponent(qEpic));
+    if (qWaf)    parts.push('q_waf='   + encodeURIComponent(qWaf));
+    if (qAi)     parts.push('q_ai='    + encodeURIComponent(qAi));
+    if (qColor)  parts.push('q_color=' + encodeURIComponent(qColor));
+    if (qStatus) parts.push('q_status='+ encodeURIComponent(qStatus));
+    return { parts, hasFilter: !!(q || qTitle || qEpic || qWaf || qAi || qColor || qStatus) };
+}
+
+function _updateRecentClearBtn() {
+    const { hasFilter } = _recentSearchParams();
+    const btn = document.getElementById('recent-clear-btn');
+    if (btn) btn.style.display = hasFilter ? '' : 'none';
+    // Active filter chips
+    const chipDiv = document.getElementById('recent-active-filters');
+    if (!chipDiv) return;
+    const chips = [];
+    const q = (document.getElementById('recent-search')?.value || '').trim();
+    if (q) chips.push(['🔍 ' + q, () => { document.getElementById('recent-search').value = ''; recentPage=1; loadRecentTable(); _updateRecentClearBtn(); }]);
+    const cols = [['rcf-title','Story'],['rcf-epic','Epic'],['rcf-waf','User WAF'],['rcf-ai','AI WAF'],['rcf-color','Color'],['rcf-status','Status']];
+    cols.forEach(([id, label]) => {
+        const v = (document.getElementById(id)?.value || '').trim();
+        if (v) chips.push([label + ': ' + v, () => { document.getElementById(id).value = ''; recentPage=1; loadRecentTable(); _updateRecentClearBtn(); }]);
+    });
+    chipDiv.innerHTML = chips.map((c, i) =>
+        `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(232,148,74,0.12);border:1px solid rgba(232,148,74,0.4);border-radius:12px;padding:2px 8px;font-size:11px;color:var(--accent);cursor:pointer;" onclick="(${c[1].toString()})()">${esc(c[0])} <span style="font-size:10px;opacity:0.7;">✕</span></span>`
+    ).join('');
+}
+
+function debounceRecentSearch() {
+    clearTimeout(_recentSearchTimer);
+    _recentSearchTimer = setTimeout(() => { recentPage = 1; loadRecentTable(); _updateRecentClearBtn(); }, 300);
+}
+
+function debounceRecentColFilter() {
+    clearTimeout(_recentColFilterTimer);
+    _recentColFilterTimer = setTimeout(() => { recentPage = 1; loadRecentTable(); _updateRecentClearBtn(); }, 250);
+}
+
+function clearRecentFilters() {
+    ['recent-search','rcf-title','rcf-epic','rcf-waf','rcf-ai','rcf-color','rcf-status'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    recentPage = 1;
+    loadRecentTable();
+    _updateRecentClearBtn();
+}
 
 async function loadRecentTable() {
     const qs = getAnalyticsQS();
     const uploadParam = qs ? '&' + qs : '';
-    const url = `/api/dashboard/stories?per_page=${recentPerPage}&page=${recentPage}&sort=${recentSortCol}&dir=${recentSortDir}${uploadParam}`;
+    const { parts } = _recentSearchParams();
+    const searchParam = parts.length ? '&' + parts.join('&') : '';
+    const url = `/api/dashboard/stories?per_page=${recentPerPage}&page=${recentPage}&sort=${recentSortCol}&dir=${recentSortDir}${uploadParam}${searchParam}`;
     const tbody = document.getElementById('sum-recent-table');
     try {
         const res = await fetch(url);
@@ -2640,13 +2721,15 @@ async function loadRecentTable() {
 
         // Pagination bar
         const pagDiv = document.getElementById('recent-pagination');
+        const { hasFilter } = _recentSearchParams();
+        const countLabel = hasFilter ? `${total.toLocaleString()} match${total !== 1 ? 'es' : ''}` : `${total.toLocaleString()} stories`;
         if (total > recentPerPage) {
             pagDiv.innerHTML =
                 `<button onclick="recentPageNav(-1)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--text-secondary);cursor:pointer;" ${recentPage<=1?'disabled':''}>←</button>` +
-                `<span>Page ${recentPage} of ${totalPages} &nbsp;·&nbsp; ${total.toLocaleString()} stories</span>` +
+                `<span>Page ${recentPage} of ${totalPages} &nbsp;·&nbsp; ${countLabel}</span>` +
                 `<button onclick="recentPageNav(1)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--text-secondary);cursor:pointer;" ${recentPage>=totalPages?'disabled':''}>→</button>`;
         } else {
-            pagDiv.innerHTML = `<span style="font-size:12px;">${total.toLocaleString()} stories</span>`;
+            pagDiv.innerHTML = `<span style="font-size:12px;">${countLabel}</span>`;
         }
 
         // Sort arrow indicators
@@ -2656,24 +2739,24 @@ async function loadRecentTable() {
         });
 
         if (stories.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No classifications yet</td></tr>';
+            const { hasFilter } = _recentSearchParams();
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">${hasFilter ? 'No stories match your filters. <a href="#" onclick="clearRecentFilters();return false;" style="color:var(--accent);">Clear filters</a>' : 'No classifications yet'}</td></tr>`;
             return;
         }
 
-        // Store stories for click access
         window._recentStories = stories;
 
         tbody.innerHTML = stories.map((s, idx) => {
-            const rawTitle = s.title || '';
-            const title = esc(rawTitle.length > 55 ? rawTitle.substring(0,55)+'…' : rawTitle);
-            const rawEpic = s.epic || '—';
-            const epic = esc(rawEpic.length > 22 ? rawEpic.substring(0,22)+'…' : rawEpic);
-            const rawColor = s.color || '';
+            const rawTitle    = s.title    || '';
+            const rawEpic     = s.epic     || '—';
+            const rawColor    = s.color    || '';
             const rawCategory = s.category || '';
-            const rawOrigTag = s.original_tag || '—';
-            const origTag = esc(rawOrigTag.length > 22 ? rawOrigTag.substring(0,22)+'…' : rawOrigTag);
+            const rawOrigTag  = s.original_tag || '—';
+            const title   = esc(rawTitle.length   > 55 ? rawTitle.substring(0,55)   + '…' : rawTitle);
+            const epic    = esc(rawEpic.length    > 22 ? rawEpic.substring(0,22)    + '…' : rawEpic);
+            const origTag = esc(rawOrigTag.length > 26 ? rawOrigTag.substring(0,26) + '…' : rawOrigTag);
             const dotColor = WAF_COLORS_MAP[rawColor] || '#9ca3af';
-            const isMismatch = s.mismatch !== undefined ? s.mismatch : s.was_mismatch;
+            const isMismatch  = s.mismatch !== undefined ? s.mismatch : s.was_mismatch;
             const statusBadge = isMismatch
                 ? '<span class="badge mismatch">Mismatch</span>'
                 : '<span class="badge high">Match</span>';
