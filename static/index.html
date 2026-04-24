@@ -1185,28 +1185,22 @@
     </button>
 </nav>
 
-    <!-- Page title strip -->
-    <div style="padding:10px 24px 8px;border-bottom:1px solid var(--border);background:var(--bg-primary);flex-shrink:0;">
-        <h2 style="font-size:16px;font-weight:700;margin:0;">WAF Classifier</h2>
-        <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">Accurately classify JIRA stories into WAF categories using AI, calibrated by your team's ground truth data.</p>
-    </div>
-
     <!-- Main Layout -->
     <div class="main-layout">
 
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <!-- Classify mode (hidden — single story mode only for now) -->
-            <div id="batch-area" style="display:none;">
-                <textarea class="batch-textarea" id="batch-input" placeholder="Paste stories (one per line):&#10;Story Title | Description | Current WAF Tag"></textarea>
-                <button class="btn btn-primary" onclick="batchClassify()">Classify All</button>
-            </div>
+        <!-- Sidebar hidden — no content currently; batch area preserved for future use -->
+        <div id="batch-area" style="display:none;">
+            <textarea id="batch-input"></textarea>
         </div>
 
         <!-- Chat Area -->
         <div class="chat-container">
             <div class="chat-messages" id="chat-messages">
                 <div class="welcome" id="welcome">
+                    <div class="welcome-icon">🎯</div>
+                    <h2>WAF Classifier</h2>
+                    <p>Accurately classify JIRA stories into WAF categories using AI, calibrated by your team's ground truth data.</p>
+
                     <div class="setup-steps">
                         <h3>How to Use</h3>
                         <div class="setup-step">
