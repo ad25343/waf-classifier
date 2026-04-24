@@ -1252,6 +1252,9 @@
                         min="0" step="0.5"
                         style="flex:0 0 80px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
                         title="Story Points (optional)">
+                    <input type="text" id="pi-number-input" placeholder="PI (e.g. PI-24.4)"
+                        style="flex:0 0 120px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
+                        title="Program Increment (optional)">
                     <input type="text" id="epic-input" placeholder="Epic (optional)"
                         style="flex:1;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:12px;"
                         list="epic-suggestions">
@@ -1269,7 +1272,7 @@
                     <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
                 </div>
                 <div class="input-hint">
-                    Press Enter to send · Shift+Enter for new line · Story Key, Points, Epic &amp; Feature are optional — they link this story to its lineage
+                    Press Enter to send · Shift+Enter for new line · Story Key, Points, PI, Epic &amp; Feature are optional — they link this story to its lineage
                 </div>
             </div>
         </div>
@@ -1348,6 +1351,7 @@
                 const parentFeature = document.getElementById("feature-input").value.trim();
                 const storyId = document.getElementById("story-id-input").value.trim();
                 const storyPoints = document.getElementById("story-points-input").value.trim();
+                const piNumber = document.getElementById("pi-number-input").value.trim();
                 const wafVersionId = document.getElementById("cls-waf-version")?.value || null;
                 const gtVersionId  = document.getElementById("cls-gt-version")?.value  || null;
                 const res = await fetch("/api/classify", {
@@ -1355,7 +1359,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         message, epic, parent_feature: parentFeature,
-                        story_id: storyId, story_points: storyPoints,
+                        story_id: storyId, story_points: storyPoints, pi_number: piNumber,
                         waf_version_id: wafVersionId ? parseInt(wafVersionId) : null,
                         gt_version_id:  gtVersionId  ? parseInt(gtVersionId)  : null,
                     })

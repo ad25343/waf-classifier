@@ -129,7 +129,7 @@ def teams_detail():
     db = get_db()
     query = """SELECT id, story_title, story_description, waf_category, waf_color,
                   run_change, confidence, was_mismatch, epic, parent_feature,
-                  timestamp, story_id, feature_id, epic_id
+                  timestamp, story_id, feature_id, epic_id, pi_number
            FROM classifications
            WHERE team = ?"""
     params = [team]
@@ -171,6 +171,7 @@ def teams_detail():
             "story_id": r["story_id"] or "",
             "feature_id": r["feature_id"] or "",
             "epic_id": r["epic_id"] or "",
+            "pi_number": r["pi_number"] or "",
         }
 
         ft["stories"].append(story)

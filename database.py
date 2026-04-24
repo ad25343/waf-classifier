@@ -50,7 +50,8 @@ def init_db():
             epic_id TEXT DEFAULT '',
             story_points TEXT DEFAULT '',
             original_color TEXT DEFAULT '',
-            waf_reasoning TEXT DEFAULT ''
+            waf_reasoning TEXT DEFAULT '',
+            pi_number TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -112,6 +113,10 @@ def init_db():
         pass
     try:
         conn.execute("ALTER TABLE classifications ADD COLUMN waf_reasoning TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE classifications ADD COLUMN pi_number TEXT DEFAULT ''")
     except sqlite3.OperationalError:
         pass
 
@@ -231,6 +236,7 @@ def init_db():
             story_id,
             feature_id,
             epic_id,
+            pi_number,
             content='classifications',
             content_rowid='id'
         );
@@ -240,11 +246,11 @@ def init_db():
             INSERT INTO classifications_fts(
                 rowid, story_title, story_description, waf_category,
                 waf_color, team, epic, parent_feature, confidence,
-                story_id, feature_id, epic_id
+                story_id, feature_id, epic_id, pi_number
             ) VALUES (
                 new.id, new.story_title, new.story_description, new.waf_category,
                 new.waf_color, new.team, new.epic, new.parent_feature, new.confidence,
-                new.story_id, new.feature_id, new.epic_id
+                new.story_id, new.feature_id, new.epic_id, new.pi_number
             );
         END;
 
@@ -253,12 +259,12 @@ def init_db():
             INSERT INTO classifications_fts(
                 classifications_fts, rowid, story_title, story_description,
                 waf_category, waf_color, team, epic, parent_feature, confidence,
-                story_id, feature_id, epic_id
+                story_id, feature_id, epic_id, pi_number
             ) VALUES (
                 'delete', old.id, old.story_title, old.story_description,
                 old.waf_category, old.waf_color, old.team, old.epic,
                 old.parent_feature, old.confidence,
-                old.story_id, old.feature_id, old.epic_id
+                old.story_id, old.feature_id, old.epic_id, old.pi_number
             );
         END;
     """)
@@ -339,7 +345,8 @@ def save_classification(title, description, category, subcategory, color,
                         original_tag="", approved=False, team="default",
                         epic="", parent_feature="",
                         story_id="", feature_id="", epic_id="",
-                        story_points="", original_color="", waf_reasoning=""):
+                        story_points="", original_color="", waf_reasoning="",
+                        pi_number=""):
     """Save a classification to the database."""
     db = get_db()
     db.execute(
@@ -347,13 +354,14 @@ def save_classification(title, description, category, subcategory, color,
            (timestamp, story_title, story_description, waf_category,
             waf_subcategory, waf_color, run_change, confidence,
             was_mismatch, original_tag, approved, team, epic, parent_feature,
-            story_id, feature_id, epic_id, story_points, original_color, waf_reasoning)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            story_id, feature_id, epic_id, story_points, original_color, waf_reasoning,
+            pi_number)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (datetime.now().isoformat(), title, description, category,
          subcategory, color, run_change, confidence,
          1 if was_mismatch else 0, original_tag, 1 if approved else 0, team,
          epic, parent_feature, story_id, feature_id, epic_id, story_points,
-         original_color, waf_reasoning)
+         original_color, waf_reasoning, pi_number)
     )
     db.commit()
     return db.execute("SELECT last_insert_rowid()").fetchone()[0]

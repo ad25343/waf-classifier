@@ -1011,6 +1011,7 @@ function renderTreeSorted(epic) {
                 s.story_id   ? `<span title="Story ID"  style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${s.story_id}</span>`   : '',
                 s.feature_id ? `<span title="Feature ID" style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${s.feature_id}</span>` : '',
                 s.epic_id    ? `<span title="Epic ID"    style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${s.epic_id}${s.epic ? ' · ' + s.epic : ''}</span>` : '',
+                s.pi_number  ? `<span title="PI Number"  style="font-size:10px;color:var(--teal);background:rgba(13,148,136,0.1);border:1px solid rgba(13,148,136,0.25);padding:1px 4px;border-radius:3px;">${s.pi_number}</span>` : '',
             ].join(' ');
 
             // ── User Submitted vs AI Suggested WAF ──────────────────
@@ -1280,6 +1281,7 @@ function showStoryDetail(data) {
             ${fld('Status', statusHtml)}
             ${conf ? fld('Confidence', `<span class="badge ${conf.toLowerCase()}">${_e(conf)}</span>`) : ''}
             ${data.story_points ? fld('Story Points', `<span style="font-weight:700;font-size:16px;color:var(--accent);">${_e(String(data.story_points))}</span>`) : ''}
+            ${data.pi_number  ? fld('PI Number', `<span style="font-size:13px;font-weight:600;color:var(--teal);">${_e(String(data.pi_number))}</span>`) : ''}
             ${data.epic    ? fld('Epic',    _e(data.epic))    : ''}
             ${(data.parent_feature || data.feature) ? fld('Feature', _e(data.parent_feature || data.feature)) : ''}
             ${(data._team || data.team) ? fld('Team', _e(data._team || data.team)) : ''}

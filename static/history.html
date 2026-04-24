@@ -887,6 +887,7 @@
                         <tr><td style="color:var(--text-primary)">Story Description</td><td><span class="badge medium">Optional</span></td><td>Helps AI classify more accurately</td></tr>
                         <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Organisation —</td></tr>
                         <tr><td style="color:var(--text-primary)">Team</td><td><span class="badge medium">Optional</span></td><td>Team or squad name</td></tr>
+                        <tr><td style="color:var(--text-primary)">PI Number</td><td><span class="badge medium">Optional</span></td><td>Program Increment — recognised as PI Number, PI, PI #, Program Increment</td></tr>
                         <tr><td style="color:var(--text-primary)">Story Points</td><td><span class="badge medium">Optional</span></td><td>Effort estimate — recognised as Story Points, Points, SP, Estimate</td></tr>
                         <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— WAF Classification —</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Category</td><td><span class="badge medium">Optional</span></td><td>Existing tag — AI will verify against this</td></tr>
@@ -978,6 +979,7 @@
                             <th style="width:40px;"><input type="checkbox" id="select-all-cb" onchange="selectAll(this.checked)" checked></th>
                             <th class="sortable" onclick="sortVerifyTable('title')">Story <span class="sort-arrow"></span></th>
                             <th class="sortable" style="min-width:50px;" onclick="sortVerifyTable('story_points')">Pts <span class="sort-arrow"></span></th>
+                            <th class="sortable" style="min-width:60px;" onclick="sortVerifyTable('pi_number')">PI <span class="sort-arrow"></span></th>
                             <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('user_submitted_waf')">User Submitted WAF <span class="sort-arrow"></span></th>
                             <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('ai_suggested_waf')">AI Suggested WAF <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortVerifyTable('ai_color')">Color (User → AI) <span class="sort-arrow"></span></th>
@@ -989,6 +991,7 @@
                             <td></td>
                             <td><input type="text" placeholder="Filter story..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
                             <td><input type="text" placeholder="Pts..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
+                            <td><input type="text" placeholder="PI..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
                             <td><input type="text" placeholder="Filter tag..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
                             <td><input type="text" placeholder="Filter AI cat..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
                             <td><input type="text" placeholder="Filter color..." oninput="debounceFilter('verify', onVerifyFilter)"></td>
@@ -1754,7 +1757,7 @@ function sortVerifyTable(col) {
     }
     // Update header arrows
     document.querySelectorAll('#verify-table th.sortable').forEach(th => th.classList.remove('asc', 'desc'));
-    const headers = { title: 0, story_points: 1, user_submitted_waf: 2, ai_suggested_waf: 3, ai_color: 4, ai_confidence: 5, status: 6 };
+    const headers = { title: 0, story_points: 1, pi_number: 2, user_submitted_waf: 3, ai_suggested_waf: 4, ai_color: 5, ai_confidence: 6, status: 7 };
     const thIdx = headers[col];
     if (thIdx !== undefined) {
         const th = document.querySelectorAll('#verify-table th.sortable')[thIdx];
@@ -1878,6 +1881,7 @@ function showMappingStep(data) {
         feature_id:     'e.g. Feature ID (F-C001) or Feature Key',
         epic_id:        'e.g. Epic ID (EP-C001), Epic Key, or Epic Link',
         story_points:   'e.g. Story Points, Points, SP, Estimate',
+        pi_number:      'e.g. PI Number, PI, PI #, Program Increment',
     };
     const fieldsEl = document.getElementById('mapping-fields');
     fieldsEl.innerHTML = data.target_fields.map(f => {
@@ -2090,9 +2094,12 @@ function showReviewStep(data) {
 }
 
 function onVerifyFilter() {
+    // Filter inputs order matches the filter row (checkbox td has no input, so not counted):
+    // [0]=title [1]=story_points [2]=pi_number [3]=user_waf [4]=ai_waf [5]=ai_color [6]=ai_conf [7]=status
     const verifyFieldMap = [
-        null, // checkbox
         'title',
+        'story_points',
+        'pi_number',
         function(r) { return String(r.user_submitted_waf_normalized || r.user_submitted_waf || '').toLowerCase(); },
         'ai_suggested_waf',
         'ai_color',
@@ -2150,6 +2157,7 @@ function renderVerifyTable() {
         const reason = esc(r.ai_reason ? (r.ai_reason.length > 60 ? r.ai_reason.substring(0, 60) + '...' : r.ai_reason) : '—');
 
         const ptsDisp = r.story_points ? `<span style="font-weight:600;color:var(--accent);">${esc(String(r.story_points))}</span>` : '<span style="color:var(--text-muted)">—</span>';
+        const piDisp  = r.pi_number   ? `<span style="font-size:11px;color:var(--text-secondary);font-weight:500;">${esc(String(r.pi_number))}</span>` : '<span style="color:var(--text-muted)">—</span>';
 
         // Color cell: show user-submitted color (with fallback from category) → AI color
         const userColorRaw = ((r.file_color || '').trim().toUpperCase()) || expectedColor(r.user_submitted_waf || '') || '';
@@ -2169,6 +2177,7 @@ function renderVerifyTable() {
             <td><input type="checkbox" class="row-cb" data-idx="${fullIdx}" onchange="updateSelectedCount()" checked></td>
             <td style="color:var(--text-primary)" title="${esc(r.title)}">${title}</td>
             <td style="text-align:center;">${ptsDisp}</td>
+            <td style="text-align:center;">${piDisp}</td>
             <td>${fileTag}</td>
             <td style="color:var(--text-primary);font-weight:500;">${aiTag}</td>
             <td>${colorCell}</td>
@@ -2225,6 +2234,7 @@ async function saveVerified() {
             feature_id: r.feature_id || '',
             epic_id: r.epic_id || '',
             story_points: r.story_points || '',
+            pi_number: r.pi_number || '',
             user_submitted_waf: r.user_submitted_waf,
             file_color: r.file_color,
             file_run_change: r.file_run_change,
@@ -2555,6 +2565,7 @@ function linRenderTree(epic) {
                 s.story_id   ? '<span title="Story ID"   style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">' + esc(s.story_id)   + '</span>' : '',
                 s.feature_id ? '<span title="Feature ID" style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">' + esc(s.feature_id) + '</span>' : '',
                 s.epic_id    ? '<span title="Epic ID"    style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">' + esc(s.epic_id)    + '</span>' : '',
+                s.pi_number  ? '<span title="PI Number"  style="font-size:10px;color:var(--teal);background:rgba(13,148,136,0.1);border:1px solid rgba(13,148,136,0.25);padding:1px 4px;border-radius:3px;">' + esc(s.pi_number) + '</span>' : '',
             ].join(' ');
             const userWaf = s.original_tag || '', aiWaf = s.category || '';
             const differ  = userWaf && aiWaf && userWaf.toLowerCase() !== aiWaf.toLowerCase();
@@ -2790,8 +2801,9 @@ async function loadRecentTable() {
                 ? '<span class="badge mismatch">Mismatch</span>'
                 : '<span class="badge high">Match</span>';
             const rowCls = isMismatch ? 'lin-mismatch-row' : '';
+            const piChip = s.pi_number ? `<span title="PI Number" style="font-size:10px;color:var(--teal);background:rgba(13,148,136,0.1);border:1px solid rgba(13,148,136,0.25);padding:1px 4px;border-radius:3px;margin-left:4px;">${esc(String(s.pi_number))}</span>` : '';
             return `<tr class="${rowCls}" style="cursor:pointer;" onclick="showStoryDetail(window._recentStories[${idx}])">
-                <td style="color:var(--text-primary);" title="${esc(rawTitle)}">${title}</td>
+                <td style="color:var(--text-primary);" title="${esc(rawTitle)}">${title}${piChip}</td>
                 <td style="color:var(--text-muted);font-size:12px;" title="${esc(rawEpic)}">${epic}</td>
                 <td style="font-size:12px;" title="${esc(rawOrigTag)}">${origTag}</td>
                 <td style="font-size:12px;">${esc(rawCategory||'—')}</td>
@@ -3229,6 +3241,7 @@ function showStoryDetail(data) {
                 return colorDot + esc(wafColor || '—') + (exp && wafColor ? ' <span style="font-size:11px;color:var(--success);">✓</span>' : '');
             })())}
             ${field('Story Points', data.story_points ? `<span style="font-weight:700;font-size:16px;color:var(--accent);">${esc(String(data.story_points))}</span>` : '<span style="color:var(--text-muted)">—</span>')}
+            ${data.pi_number ? field('PI Number', `<span style="font-size:13px;font-weight:600;color:var(--text-primary);">${esc(String(data.pi_number))}</span>`) : ''}
             ${field('Run / Change', esc(data.ai_run_change || data.run_change || ''))}
             ${field('Confidence', '<span class="badge ' + confClass + '">' + esc(conf || '—') + '</span>')}
             ${field('Match Status', matchHtml)}

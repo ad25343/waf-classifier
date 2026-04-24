@@ -104,6 +104,7 @@ def classify():
     parent_feature = data.get("parent_feature", "")
     story_id = data.get("story_id", "")
     story_points = str(data.get("story_points", "")).strip()
+    pi_number = str(data.get("pi_number", "")).strip()
 
     # Optional version overrides — use a specific WAF/GT version for this call only
     def _to_int_or_none(val):

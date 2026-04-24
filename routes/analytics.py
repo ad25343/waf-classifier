@@ -210,7 +210,7 @@ def dashboard_stories():
         f"""SELECT id, story_title, story_description, waf_category, original_tag,
                    waf_color, run_change, confidence, was_mismatch, approved, team,
                    epic, parent_feature, timestamp, original_color,
-                   story_id, story_points, waf_reasoning
+                   story_id, story_points, waf_reasoning, pi_number
             FROM classifications{where}
             ORDER BY {sort_col} {sort_dir} LIMIT ? OFFSET ?""",
         params + [per_page, offset]
@@ -233,6 +233,7 @@ def dashboard_stories():
             "story_id": r["story_id"] or "",
             "story_points": r["story_points"] or "",
             "waf_reasoning": r["waf_reasoning"] or "",
+            "pi_number": r["pi_number"] or "",
         } for r in rows]
     })
 
@@ -256,6 +257,7 @@ def dashboard_save():
             was_mismatch=data.get("was_mismatch", False),
             original_tag=data.get("original_tag", ""),
             approved=data.get("approved", False),
+            pi_number=data.get("pi_number", ""),
         )
         return jsonify({"success": True, "id": row_id})
     except Exception as e:
