@@ -1448,7 +1448,7 @@
                     "regulatory mandated change": "RED", "enterprise strategic priority": "ORANGE",
                     "top divisional priority": "YELLOW", "other block priority": "GREEN",
                 };
-                function expectedColor(cat) { return cat ? CATEGORY_COLOR_MAP[cat.toLowerCase().trim()] || null : null; }
+                function expectedColor(cat) { if (!cat) return null; const lc = cat.toLowerCase().trim(); if (CATEGORY_COLOR_MAP[lc]) return CATEGORY_COLOR_MAP[lc]; if (lc.includes('ktlo') || (lc.includes('keep') && lc.includes('lights') && lc.includes('on'))) return 'GRAY'; return null; }
                 function colorOk(cat, col) { const e = expectedColor(cat); return (!e || !col) ? true : e === col.toUpperCase().trim(); }
 
                 // ── Inline correction form ──────────────────────────────

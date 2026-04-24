@@ -236,18 +236,24 @@
         .lin-status-bar .bar-match { background: var(--success); }
         .lin-status-bar .bar-mismatch { background: var(--error); }
         .lin-mismatch-row td { background: rgba(248,113,113,0.14); }
-        /* Graph tree view */
-        .tree-feature { margin-left: 28px; margin-bottom: 6px; }
-        .tree-feature-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-tertiary); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; transition: background 0.15s; }
-        .tree-feature-header:hover { background: var(--bg-hover, #2d3045); }
-        .tree-toggle { transition: transform 0.2s; font-size: 10px; color: var(--text-muted); }
-        .tree-toggle.open { transform: rotate(90deg); }
-        .tree-stories { display: none; margin-left: 28px; border-left: 2px solid var(--border); padding-left: 12px; }
-        .tree-stories.open { display: block; }
-        .tree-story { padding: 6px 10px; font-size: 13px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(53,56,73,0.3); }
-        .tree-story.mismatch { border-left: 3px solid var(--error); background: rgba(248,113,113,0.14); }
-        .tree-story-title { flex: 1; color: var(--text-primary); }
-        .tree-epic-node { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+        /* Lineage two-panel */
+        .lin-epic-item { padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.15s; }
+        .lin-epic-item:hover { background: var(--bg-tertiary); }
+        .lin-epic-item.lin-epic-item-active { background: var(--bg-tertiary); border-left: 3px solid var(--accent); }
+        .lin-sort-btn { background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-secondary); padding: 3px 9px; border-radius: 5px; font-size: 11px; cursor: pointer; transition: all 0.15s; }
+        .lin-sort-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+        .lin-sort-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .lin-sort-btn.active::after { content: attr(data-dir); margin-left: 3px; font-size: 9px; }
+        .lin-tree-feature { margin-bottom: 4px; }
+        .lin-feature-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-tertiary); border-radius: 8px; cursor: pointer; transition: all 0.15s; font-size: 13px; }
+        .lin-feature-header:hover { background: var(--bg-hover, #2d3045); }
+        .lin-feature-toggle { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; width: 16px; flex-shrink: 0; }
+        .lin-feature-toggle.open { transform: rotate(90deg); }
+        .lin-story-list { display: none; margin-left: 24px; border-left: 2px solid var(--border); padding-left: 12px; }
+        .lin-story-list.open { display: block; }
+        .lin-story-item { padding: 8px 12px; border-bottom: 1px solid rgba(53,56,73,0.5); font-size: 13px; display: flex; align-items: center; gap: 8px; transition: background 0.12s; }
+        .lin-story-item.lin-story-mismatch { border-left: 3px solid var(--error); background: rgba(248,113,113,0.08); }
+        .lin-story-item:hover { background: var(--bg-tertiary); }
 
         .mismatch-row td { background: rgba(248,113,113,0.05); }
         th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
@@ -673,75 +679,60 @@
 
     <!-- ═══ EPIC LINEAGE ═══ -->
     <div class="tab-panel" id="panel-lineage">
-        <!-- Epic list (overview) -->
-        <div id="lin-overview">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <div style="font-size:14px;color:var(--text-secondary);">Select an epic to see its stories and classification status</div>
-                <span id="lin-epic-total" style="font-size:13px;color:var(--text-muted);"></span>
-            </div>
-            <div class="card" style="padding:0;overflow:auto;">
-                <table style="width:100%;font-size:13px;">
-                    <thead><tr>
-                        <th style="text-align:left;">Epic</th>
-                        <th style="text-align:center;">Stories</th>
-                        <th style="text-align:center;">Correct</th>
-                        <th style="text-align:center;">Mismatches</th>
-                        <th style="text-align:center;">Colors</th>
-                        <th style="text-align:center;width:200px;">Classification Status</th>
-                    </tr></thead>
-                    <tbody id="lin-epic-tbody"></tbody>
-                </table>
-            </div>
-        </div>
+        <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;min-height:600px;">
 
-        <!-- Single epic detail -->
-        <div id="lin-epic-detail" style="display:none;">
-            <!-- Back + title bar -->
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-                <button class="btn btn-sm btn-outline" onclick="linBackToOverview()">← Back</button>
-                <h3 id="lin-epic-title" style="font-size:18px;font-weight:600;flex:1;"></h3>
+            <!-- Left panel: Epic list -->
+            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:14px;font-weight:600;">Epics</span>
+                    <span id="lin-epic-count" style="font-size:12px;color:var(--text-muted);"></span>
+                </div>
+                <div style="padding:12px 20px;border-bottom:1px solid var(--border);">
+                    <input type="text" id="lin-epic-search" placeholder="Search epics..." oninput="linFilterEpics()"
+                        style="width:100%;padding:8px 12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:13px;outline:none;">
+                </div>
+                <div id="lin-epic-list" style="flex:1;overflow-y:auto;"></div>
             </div>
 
-            <!-- KPI row -->
-            <div class="lin-kpi-row" id="lin-kpis" style="margin-bottom:16px;"></div>
+            <!-- Right panel -->
+            <div>
+                <!-- Overview: all epics cards -->
+                <div id="lin-overview">
+                    <div style="font-size:16px;font-weight:600;margin-bottom:16px;color:var(--text-primary);">All Epics Overview</div>
+                    <div id="lin-epic-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px;"></div>
+                </div>
 
-            <!-- View toggle + filter -->
-            <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
-                <button class="btn btn-sm lin-view-btn active" onclick="linSwitchView('table', this)">Table View</button>
-                <button class="btn btn-sm lin-view-btn" onclick="linSwitchView('graph', this)">Graph View</button>
-                <div style="flex:1;"></div>
-                <button class="btn btn-sm lin-story-filter active" data-sf="all" onclick="linStoryFilter('all',this)">All</button>
-                <button class="btn btn-sm lin-story-filter" data-sf="match" onclick="linStoryFilter('match',this)" style="color:var(--success);">Correct</button>
-                <button class="btn btn-sm lin-story-filter" data-sf="mismatch" onclick="linStoryFilter('mismatch',this)" style="color:var(--error);">Mismatches</button>
-            </div>
+                <!-- Single epic detail -->
+                <div id="lin-epic-detail" style="display:none;">
+                    <!-- KPI row -->
+                    <div id="lin-kpis" class="lin-kpi-row" style="margin-bottom:16px;"></div>
 
-            <!-- Table view -->
-            <div id="lin-table-view">
-                <div class="card" style="padding:0;overflow:auto;max-height:600px;">
-                    <table style="width:100%;font-size:13px;">
-                        <thead><tr>
-                            <th style="width:6px;padding:0;"></th>
-                            <th style="text-align:left;">Story</th>
-                            <th style="text-align:left;">Feature</th>
-                            <th style="text-align:left;">User Submitted WAF</th>
-                            <th style="text-align:left;">AI Suggested WAF</th>
-                            <th>Color</th>
-                            <th>Run/Change</th>
-                            <th>Confidence</th>
-                            <th>Status</th>
-                        </tr></thead>
-                        <tbody id="lin-story-tbody"></tbody>
-                    </table>
+                    <!-- Chart -->
+                    <div class="card" style="margin-bottom:16px;">
+                        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;">WAF Category Breakdown</div>
+                        <div style="position:relative;height:200px;"><canvas id="lin-cat-chart"></canvas></div>
+                    </div>
+
+                    <!-- Story lineage tree -->
+                    <div class="card">
+                        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;" id="lin-tree-title">Story Lineage</div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;color:var(--text-muted);">
+                            <span style="flex-shrink:0;">Sort:</span>
+                            <button class="lin-sort-btn active" id="linsort-title" data-dir="▲" onclick="setLinSort('title')">Title</button>
+                            <button class="lin-sort-btn" id="linsort-category" onclick="setLinSort('category')">Category</button>
+                            <button class="lin-sort-btn" id="linsort-color" onclick="setLinSort('color')">Color</button>
+                            <button class="lin-sort-btn" id="linsort-confidence" onclick="setLinSort('confidence')">Confidence</button>
+                            <button class="lin-sort-btn" id="linsort-mismatch" onclick="setLinSort('mismatch')">Status</button>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <input type="text" id="lin-story-search" placeholder="Search stories by title, category, or confidence..."
+                                oninput="filterLinStories()"
+                                style="width:100%;max-width:420px;padding:6px 12px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);outline:none;">
+                        </div>
+                        <div id="lin-tree-container"></div>
+                    </div>
                 </div>
             </div>
-
-            <!-- Graph view (tree visualization) -->
-            <div id="lin-graph-view" style="display:none;">
-                <div class="card" id="lin-tree-card">
-                    <div id="lin-tree-container"></div>
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -941,7 +932,7 @@
                             <th class="sortable" style="min-width:50px;" onclick="sortVerifyTable('story_points')">Pts <span class="sort-arrow"></span></th>
                             <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('user_submitted_waf')">User Submitted WAF <span class="sort-arrow"></span></th>
                             <th class="sortable" style="min-width:120px;" onclick="sortVerifyTable('ai_suggested_waf')">AI Suggested WAF <span class="sort-arrow"></span></th>
-                            <th class="sortable" onclick="sortVerifyTable('ai_color')">Color <span class="sort-arrow"></span></th>
+                            <th class="sortable" onclick="sortVerifyTable('ai_color')">Color (User → AI) <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortVerifyTable('ai_confidence')">Confidence <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortVerifyTable('status')">Status <span class="sort-arrow"></span></th>
                             <th style="min-width:180px;">AI Reasoning</th>
@@ -1277,7 +1268,11 @@ const CATEGORY_COLOR_MAP = {
 };
 function expectedColor(category) {
     if (!category) return null;
-    return CATEGORY_COLOR_MAP[category.toLowerCase().trim()] || null;
+    const lc = category.toLowerCase().trim();
+    if (CATEGORY_COLOR_MAP[lc]) return CATEGORY_COLOR_MAP[lc];
+    // Smart KTLO detection: any variant containing "ktlo" or keep+lights+on
+    if (lc.includes('ktlo') || (lc.includes('keep') && lc.includes('lights') && lc.includes('on'))) return 'GRAY';
+    return null;
 }
 function colorOk(category, color) {
     const exp = expectedColor(category);
@@ -2107,13 +2102,28 @@ function renderVerifyTable() {
         const reason = esc(r.ai_reason ? (r.ai_reason.length > 60 ? r.ai_reason.substring(0, 60) + '...' : r.ai_reason) : '—');
 
         const ptsDisp = r.story_points ? `<span style="font-weight:600;color:var(--accent);">${esc(String(r.story_points))}</span>` : '<span style="color:var(--text-muted)">—</span>';
+
+        // Color cell: show user-submitted color (with fallback from category) → AI color
+        const userColorRaw = ((r.file_color || '').trim().toUpperCase()) || expectedColor(r.user_submitted_waf || '') || '';
+        const aiColorRaw   = ((r.ai_color   || '').trim().toUpperCase());
+        function colorPill(colorKey, label) {
+            if (!colorKey) return '<span style="color:var(--text-muted);font-size:12px;">—</span>';
+            const hex = WAF_COLORS_MAP[colorKey] || '#9ca3af';
+            return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap;">` +
+                   `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${hex};${colorKey==='BLACK'?'border:1px solid #6b7280;':''}flex-shrink:0;"></span>` +
+                   `${esc(colorKey)}</span>`;
+        }
+        const colorCell = userColorRaw && userColorRaw !== aiColorRaw
+            ? colorPill(userColorRaw, 'User') + ' <span style="color:var(--text-muted);font-size:11px;">→</span> ' + colorPill(aiColorRaw, 'AI') + ' ' + colorCheckTag(r.ai_suggested_waf, r.ai_color)
+            : colorPill(aiColorRaw, 'AI') + ' ' + colorCheckTag(r.ai_suggested_waf, r.ai_color);
+
         return `<tr data-idx="${fullIdx}" class="${r.is_match === false ? 'mismatch-row' : ''}" style="cursor:pointer;" onclick="if(event.target.tagName!=='INPUT')showStoryDetail(verifyResultsFull[${fullIdx}])">
             <td><input type="checkbox" class="row-cb" data-idx="${fullIdx}" onchange="updateSelectedCount()" checked></td>
             <td style="color:var(--text-primary)" title="${esc(r.title)}">${title}</td>
             <td style="text-align:center;">${ptsDisp}</td>
             <td>${fileTag}</td>
             <td style="color:var(--text-primary);font-weight:500;">${aiTag}</td>
-            <td>${esc(r.ai_color || '—')} ${colorCheckTag(r.ai_suggested_waf, r.ai_color)}</td>
+            <td>${colorCell}</td>
             <td><span class="badge ${confClass}">${esc(r.ai_confidence || '—')}</span>${missingDesc}</td>
             <td>${statusBadge}</td>
             <td style="font-size:12px;color:var(--text-muted);" title="${esc(r.ai_reason || '')}">${reason}</td>
@@ -2284,202 +2294,328 @@ function chartOpts(indexAxis = 'x', beginAtZero = true) {
 // EPIC LINEAGE TAB
 // ════════════════════════════════════════════════════════════════
 
-let linEpicData = [];
-let linCurrentEpic = null;
-let linStoryFilterMode = 'all';
+let linEpicListData = [];   // [{name, story_count, mismatches, mismatch_rate}]
+let linAllEpicData  = [];   // full summary with features/categories
+let linCurrentEpic  = null;
+let _linSortCol     = 'title';
+let _linSortDir     = 'asc';
+const CHART_PALETTE_LIN = ["#e8944a","#c084fc","#4ade80","#fbbf24","#f87171","#2dd4bf","#f472b6","#34d399","#818cf8","#fb923c"];
 
 async function loadLineage() {
     try {
-        const qs = getAnalyticsQS();
+        const qs  = getAnalyticsQS();
         const sep = qs ? '?' + qs : '';
-        const res = await fetch('/api/epics/summary' + sep);
-        const data = await res.json();
-        linEpicData = data.epics || [];
-        document.getElementById('lin-epic-total').textContent = linEpicData.length + ' epics, ' + linEpicData.reduce((s,e)=>s+e.total_stories,0) + ' stories';
+        const [listRes, summaryRes] = await Promise.all([
+            fetch('/api/epics' + sep),
+            fetch('/api/epics/summary' + sep)
+        ]);
+        const listData    = await listRes.json();
+        const summaryData = await summaryRes.json();
+        linEpicListData = listData.epics    || [];
+        linAllEpicData  = summaryData.epics || [];
+        document.getElementById('lin-epic-count').textContent = linEpicListData.length + ' epics';
+        linRenderEpicList();
         linRenderOverview();
     } catch (err) {
         console.error('Failed to load lineage:', err);
     }
 }
 
-function linRenderOverview() {
-    const tbody = document.getElementById('lin-epic-tbody');
-    if (linEpicData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No epic data found. Upload data with an Epic column.</td></tr>';
+function linRenderEpicList() {
+    const container = document.getElementById('lin-epic-list');
+    if (linEpicListData.length === 0) {
+        container.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px;">No epics found.</div>';
         return;
     }
-    tbody.innerHTML = linEpicData.sort((a,b) => b.mismatches - a.mismatches || b.total_stories - a.total_stories).map(e => {
-        const correct = e.total_stories - e.mismatches;
-        const pctCorrect = e.total_stories > 0 ? Math.round(correct / e.total_stories * 100) : 100;
-        const pctMismatch = 100 - pctCorrect;
-        const colorDots = Object.entries(e.colors || {}).map(([c,n]) =>
-            '<span class="color-dot" style="background:' + (WAF_COLORS_MAP[c]||'#e8944a') + '" title="' + esc(c) + ': ' + esc(String(n)) + '"></span>'
-        ).join('');
-        const epicEscAttr = esc(e.epic);
-        const epicEscJs = e.epic.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-        return '<tr style="cursor:pointer;" onclick="linSelectEpic(\'' + epicEscJs + '\')">' +
-            '<td style="text-align:left;font-weight:500;">' + epicEscAttr + '</td>' +
-            '<td style="text-align:center;">' + e.total_stories + '</td>' +
-            '<td style="text-align:center;color:var(--success);">' + correct + '</td>' +
-            '<td style="text-align:center;color:' + (e.mismatches > 0 ? 'var(--error);font-weight:600' : 'var(--text-muted)') + ';">' + e.mismatches + '</td>' +
-            '<td style="text-align:center;">' + colorDots + '</td>' +
-            '<td><div class="lin-status-bar"><div class="bar-match" style="width:' + pctCorrect + '%"></div><div class="bar-mismatch" style="width:' + pctMismatch + '%"></div></div></td>' +
-        '</tr>';
+    const totalStories = linEpicListData.reduce((s,e) => s + e.story_count, 0);
+    let html = '<div class="lin-epic-item lin-epic-item-active" onclick="linShowOverview(this)">' +
+        '<div style="font-size:14px;font-weight:500;margin-bottom:3px;">All Epics</div>' +
+        '<div style="font-size:12px;color:var(--accent);">' + totalStories + ' stories</div>' +
+        '</div>';
+    html += linEpicListData.map(e => {
+        const matchPct = e.story_count > 0 ? ((1 - e.mismatch_rate / 100) * 100).toFixed(1) : null;
+        const jsName   = e.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const eName    = esc(e.name);
+        return '<div class="lin-epic-item" data-epic="' + eName + '" onclick="linSelectEpic(\'' + jsName + '\', this)">' +
+            '<div style="font-size:14px;font-weight:500;margin-bottom:3px;">' + eName + '</div>' +
+            '<div style="font-size:12px;color:var(--text-muted);display:flex;gap:10px;flex-wrap:wrap;">' +
+                '<span style="color:var(--accent);">' + e.story_count + ' stories</span>' +
+                (e.mismatches > 0 ? '<span style="color:var(--error);">' + e.mismatches + ' mismatches</span>' : '') +
+                (matchPct !== null ? '<span style="color:' + (parseFloat(matchPct) >= 70 ? 'var(--success)' : 'var(--warning)') + ';">' + matchPct + '% WAF match</span>' : '') +
+            '</div>' +
+        '</div>';
     }).join('');
+    container.innerHTML = html;
 }
 
-function linSelectEpic(name) {
-    linCurrentEpic = linEpicData.find(e => e.epic === name);
-    if (!linCurrentEpic) return;
-    document.getElementById('lin-overview').style.display = 'none';
-    document.getElementById('lin-epic-detail').style.display = 'block';
-    document.getElementById('lin-epic-title').textContent = name;
-    linStoryFilterMode = 'all';
-    document.querySelectorAll('.lin-story-filter').forEach(b => b.classList.toggle('active', b.dataset.sf === 'all'));
-    linRenderEpicKPIs();
-    linRenderStoryTable();
-    linRenderTreeView();
+function linFilterEpics() {
+    const q = (document.getElementById('lin-epic-search').value || '').toLowerCase();
+    document.querySelectorAll('#lin-epic-list .lin-epic-item[data-epic]').forEach(el => {
+        el.style.display = el.dataset.epic.toLowerCase().includes(q) ? '' : 'none';
+    });
 }
 
-function linBackToOverview() {
+function linShowOverview(el) {
+    document.querySelectorAll('#lin-epic-list .lin-epic-item').forEach(e => e.classList.remove('lin-epic-item-active'));
+    if (el) el.classList.add('lin-epic-item-active');
     document.getElementById('lin-overview').style.display = 'block';
     document.getElementById('lin-epic-detail').style.display = 'none';
     linCurrentEpic = null;
 }
 
-function linRenderEpicKPIs() {
-    const e = linCurrentEpic;
-    if (!e) return;
-    const correct = e.total_stories - e.mismatches;
-    document.getElementById('lin-kpis').innerHTML =
-        '<div class="lin-kpi kpi-clickable' + (linStoryFilterMode === 'all' ? ' active' : '') + '" onclick="linKpiFilter(\'all\')" title="Show all stories"><div class="lin-kpi-label">Stories</div><div class="lin-kpi-value" style="color:var(--accent)">' + e.total_stories + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click to view all</div></div>' +
-        '<div class="lin-kpi"><div class="lin-kpi-label">Features</div><div class="lin-kpi-value" style="color:var(--purple)">' + e.features.length + '</div></div>' +
-        '<div class="lin-kpi kpi-clickable' + (linStoryFilterMode === 'match' ? ' active' : '') + '" onclick="linKpiFilter(\'match\')" title="Show correct stories"><div class="lin-kpi-label">Correct</div><div class="lin-kpi-value" style="color:var(--success)">' + correct + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click to filter</div></div>' +
-        '<div class="lin-kpi kpi-clickable' + (linStoryFilterMode === 'mismatch' ? ' active' : '') + '" onclick="linKpiFilter(\'mismatch\')" title="Show mismatches"><div class="lin-kpi-label">Mismatches</div><div class="lin-kpi-value" style="color:var(--error)">' + e.mismatches + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Click to filter</div></div>' +
-        '<div class="lin-kpi"><div class="lin-kpi-label">Teams</div><div class="lin-kpi-value" style="color:var(--text-secondary)">' + (e.teams||[]).length + '</div></div>';
-}
-
-function linKpiFilter(mode) {
-    linStoryFilterMode = mode;
-    // Sync the text filter buttons too
-    document.querySelectorAll('.lin-story-filter').forEach(b => b.classList.toggle('active', b.dataset.sf === mode));
-    linRenderEpicKPIs();
-    linRenderStoryTable();
-    linRenderTreeView();
-}
-
-function linSwitchView(view, btn) {
-    document.querySelectorAll('.lin-view-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('lin-table-view').style.display = view === 'table' ? 'block' : 'none';
-    document.getElementById('lin-graph-view').style.display = view === 'graph' ? 'block' : 'none';
-
-}
-
-
-function linStoryFilter(mode, btn) {
-    linStoryFilterMode = mode;
-    document.querySelectorAll('.lin-story-filter').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    linRenderEpicKPIs();
-    linRenderStoryTable();
-    linRenderTreeView();
-}
-
-function linGetFilteredStories() {
-    if (!linCurrentEpic) return [];
-    let stories = [];
-    linCurrentEpic.features.forEach(f => {
-        f.stories.forEach(s => {
-            stories.push({ ...s, feature: f.name });
-        });
-    });
-    if (linStoryFilterMode === 'match') stories = stories.filter(s => !s.mismatch);
-    else if (linStoryFilterMode === 'mismatch') stories = stories.filter(s => s.mismatch);
-    return stories;
-}
-
-let _linDetailStories = [];   // global ref for onclick handlers
-
-function linRenderStoryTable() {
-    const stories = linGetFilteredStories();
-    _linDetailStories = stories;   // store for onclick
-    const tbody = document.getElementById('lin-story-tbody');
-    if (stories.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No stories match this filter.</td></tr>';
+function linRenderOverview() {
+    const container = document.getElementById('lin-epic-cards');
+    if (linAllEpicData.length === 0) {
+        container.innerHTML = '<div style="padding:60px;text-align:center;color:var(--text-muted);">No epic data. Import files with an Epic column.</div>';
         return;
     }
-    tbody.innerHTML = stories.map((s, idx) => {
-        const dot = WAF_COLORS_MAP[s.color] || '#e8944a';
-        const confClass = (s.confidence||'').toLowerCase();
-        const isMismatch = s.mismatch;
-        const statusBadge = isMismatch
-            ? '<span class="badge mismatch">Mismatch</span>'
-            : '<span class="badge high">Correct</span>';
-        const title = esc(s.title.length > 50 ? s.title.substring(0,50)+'...' : s.title);
-        const feat = esc(s.feature.length > 25 ? s.feature.substring(0,25)+'...' : s.feature);
-        const ogTag = esc(s.original_tag || '—');
-        return '<tr class="' + (isMismatch ? 'lin-mismatch-row' : '') + '" style="cursor:pointer;" onclick="showStoryDetail(_linDetailStories[' + idx + '])">' +
-            '<td style="padding:0;width:6px;background:' + dot + ';"></td>' +
-            '<td style="color:var(--text-primary)" title="' + esc(s.title) + '">' + title + '</td>' +
-            '<td style="color:var(--text-muted);" title="' + esc(s.feature) + '">' + feat + '</td>' +
-            '<td' + (isMismatch ? ' style="color:var(--error);text-decoration:line-through;opacity:0.85;"' : '') + '>' + ogTag + '</td>' +
-            '<td' + (isMismatch ? ' style="color:var(--success);font-weight:600;"' : '') + '>' + esc(s.category || '—') + '</td>' +
-            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—') + ' ' + colorCheckTag(s.category, s.color) + '</td>' +
-            '<td style="text-align:center;">' + esc(s.run_change || '—') + '</td>' +
-            '<td style="text-align:center;"><span class="badge ' + confClass + '">' + esc(s.confidence || '—') + '</span></td>' +
-            '<td style="text-align:center;">' + statusBadge + '</td>' +
-        '</tr>';
+    function catBars(entries, maxVal) {
+        if (!entries.length) return '<div style="font-size:11px;color:var(--text-muted);padding:4px 0;">No data</div>';
+        return entries.slice(0, 4).map(([cat, cnt], ci) =>
+            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:12px;">' +
+                '<div style="width:160px;flex-shrink:0;color:var(--text-secondary);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + esc(cat) + '">' + esc(cat) + '</div>' +
+                '<div style="flex:1;height:8px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden;">' +
+                    '<div style="width:' + Math.round(cnt / maxVal * 100) + '%;height:100%;background:' + CHART_PALETTE_LIN[ci % CHART_PALETTE_LIN.length] + ';border-radius:3px;"></div>' +
+                '</div>' +
+                '<div style="width:24px;color:var(--text-muted);font-size:11px;text-align:right;">' + cnt + '</div>' +
+            '</div>'
+        ).join('');
+    }
+    container.innerHTML = linAllEpicData.map(epic => {
+        const aiCats  = Object.entries(epic.categories || {}).sort((a, b) => b[1] - a[1]);
+        const subCats = Object.entries(epic.submitted_categories || {}).sort((a, b) => b[1] - a[1]);
+        const maxAi   = aiCats.length  > 0 ? aiCats[0][1]  : 1;
+        const maxSub  = subCats.length > 0 ? subCats[0][1] : 1;
+        const alignPct   = 100 - (epic.mismatch_rate || 0);
+        const alignColor = alignPct >= 70 ? 'var(--success)' : alignPct >= 50 ? 'var(--warning)' : 'var(--error)';
+        const jsName = epic.epic.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return '<div onclick="linSelectEpicByName(\'' + jsName + '\')" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--accent)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'\'">' +
+            '<div style="font-size:15px;font-weight:600;margin-bottom:12px;" title="' + esc(epic.epic) + '">' + esc(epic.epic) + '</div>' +
+            '<div style="display:flex;gap:16px;margin-bottom:12px;">' +
+                '<div><div style="font-size:18px;font-weight:700;color:var(--accent);">' + epic.total_stories + '</div><div style="font-size:11px;color:var(--text-muted);">Stories</div></div>' +
+                (epic.total_points > 0 ? '<div><div style="font-size:18px;font-weight:700;color:var(--teal);">' + (epic.total_points % 1 === 0 ? epic.total_points : epic.total_points.toFixed(1)) + '</div><div style="font-size:11px;color:var(--text-muted);">Points</div></div>' : '') +
+                '<div><div style="font-size:18px;font-weight:700;color:' + alignColor + ';">' + alignPct.toFixed(1) + '%</div><div style="font-size:11px;color:var(--text-muted);">WAF Aligned</div></div>' +
+                '<div><div style="font-size:18px;font-weight:700;color:var(--error);">' + epic.mismatches + '</div><div style="font-size:11px;color:var(--text-muted);">Mismatches</div></div>' +
+            '</div>' +
+            (subCats.length ? '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--teal);margin:10px 0 4px;">&#8679; User Submitted WAF</div>' + catBars(subCats, maxSub) : '') +
+            (aiCats.length  ? '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);margin:10px 0 4px;">&#x2728; AI Suggested WAF</div>' + catBars(aiCats, maxAi) : '') +
+        '</div>';
     }).join('');
 }
 
-function linRenderTreeView() {
-    if (!linCurrentEpic) return;
-    const e = linCurrentEpic;
-    const container = document.getElementById('lin-tree-container');
-
-    // Epic node at top
-    const dominantDot = WAF_COLORS_MAP[e.dominant_color] || '#e8944a';
-    let html = '<div class="tree-epic-node"><span class="color-dot" style="background:' + dominantDot + ';width:16px;height:16px;"></span> ' + esc(e.epic) + ' <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(' + e.total_stories + ' stories)</span></div>';
-
-    // Features, each with stories
-    e.features.forEach((feat, fi) => {
-        const filtered = linStoryFilterMode === 'match' ? feat.stories.filter(s => !s.mismatch) :
-                         linStoryFilterMode === 'mismatch' ? feat.stories.filter(s => s.mismatch) : feat.stories;
-        if (filtered.length === 0) return;
-        const mismatchCount = feat.stories.filter(s => s.mismatch).length;
-        const featLabel = mismatchCount > 0 ? esc(feat.name) + ' <span style="color:var(--error);font-size:11px;font-weight:400;">(' + mismatchCount + ' mismatch)</span>' : esc(feat.name);
-
-        html += '<div class="tree-feature">';
-        html += '<div class="tree-feature-header" onclick="linToggleTree(this)">';
-        html += '<span class="tree-toggle' + (fi === 0 ? ' open' : '') + '">▶</span>';
-        html += '<span style="flex:1;">' + featLabel + '</span>';
-        html += '<span style="font-size:11px;color:var(--text-muted);">' + filtered.length + ' stories</span>';
-        html += '</div>';
-        html += '<div class="tree-stories' + (fi === 0 ? ' open' : '') + '">';
-
-        filtered.forEach(s => {
-            const dot = WAF_COLORS_MAP[s.color] || '#e8944a';
-            const title = esc(s.title.length > 55 ? s.title.substring(0,55)+'...' : s.title);
-            const status = s.mismatch ? '<span class="badge mismatch" style="font-size:10px;">Mismatch</span>' : '<span class="badge high" style="font-size:10px;">OK</span>';
-            html += '<div class="tree-story' + (s.mismatch ? ' mismatch' : '') + '">';
-            html += '<span class="color-dot" style="background:' + dot + '"></span>';
-            html += '<span class="tree-story-title" title="' + esc(s.title) + '">' + title + '</span>';
-            html += s.mismatch
-                ? '<span style="font-size:12px;"><span style="color:var(--error);text-decoration:line-through;opacity:0.8;">' + esc(s.original_tag || '') + '</span> <span style="color:var(--text-muted);">→</span> <span style="color:var(--success);font-weight:500;">' + esc(s.category || '') + '</span></span>'
-                : '<span style="font-size:12px;color:var(--text-secondary);">' + esc(s.category || '') + '</span>';
-            html += status;
-            html += '</div>';
-        });
-
-        html += '</div></div>';
-    });
-
-    container.innerHTML = html;
+function linSelectEpicByName(name) {
+    const item = document.querySelector('#lin-epic-list .lin-epic-item[data-epic="' + name + '"]');
+    linSelectEpic(name, item);
 }
 
-function linToggleTree(header) {
-    header.querySelector('.tree-toggle').classList.toggle('open');
+function linSelectEpic(name, el) {
+    document.querySelectorAll('#lin-epic-list .lin-epic-item').forEach(e => e.classList.remove('lin-epic-item-active'));
+    if (el) el.classList.add('lin-epic-item-active');
+    const epic = linAllEpicData.find(e => e.epic === name);
+    if (!epic) return;
+    linCurrentEpic = epic;
+    const srch = document.getElementById('lin-story-search');
+    if (srch) srch.value = '';
+    document.getElementById('lin-overview').style.display = 'none';
+    document.getElementById('lin-epic-detail').style.display = 'block';
+    linRenderEpicDetail(epic);
+}
+
+function linRenderEpicDetail(epic) {
+    const kpiStyle   = 'cursor:pointer;transition:background 0.15s;border-radius:8px;padding:2px 4px;';
+    const alignPct   = 100 - (epic.mismatch_rate || 0);
+    const alignColor = alignPct >= 70 ? 'var(--success)' : alignPct >= 50 ? 'var(--warning)' : 'var(--error)';
+    document.getElementById('lin-kpis').innerHTML =
+        '<div class="lin-kpi kpi-clickable" style="' + kpiStyle + '" onclick="linKpiFilter(\'all\')" title="Show all stories">' +
+            '<div class="lin-kpi-label">Stories</div>' +
+            '<div class="lin-kpi-value" style="color:var(--accent)">' + epic.total_stories + '</div>' +
+        '</div>' +
+        (epic.total_points > 0 ?
+            '<div class="lin-kpi"><div class="lin-kpi-label">Total Points</div><div class="lin-kpi-value" style="color:var(--teal)">' + (epic.total_points % 1 === 0 ? epic.total_points : epic.total_points.toFixed(1)) + '</div></div>' : '') +
+        '<div class="lin-kpi"><div class="lin-kpi-label">Features</div><div class="lin-kpi-value" style="color:var(--purple)">' + epic.features.length + '</div></div>' +
+        '<div class="lin-kpi kpi-clickable" style="' + kpiStyle + '" onclick="linKpiFilter(\'match\')" title="Show WAF-aligned stories">' +
+            '<div class="lin-kpi-label">WAF Aligned</div>' +
+            '<div class="lin-kpi-value" style="color:' + alignColor + '">' + alignPct.toFixed(1) + '%</div>' +
+        '</div>' +
+        '<div class="lin-kpi kpi-clickable" style="' + kpiStyle + '" onclick="linKpiFilter(\'mismatch\')" title="Show mismatch stories">' +
+            '<div class="lin-kpi-label">Mismatches</div>' +
+            '<div class="lin-kpi-value" style="color:var(--error)">' + epic.mismatches + '</div>' +
+        '</div>';
+
+    const cats = Object.entries(epic.categories || {}).sort((a, b) => b[1] - a[1]);
+    destroyChart('lin-cat-chart');
+    const ctx = document.getElementById('lin-cat-chart');
+    if (ctx && cats.length > 0) {
+        charts['lin-cat-chart'] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: cats.map(c => c[0]),
+                datasets: [{ data: cats.map(c => c[1]), backgroundColor: CHART_PALETTE_LIN.slice(0, cats.length), borderRadius: 6, barThickness: 22 }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#6b6e80' }, grid: { color: '#353849' } },
+                    y: { ticks: { color: '#9395a5', font: { size: 11 } }, grid: { display: false } }
+                }
+            }
+        });
+    }
+    document.getElementById('lin-tree-title').textContent = epic.epic + ' \u2014 Story Lineage';
+    _linSortCol = 'title'; _linSortDir = 'asc';
+    document.querySelectorAll('.lin-sort-btn').forEach(b => { b.classList.remove('active'); b.removeAttribute('data-dir'); });
+    const defBtn = document.getElementById('linsort-title');
+    if (defBtn) { defBtn.classList.add('active'); defBtn.setAttribute('data-dir', '\u25b2'); }
+    linRenderTree(epic);
+}
+
+function setLinSort(col) {
+    if (_linSortCol === col) { _linSortDir = _linSortDir === 'asc' ? 'desc' : 'asc'; }
+    else { _linSortCol = col; _linSortDir = 'asc'; }
+    document.querySelectorAll('.lin-sort-btn').forEach(b => { b.classList.remove('active'); b.removeAttribute('data-dir'); });
+    const btn = document.getElementById('linsort-' + col);
+    if (btn) { btn.classList.add('active'); btn.setAttribute('data-dir', _linSortDir === 'asc' ? '\u25b2' : '\u25bc'); }
+    if (linCurrentEpic) linRenderTree(linCurrentEpic);
+}
+
+function linSortStories(stories) {
+    const col = _linSortCol, dir = _linSortDir === 'asc' ? 1 : -1;
+    return [...stories].sort((a, b) => {
+        let va, vb;
+        if      (col === 'title')      { va = (a.title      || '').toLowerCase(); vb = (b.title      || '').toLowerCase(); }
+        else if (col === 'category')   { va = (a.category   || '').toLowerCase(); vb = (b.category   || '').toLowerCase(); }
+        else if (col === 'color')      { va = (a.color      || '').toLowerCase(); vb = (b.color      || '').toLowerCase(); }
+        else if (col === 'confidence') { va = (a.confidence || '').toLowerCase(); vb = (b.confidence || '').toLowerCase(); }
+        else if (col === 'mismatch')   { va = a.mismatch ? 1 : 0;                 vb = b.mismatch ? 1 : 0; }
+        else { va = ''; vb = ''; }
+        return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
+    });
+}
+
+function linRenderTree(epic) {
+    window._linStoriesFlat = [];
+    const treeHtml = epic.features.map(feat => {
+        const sorted = linSortStories(feat.stories);
+        const storiesHtml = sorted.map(s => {
+            const flatIdx  = window._linStoriesFlat.length;
+            window._linStoriesFlat.push(s);
+            const dotColor = WAF_COLORS_MAP[s.color] || '#e8944a';
+            const confCls  = (s.confidence || '').toLowerCase();
+            const title    = s.title.length > 60 ? s.title.substring(0, 60) + '...' : s.title;
+            const idTags   = [
+                s.story_id   ? '<span title="Story ID"   style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">' + esc(s.story_id)   + '</span>' : '',
+                s.feature_id ? '<span title="Feature ID" style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">' + esc(s.feature_id) + '</span>' : '',
+                s.epic_id    ? '<span title="Epic ID"    style="font-size:10px;color:var(--text-muted);background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">' + esc(s.epic_id)    + '</span>' : '',
+            ].join(' ');
+            const userWaf = s.original_tag || '', aiWaf = s.category || '';
+            const differ  = userWaf && aiWaf && userWaf.toLowerCase() !== aiWaf.toLowerCase();
+            let wafTag = '';
+            if (differ) {
+                wafTag = '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);border-radius:4px;padding:1px 5px;white-space:nowrap;flex-shrink:0;" title="User: ' + esc(userWaf) + ' \u00b7 AI: ' + esc(aiWaf) + '">' +
+                    '<span style="color:var(--text-muted);">' + esc(userWaf) + '</span>' +
+                    '<span style="color:var(--text-muted);font-size:9px;">\u2192</span>' +
+                    '<span style="color:var(--text-primary);font-weight:600;">' + esc(aiWaf) + '</span>' +
+                    '<span style="color:var(--warning);font-size:11px;">\u26a0</span>' +
+                '</span>';
+            } else if (aiWaf) {
+                wafTag = '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:1px 5px;white-space:nowrap;flex-shrink:0;" title="' + esc(userWaf ? 'User: ' + userWaf + ' \u00b7 AI: ' + aiWaf : 'AI: ' + aiWaf) + '">' +
+                    (userWaf ? '<span style="color:var(--text-muted);">' + esc(userWaf) + '</span><span style="color:var(--text-muted);font-size:9px;">\u2192</span>' : '') +
+                    '<span style="color:var(--text-primary);font-weight:600;">' + esc(aiWaf) + '</span>' +
+                    (userWaf ? '<span style="color:var(--success);font-size:10px;">\u2713</span>' : '') +
+                '</span>';
+            }
+            const ptsTag   = s.story_points ? '<span title="Story Points" style="font-size:10px;font-weight:600;color:var(--accent);background:rgba(232,148,74,0.12);border:1px solid rgba(232,148,74,0.3);padding:1px 5px;border-radius:3px;">' + esc(String(s.story_points)) + ' pts</span>' : '';
+            const aligned  = !s.mismatch;
+            const alignDot = '<span title="' + (aligned ? 'WAF match' : 'WAF mismatch') + '" style="font-size:12px;cursor:default;color:' + (aligned ? 'var(--success)' : 'var(--error)') + ';">' + (aligned ? '\u25cf' : '\u25ce') + '</span>';
+            return '<div class="lin-story-item' + (s.mismatch ? ' lin-story-mismatch' : '') + '" ' +
+                    'data-mismatch="' + (s.mismatch ? 'true' : 'false') + '" ' +
+                    'style="cursor:pointer;" title="Click to view story details" ' +
+                    'onclick="showStoryDetail(window._linStoriesFlat[' + flatIdx + '])">' +
+                '<span class="color-dot" style="background:' + dotColor + '" title="' + esc(s.color || '') + '"></span>' +
+                '<span style="flex:1;color:var(--text-primary);" title="' + esc(s.title) + '">' + esc(title) + '</span>' +
+                ptsTag + idTags + wafTag +
+                '<span class="badge ' + confCls + '">' + esc(s.confidence || '\u2014') + '</span>' +
+                alignDot +
+            '</div>';
+        }).join('');
+        const mismatchCount = feat.stories.filter(s => s.mismatch).length;
+        const featLabel = mismatchCount > 0
+            ? esc(feat.name) + ' <span style="color:var(--error);font-size:11px;font-weight:400;">(' + mismatchCount + ' mismatch)</span>'
+            : esc(feat.name);
+        return '<div class="lin-tree-feature">' +
+            '<div class="lin-feature-header" onclick="linToggleFeature(this)">' +
+                '<span class="lin-feature-toggle">\u25b6</span>' +
+                '<span style="flex:1;">' + featLabel + '</span>' +
+                '<span style="font-size:11px;color:var(--text-muted);" class="lin-feat-count">' + feat.stories.length + ' stories</span>' +
+                (feat.total_points > 0 ? '<span style="font-size:11px;font-weight:600;color:var(--teal);margin-left:6px;">' + (feat.total_points % 1 === 0 ? feat.total_points : feat.total_points.toFixed(1)) + ' pts</span>' : '') +
+            '</div>' +
+            '<div class="lin-story-list">' + storiesHtml + '</div>' +
+        '</div>';
+    }).join('');
+
+    const openFeatures = new Set();
+    document.querySelectorAll('#lin-tree-container .lin-tree-feature').forEach((el, i) => {
+        if (el.querySelector('.lin-story-list.open')) openFeatures.add(i);
+    });
+    document.getElementById('lin-tree-container').innerHTML = treeHtml;
+    const featureEls = document.querySelectorAll('#lin-tree-container .lin-tree-feature');
+    if (openFeatures.size === 0) {
+        if (featureEls[0]) {
+            featureEls[0].querySelector('.lin-feature-toggle').classList.add('open');
+            featureEls[0].querySelector('.lin-story-list').classList.add('open');
+        }
+    } else {
+        featureEls.forEach((el, i) => {
+            if (openFeatures.has(i)) {
+                el.querySelector('.lin-feature-toggle').classList.add('open');
+                el.querySelector('.lin-story-list').classList.add('open');
+            }
+        });
+    }
+    const searchVal = (document.getElementById('lin-story-search').value || '').trim();
+    if (searchVal) filterLinStories();
+}
+
+let _linFilterTimer = null;
+function filterLinStories() {
+    clearTimeout(_linFilterTimer);
+    _linFilterTimer = setTimeout(function() {
+        const q = (document.getElementById('lin-story-search').value || '').toLowerCase().trim();
+        document.querySelectorAll('#lin-tree-container .lin-story-item').forEach(item => {
+            if (!q) { item.style.display = ''; return; }
+            item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+        document.querySelectorAll('#lin-tree-container .lin-tree-feature').forEach(feat => {
+            const stories = feat.querySelectorAll('.lin-story-item');
+            const visible = feat.querySelectorAll('.lin-story-item:not([style*="display: none"])');
+            const countEl = feat.querySelector('.lin-feat-count');
+            if (countEl) countEl.textContent = (q ? visible.length + '/' : '') + stories.length + ' stories';
+            if (q && visible.length > 0) {
+                feat.querySelector('.lin-feature-toggle')?.classList.add('open');
+                feat.querySelector('.lin-story-list')?.classList.add('open');
+            }
+        });
+    }, 200);
+}
+
+function linKpiFilter(type) {
+    document.querySelectorAll('#lin-tree-container .lin-story-item').forEach(item => {
+        const isMismatch = item.getAttribute('data-mismatch') === 'true';
+        item.style.display = (type === 'all' || (type === 'mismatch' && isMismatch) || (type === 'match' && !isMismatch)) ? '' : 'none';
+    });
+    document.querySelectorAll('#lin-tree-container .lin-tree-feature').forEach(feat => {
+        const visible = feat.querySelectorAll('.lin-story-item:not([style*="display: none"])');
+        if (type !== 'all' && visible.length > 0) {
+            feat.querySelector('.lin-feature-toggle')?.classList.add('open');
+            feat.querySelector('.lin-story-list')?.classList.add('open');
+        }
+    });
+    document.getElementById('lin-tree-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function linToggleFeature(header) {
+    header.querySelector('.lin-feature-toggle').classList.toggle('open');
     header.nextElementSibling.classList.toggle('open');
 }
 

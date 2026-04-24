@@ -25,10 +25,16 @@ DEFAULT_WAF_CATEGORIES = [
 ]
 
 WAF_ALIASES = {
-    # KTLO
-    "ktlo":                          "KTLO (Keep the Lights On)",
-    "keep the lights on":            "KTLO (Keep the Lights On)",
-    "keep lights on":                "KTLO (Keep the Lights On)",
+    # KTLO — all common forms map to canonical
+    "ktlo":                                "KTLO (Keep the Lights On)",
+    "keep the lights on":                  "KTLO (Keep the Lights On)",
+    "keep lights on":                      "KTLO (Keep the Lights On)",
+    "keep the lights on (ktlo)":           "KTLO (Keep the Lights On)",
+    "keeping the lights on":               "KTLO (Keep the Lights On)",
+    "keeping the lights on (ktlo)":        "KTLO (Keep the Lights On)",
+    "ktlo - keep the lights on":           "KTLO (Keep the Lights On)",
+    "ktlo – keep the lights on":           "KTLO (Keep the Lights On)",
+    "ktlo: keep the lights on":            "KTLO (Keep the Lights On)",
     # Maintenance
     "biz maintenance":               "Business Maintenance",
     "bus maintenance":               "Business Maintenance",

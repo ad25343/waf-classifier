@@ -62,6 +62,12 @@ def normalize_waf_category(raw_category, known_categories=None):
     if raw_lower in WAF_ALIASES:
         return (WAF_ALIASES[raw_lower], True, raw)
 
+    # 4. Smart KTLO detection — any string containing "ktlo" or
+    #    both "keep"+"lights"+"on" normalizes to the canonical form
+    if "ktlo" in raw_lower or ("keep" in raw_lower and "lights" in raw_lower and "on" in raw_lower):
+        canonical = next((c for c in cats if c.lower().startswith("ktlo")), "KTLO (Keep the Lights On)")
+        return (canonical, True, raw)
+
     # No match — return as-is
     return (raw, False, raw)
 

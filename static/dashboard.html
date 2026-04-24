@@ -512,7 +512,10 @@ const CATEGORY_COLOR_MAP = {
 };
 function expectedColor(category) {
     if (!category) return null;
-    return CATEGORY_COLOR_MAP[category.toLowerCase().trim()] || null;
+    const lc = category.toLowerCase().trim();
+    if (CATEGORY_COLOR_MAP[lc]) return CATEGORY_COLOR_MAP[lc];
+    if (lc.includes('ktlo') || (lc.includes('keep') && lc.includes('lights') && lc.includes('on'))) return 'GRAY';
+    return null;
 }
 function colorOk(category, color) {
     const exp = expectedColor(category);
