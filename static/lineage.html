@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WAF Classifier | Epic Lineage</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -690,7 +691,14 @@
                 <!-- Charts -->
                 <div class="chart-grid">
                     <div class="card">
-                        <div class="card-title">WAF Category Breakdown</div>
+                        <div class="card-title">WAF Classification Divergence — AI vs User
+                            <span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:8px;">for this epic</span>
+                        </div>
+                        <div style="display:flex;gap:20px;align-items:center;margin-bottom:10px;font-size:12px;color:var(--text-muted);">
+                            <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(212,114,42,0.85);"></span><strong style="color:var(--text-secondary);">Orange →</strong> AI classifies more</span>
+                            <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(13,148,136,0.85);"></span><strong style="color:var(--text-secondary);">← Teal</strong> Team tags more</span>
+                            <span>Near zero = aligned</span>
+                        </div>
                         <div class="chart-container"><canvas id="epicCatChart"></canvas></div>
                     </div>
                 </div>
@@ -792,6 +800,7 @@ const CHART_PALETTE = [
     "#2dd4bf", "#f472b6", "#34d399", "#818cf8", "#fb923c"
 ];
 
+if (window.ChartDataLabels) Chart.register(ChartDataLabels);
 let charts = {};
 let allEpicData = [];
 let epicListData = [];
@@ -1188,25 +1197,73 @@ function renderEpicDetail(epic) {
         </div>
     `;
 
-    // Category chart
-    const cats = Object.entries(epic.categories).sort((a, b) => b[1] - a[1]);
+    // Divergence chart: AI category vs user original_tag per story
     destroyChart('epicCatChart');
+
+    // Aggregate AI counts and user tag counts from all stories
+    const _aiMap = {}, _userMap = {};
+    (epic.features || []).forEach(feat => {
+        (feat.stories || []).forEach(s => {
+            const ai   = (s.category   || '').trim() || 'Unknown';
+            const user = (s.original_tag || '').trim();
+            _aiMap[ai] = (_aiMap[ai] || 0) + 1;
+            if (user) _userMap[user] = (_userMap[user] || 0) + 1;
+        });
+    });
+
+    // Union of all categories, compute delta, sort most AI-heavy → most user-heavy
+    const _divCats = Array.from(new Set([...Object.keys(_aiMap), ...Object.keys(_userMap)]))
+        .map(name => ({ name, ai: _aiMap[name] || 0, user: _userMap[name] || 0,
+                        delta: (_aiMap[name] || 0) - (_userMap[name] || 0) }))
+        .sort((a, b) => b.delta - a.delta);
+
+    const _hasUserTags = Object.keys(_userMap).length > 0;
+
     charts['epicCatChart'] = new Chart(document.getElementById('epicCatChart'), {
         type: 'bar',
         data: {
-            labels: cats.map(c => c[0]),
+            labels: _divCats.map(c => c.name),
             datasets: [{
-                data: cats.map(c => c[1]),
-                backgroundColor: CHART_PALETTE.slice(0, cats.length),
-                borderRadius: 6, barThickness: 22,
+                data: _divCats.map(c => _hasUserTags ? c.delta : c.ai),
+                backgroundColor: _divCats.map(c => _hasUserTags
+                    ? (c.delta >= 0 ? 'rgba(212,114,42,0.85)' : 'rgba(13,148,136,0.85)')
+                    : 'rgba(212,114,42,0.85)'),
+                borderRadius: 4, borderSkipped: false,
             }]
         },
         options: {
             indexAxis: 'y',
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    display: ctx => Math.abs(_divCats[ctx.dataIndex]?.delta || _divCats[ctx.dataIndex]?.ai) > 0,
+                    anchor: ctx => (_hasUserTags && _divCats[ctx.dataIndex]?.delta < 0) ? 'start' : 'end',
+                    align:  ctx => (_hasUserTags && _divCats[ctx.dataIndex]?.delta < 0) ? 'start' : 'end',
+                    color: '#9395a5', font: { size: 10, weight: '600' },
+                    formatter: (val) => _hasUserTags ? ((val >= 0 ? '+' : '') + val) : val
+                },
+                tooltip: {
+                    callbacks: {
+                        title: ctx => ctx[0].label,
+                        label: ctx => {
+                            const d = _divCats[ctx.dataIndex];
+                            if (!_hasUserTags) return `  AI Suggested: ${d.ai}`;
+                            const sign = d.delta >= 0 ? '+' : '';
+                            return [
+                                `  AI Suggested:  ${d.ai}`,
+                                `  Team Tagged:   ${d.user}`,
+                                `  Difference:    ${sign}${d.delta}  (${d.delta > 0 ? 'AI sees more' : d.delta < 0 ? 'Team tags more' : 'Aligned'})`
+                            ];
+                        }
+                    }
+                }
+            },
             scales: {
-                x: { ticks: { color: '#6b6e80' }, grid: { color: '#353849' } },
+                x: {
+                    ticks: { color: '#6b6e80' }, grid: { color: '#353849' },
+                    title: _hasUserTags ? { display: true, text: '← Team tags more   |   AI classifies more →', color: '#6b6e80', font: { size: 11 } } : { display: false }
+                },
                 y: { ticks: { color: '#9395a5', font: { size: 11 } }, grid: { display: false } }
             }
         }
