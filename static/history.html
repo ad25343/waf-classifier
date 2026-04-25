@@ -694,6 +694,7 @@
                     <div class="card-title" style="margin:0;">All Stories</div>
                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                         <div id="recent-active-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+                        <button class="btn btn-sm btn-outline" onclick="showExportMenu(this,[{l:'Excel (.xlsx)',i:'📊',f:downloadAllStoriesExcel},{l:'PDF',i:'📑',f:downloadAllStoriesPDF}])" style="font-size:12px;">⬇ Export ▾</button>
                         <div style="position:relative;">
                             <input type="text" id="recent-search" placeholder="🔍 Search stories…"
                                 oninput="debounceRecentSearch()"
@@ -3934,6 +3935,47 @@ function downloadDrillDownPDF() {
     const d = _drillDownExportData(); if (!d) return;
     const title = document.getElementById('drilldown-title').textContent || 'Stories';
     downloadPDF(`waf-drilldown-${d.slug}-${new Date().toISOString().slice(0,10)}.pdf`, title, d.headers, d.rows);
+}
+
+// ── All Stories exports ───────────────────────────────────────
+async function _fetchAllStoriesForExport() {
+    const qs = getAnalyticsQS();
+    const uploadParam = qs ? '&' + qs : '';
+    const { parts } = _recentSearchParams();
+    const searchParam = parts.length ? '&' + parts.join('&') : '';
+    const url = `/api/dashboard/stories?per_page=all&page=1&sort=${recentSortCol}&dir=${recentSortDir}${uploadParam}${searchParam}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.stories || [];
+}
+
+function _allStoriesHeaders() {
+    return ['Story Title','Epic','User WAF','AI WAF','Color','PI Number','Story Points','Team','Confidence','Status'];
+}
+function _allStoriesRows(stories) {
+    return stories.map(s => [
+        s.title || '', s.epic || '', s.original_tag || '', s.category || '',
+        s.color || '', s.pi_number || '', s.story_points || '', s.team || '',
+        s.confidence || '', (s.mismatch || s.was_mismatch) ? 'Mismatch' : 'Match'
+    ]);
+}
+
+async function downloadAllStoriesExcel() {
+    try {
+        const stories = await _fetchAllStoriesForExport();
+        if (!stories.length) { alert('No stories to export.'); return; }
+        downloadExcel(`waf-all-stories-${new Date().toISOString().slice(0,10)}.xlsx`,
+            'All Stories', _allStoriesHeaders(), _allStoriesRows(stories));
+    } catch(e) { console.error(e); alert('Export failed.'); }
+}
+
+async function downloadAllStoriesPDF() {
+    try {
+        const stories = await _fetchAllStoriesForExport();
+        if (!stories.length) { alert('No stories to export.'); return; }
+        downloadPDF(`waf-all-stories-${new Date().toISOString().slice(0,10)}.pdf`,
+            'WAF — All Stories', _allStoriesHeaders(), _allStoriesRows(stories));
+    } catch(e) { console.error(e); alert('Export failed.'); }
 }
 
 // ── Export ────────────────────────────────────────────────────

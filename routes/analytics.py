@@ -112,7 +112,8 @@ def dashboard_stories():
     value = request.args.get("value", "")
     q     = request.args.get("q", "").strip()
     page     = max(1, int(request.args.get("page", "1")))
-    per_page = min(500, max(1, int(request.args.get("per_page", "100"))))
+    per_page_raw = request.args.get("per_page", "100")
+    per_page = 9999 if per_page_raw == "all" else min(5000, max(1, int(per_page_raw)))
 
     where_clauses = []
     params = []
