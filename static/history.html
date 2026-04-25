@@ -631,6 +631,25 @@
             </div>
         </div>
 
+        <!-- Narrative card -->
+        <div id="summary-narrative" class="card" style="display:none;margin-bottom:20px;padding:16px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+                <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);margin-bottom:8px;">Portfolio Summary</div>
+                    <p id="narrative-text" style="margin:0;font-size:14px;line-height:1.75;color:var(--text-secondary);"></p>
+                </div>
+                <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                    <button id="ai-narrative-btn" onclick="generateAINarrative()"
+                        style="padding:6px 14px;background:linear-gradient(135deg,rgba(212,114,42,0.15),rgba(147,51,234,0.15));border:1px solid rgba(212,114,42,0.4);border-radius:8px;color:var(--text-primary);font-size:12px;cursor:pointer;white-space:nowrap;transition:all 0.2s;"
+                        onmouseenter="this.style.background='linear-gradient(135deg,rgba(212,114,42,0.25),rgba(147,51,234,0.25))'"
+                        onmouseleave="this.style.background='linear-gradient(135deg,rgba(212,114,42,0.15),rgba(147,51,234,0.15))'">
+                        ✨ AI Narrative
+                    </button>
+                    <span id="narrative-source" style="font-size:10px;color:var(--text-muted);text-align:right;"></span>
+                </div>
+            </div>
+        </div>
+
         <!-- Drill-down panel (hidden by default) -->
         <div id="summary-drilldown" class="card" style="display:none;margin-bottom:20px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -1586,10 +1605,143 @@ async function loadSummary() {
             }
         });
 
+        // Narrative
+        renderNarrative(data);
+
         // Recent Table — now driven by loadRecentTable()
         loadRecentTable();
     } catch (err) {
         console.error("Summary load failed:", err);
+    }
+}
+
+// ── Narrative ─────────────────────────────────────────────────
+const MAINTENANCE_CATS = ['ktlo', 'keep the lights on', 'technical maintenance', 'business maintenance', 'regulatory'];
+const STRATEGIC_CATS   = ['enterprise strategic', 'top divisional', 'other block'];
+
+function _catIs(name, keywords) {
+    const n = (name || '').toLowerCase();
+    return keywords.some(k => n.includes(k));
+}
+
+function buildTemplateNarrative(data) {
+    const total    = data.total_classifications || 0;
+    const cats     = data.categories || [];
+    const mismatches = data.total_mismatches || 0;
+    const mismatchPct = total > 0 ? (mismatches / total * 100) : 0;
+    const confList = data.confidence || [];
+    const rcList   = data.run_change || [];
+
+    const top    = cats[0];
+    const topPct = top && total > 0 ? (top.count / total * 100).toFixed(1) : 0;
+
+    const maintCount = cats.filter(c => _catIs(c.name, MAINTENANCE_CATS)).reduce((a, c) => a + c.count, 0);
+    const stratCount = cats.filter(c => _catIs(c.name, STRATEGIC_CATS)).reduce((a, c) => a + c.count, 0);
+    const maintPct = total > 0 ? (maintCount / total * 100).toFixed(1) : 0;
+    const stratPct = total > 0 ? (stratCount / total * 100).toFixed(1) : 0;
+
+    const highConf   = confList.find(c => (c.name || '').toUpperCase() === 'HIGH');
+    const highConfPct = highConf && total > 0 ? (highConf.count / total * 100).toFixed(1) : null;
+
+    const runItem    = rcList.find(i => i.name === 'Run');
+    const changeItem = rcList.find(i => i.name === 'Change');
+    const runPct     = runItem    && total > 0 ? (runItem.count    / total * 100).toFixed(1) : null;
+    const changePct  = changeItem && total > 0 ? (changeItem.count / total * 100).toFixed(1) : null;
+
+    const taggedCount   = (data.submitted_waf || []).reduce((a, c) => a + c.count, 0);
+    const untaggedCount = total - taggedCount;
+
+    const parts = [];
+
+    // Volume + top category
+    if (top) {
+        parts.push(`<strong>${total.toLocaleString()}</strong> stories analyzed — the dominant classification is <strong>${top.name}</strong> at <strong>${topPct}%</strong>.`);
+    } else {
+        parts.push(`<strong>${total.toLocaleString()}</strong> stories analyzed.`);
+    }
+
+    // Maintenance vs Strategic posture
+    if (maintCount > 0 || stratCount > 0) {
+        const posture = parseFloat(maintPct) > 55 ? 'maintenance-heavy' :
+                        parseFloat(stratPct) > 40 ? 'strategically oriented' : 'balanced';
+        parts.push(`The portfolio is <strong>${posture}</strong>: ${maintPct}% maintenance work vs ${stratPct}% strategic investment.`);
+    }
+
+    // Run / Change
+    if (runPct && changePct) {
+        parts.push(`Split is <strong>${runPct}% Run</strong> (operational) and <strong>${changePct}% Change</strong> (new capability).`);
+    }
+
+    // Mismatch signal
+    if (mismatchPct < 3) {
+        parts.push(`AI and user classifications align closely — only <strong>${mismatchPct.toFixed(1)}%</strong> mismatch rate.`);
+    } else if (mismatchPct < 12) {
+        parts.push(`<strong>${mismatches} stories (${mismatchPct.toFixed(1)}%)</strong> have a mismatch between user-submitted and AI-suggested WAF — worth a review.`);
+    } else {
+        parts.push(`High mismatch rate of <strong>${mismatchPct.toFixed(1)}%</strong> (${mismatches} stories) — user tags and AI classifications diverge significantly, suggesting tag hygiene issues.`);
+    }
+
+    // Confidence
+    if (highConfPct) {
+        parts.push(`<strong>${highConfPct}%</strong> of classifications are high confidence.`);
+    }
+
+    // Untagged
+    if (untaggedCount > 0) {
+        parts.push(`<strong>${untaggedCount}</strong> ${untaggedCount === 1 ? 'story' : 'stories'} had no existing WAF tag and ${untaggedCount === 1 ? 'was' : 'were'} classified fresh by AI.`);
+    }
+
+    return parts.join(' ');
+}
+
+function renderNarrative(data) {
+    const card = document.getElementById('summary-narrative');
+    const el   = document.getElementById('narrative-text');
+    const src  = document.getElementById('narrative-source');
+    const btn  = document.getElementById('ai-narrative-btn');
+    if (!card || !el) return;
+    el.innerHTML = buildTemplateNarrative(data);
+    src.textContent = 'Auto-generated from data';
+    btn.disabled = false;
+    btn.textContent = '✨ AI Narrative';
+    card.style.display = '';
+}
+
+async function generateAINarrative() {
+    const btn  = document.getElementById('ai-narrative-btn');
+    const el   = document.getElementById('narrative-text');
+    const src  = document.getElementById('narrative-source');
+    if (!summaryData || !btn) return;
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating…';
+    try {
+        const res = await fetch('/api/narrative', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                total: summaryData.total_classifications,
+                mismatches: summaryData.total_mismatches,
+                categories: summaryData.categories,
+                submitted_waf: summaryData.submitted_waf,
+                run_change: summaryData.run_change,
+                confidence: summaryData.confidence,
+            })
+        });
+        const d = await res.json();
+        if (d.narrative) {
+            el.textContent = d.narrative;
+            src.textContent = 'AI-generated insight';
+            btn.textContent = '↩ Reset';
+            btn.disabled = false;
+            btn.onclick = () => { renderNarrative(summaryData); btn.onclick = generateAINarrative; };
+        } else {
+            throw new Error(d.error || 'No narrative returned');
+        }
+    } catch(e) {
+        btn.textContent = '✨ AI Narrative';
+        btn.disabled = false;
+        src.textContent = 'AI unavailable — try again';
+        console.error('Narrative generation failed:', e);
     }
 }
 

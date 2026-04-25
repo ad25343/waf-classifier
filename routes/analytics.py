@@ -1011,3 +1011,77 @@ def search_classifications():
         })
 
     return jsonify({"results": results, "total": len(results), "query": q})
+
+
+@analytics_bp.route("/api/narrative", methods=["POST"])
+def generate_narrative():
+    """Generate an AI narrative summary from WAF classification stats."""
+    try:
+        from waf_core import get_client, AI_MODEL
+        from config import AI_BACKEND
+    except ImportError as e:
+        return jsonify({"error": f"AI backend unavailable: {e}"}), 503
+
+    data = request.get_json(force=True) or {}
+    total      = data.get("total", 0)
+    mismatches = data.get("mismatches", 0)
+    cats       = data.get("categories", [])
+    sub_waf    = data.get("submitted_waf", [])
+    run_change = data.get("run_change", [])
+    confidence = data.get("confidence", [])
+
+    if total == 0:
+        return jsonify({"error": "No data to summarise"}), 400
+
+    mismatch_pct = round(mismatches / total * 100, 1) if total else 0
+
+    # Build a compact stats block for the prompt
+    cat_lines = "\n".join(
+        f"  - {c['name']}: {c['count']} ({round(c['count']/total*100,1)}%)"
+        for c in cats[:8]
+    )
+    sub_lines = "\n".join(
+        f"  - {c['name']}: {c['count']} ({round(c['count']/total*100,1)}%)"
+        for c in sub_waf[:6]
+    ) if sub_waf else "  (no user tags submitted)"
+    rc_lines  = ", ".join(f"{r['name']}: {r['count']} ({round(r['count']/total*100,1)}%)" for r in run_change)
+    conf_lines = ", ".join(f"{c['name']}: {round(c['count']/total*100,1)}%" for c in confidence)
+
+    prompt = f"""You are a WAF (Work Allocation Framework) portfolio analyst. Write a concise 3-4 sentence executive narrative summarising the following classification results. Be specific with numbers. Highlight the most important pattern and flag any concerns (high mismatch rate, skewed posture, missing tags, etc.). Write in plain English for a product or engineering leader — no bullet points, no headers, just flowing prose.
+
+STATS:
+Total stories: {total}
+Mismatch rate: {mismatch_pct}% ({mismatches} stories)
+Run / Change: {rc_lines or 'not available'}
+AI Confidence: {conf_lines or 'not available'}
+
+AI Suggested WAF Distribution:
+{cat_lines}
+
+User Submitted WAF Distribution:
+{sub_lines}
+
+Write the narrative now:"""
+
+    try:
+        client = get_client()
+        if AI_BACKEND == "anthropic":
+            response = client.messages.create(
+                model=AI_MODEL,
+                max_tokens=300,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            narrative = response.content[0].text.strip()
+        else:
+            # Bedrock
+            body = json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 300,
+                "messages": [{"role": "user", "content": prompt}]
+            })
+            resp = client.invoke_model(modelId=AI_MODEL, body=body)
+            narrative = json.loads(resp["body"].read())["content"][0]["text"].strip()
+
+        return jsonify({"narrative": narrative})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
