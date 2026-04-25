@@ -449,9 +449,12 @@
             <button class="status-tab" data-status="dismissed">Dismissed</button>
             <button class="status-tab" data-status="flagged_waf">WAF Flagged</button>
         </div>
-        <div class="search-wrap">
-            <span class="search-icon">&#128269;</span>
-            <input class="search-input" id="search-input" type="text" placeholder="Search story titles…" oninput="applySearch()">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <div class="search-wrap">
+                <span class="search-icon">&#128269;</span>
+                <input class="search-input" id="search-input" type="text" placeholder="Search story titles…" oninput="applySearch()">
+            </div>
+            <button onclick="showExportMenu(this,[{l:'Excel (.xlsx)',i:'📊',f:downloadDisputesExcel},{l:'PDF',i:'📑',f:downloadDisputesPDF}])" style="padding:6px 12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-size:12px;cursor:pointer;white-space:nowrap;">⬇ Export ▾</button>
         </div>
     </div>
 
@@ -961,6 +964,77 @@ function statusLabel(s) {
     const map = { pending: 'Pending', accepted: 'Accepted', dismissed: 'Dismissed', flagged_waf: 'WAF Flagged' };
     return map[s] || s;
 }
+
+// ── Export ─────────────────────────────────────────────────────
+function showExportMenu(btn, items) {
+    document.querySelectorAll('.waf-export-popup').forEach(el => el.remove());
+    const popup = document.createElement('div');
+    popup.className = 'waf-export-popup';
+    popup.style.cssText = 'position:fixed;z-index:9999;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:160px;';
+    items.forEach(({ l, i, f }) => {
+        const item = document.createElement('button');
+        item.style.cssText = 'display:block;width:100%;text-align:left;padding:7px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:13px;border-radius:5px;white-space:nowrap;';
+        item.innerHTML = `${i} ${l}`;
+        item.onmouseenter = () => item.style.background = 'var(--bg-tertiary)';
+        item.onmouseleave = () => item.style.background = 'none';
+        item.onclick = () => { popup.remove(); f(); };
+        popup.appendChild(item);
+    });
+    const rect = btn.getBoundingClientRect();
+    popup.style.top  = (rect.bottom + 4) + 'px';
+    popup.style.right = (window.innerWidth - rect.right) + 'px';
+    document.body.appendChild(popup);
+    setTimeout(() => {
+        document.addEventListener('click', function _c(e) {
+            if (!popup.contains(e.target) && e.target !== btn) { popup.remove(); document.removeEventListener('click', _c); }
+        });
+    }, 10);
+}
+
+function _disputeExportData() {
+    const src = filteredDisputes.length ? filteredDisputes : allDisputes;
+    if (!src || !src.length) { alert('No disputes to export.'); return null; }
+    const headers = ['Date','Story Title','Team','Epic','PI Number','AI Category','AI Color','AI Confidence',
+                     'User Comment','Suggested Category','Status'];
+    const rows = src.map(d => [
+        d.created_at ? d.created_at.slice(0,10) : '',
+        d.story_title || '',
+        d.team || '', d.epic || '', d.pi_number || '',
+        d.ai_category || d.category || '',
+        d.ai_color || d.color || '',
+        d.ai_confidence != null ? Math.round((d.ai_confidence||0)*100)+'%' : (d.confidence ? Math.round(d.confidence)+'%' : ''),
+        d.user_comment || '',
+        d.suggested_category || '',
+        statusLabel(d.status || 'pending')
+    ]);
+    const ts = new Date().toISOString().slice(0,10);
+    return { headers, rows, ts };
+}
+
+function downloadDisputesExcel() {
+    const d = _disputeExportData(); if (!d) return;
+    if (!window.XLSX) { alert('Excel library not loaded yet.'); return; }
+    const ws = XLSX.utils.aoa_to_sheet([d.headers, ...d.rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Disputes');
+    XLSX.writeFile(wb, `waf-disputes-${d.ts}.xlsx`);
+}
+
+function downloadDisputesPDF() {
+    const d = _disputeExportData(); if (!d) return;
+    if (!window.jspdf) { alert('PDF library not loaded yet.'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(13); doc.text('WAF Classification Disputes', 14, 14);
+    doc.autoTable({ head: [d.headers], body: d.rows, startY: 20,
+        styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+        headStyles: { fillColor: [212, 114, 42], textColor: [255,255,255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 245, 248] } });
+    doc.save(`waf-disputes-${d.ts}.pdf`);
+}
 </script>
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
