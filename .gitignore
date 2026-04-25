@@ -29,6 +29,7 @@ WAF_Classified_Stories.xlsx
 
 # Database (local history)
 waf_history.db
+waf_classifier.db
 
 # Runtime / temp
 server.log
