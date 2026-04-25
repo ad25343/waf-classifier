@@ -238,7 +238,7 @@
             padding: 8px 24px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            overflow-x: auto;
+            overflow: visible;
             flex-wrap: nowrap;
         }
         .top-nav-link {
@@ -263,14 +263,14 @@
         .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
         .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
         .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
-        .nav-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
         .nav-dropdown-menu {
             display: none; position: absolute; top: calc(100% + 6px); left: 0;
             min-width: 160px; background: var(--bg-secondary); border: 1px solid var(--border);
-            border-radius: 10px; padding: 6px; z-index: 1000;
+            border-radius: 10px; padding: 6px; z-index: 9999;
             box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         }
-        .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
         .nav-dropdown-item {
             display: block; padding: 8px 12px; border-radius: 7px;
             font-size: 13px; font-weight: 500; color: var(--text-secondary);
@@ -279,8 +279,63 @@
         .nav-dropdown-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
         .nav-dropdown-item.active { color: var(--accent); background: rgba(232,148,74,0.10); }
 
+        /* ── Stats row ───────────────────────────────────────── */
+        .stats-row {
+            display: flex;
+            gap: 16px;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto 24px auto;
+        }
+        .stat-card {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .stat-card:hover { border-color: var(--accent); }
+        .stat-num {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .stat-num.disputes-alert { color: #f43f5e; }
+        .stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+        }
+
+        /* ── Disputes badge on card ──────────────────────────── */
+        .disputes-badge {
+            position: absolute;
+            top: 16px; right: 16px;
+            background: #f43f5e;
+            color: white;
+            border-radius: 12px;
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 22px;
+            text-align: center;
+            display: none;
+            animation: pulse-badge 2s infinite;
+        }
+        @keyframes pulse-badge {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.4); }
+            50%       { box-shadow: 0 0 0 5px rgba(244,63,94,0); }
+        }
+
         @media (max-width: 700px) {
             .menu-grid { grid-template-columns: 1fr; }
+            .stats-row { display: grid; grid-template-columns: 1fr 1fr; }
         }
 
         /* ── Global search ───────────────────────────────────── */
@@ -415,7 +470,7 @@
     <div class="nav-dropdown">
         <span class="top-nav-link nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
         <div class="nav-dropdown-menu">
-            <a href="/history"  class="nav-dropdown-item">Analytics</a>
+            <a href="/history"  class="nav-dropdown-item">Analyze Stories</a>
             <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
             <a href="/teams"    class="nav-dropdown-item">Teams</a>
             <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
@@ -469,7 +524,27 @@
     <div id="version-info">v3.2.3</div>
 </div>
 
-<div class="main">
+<div class="main" style="flex-direction:column; align-items:center; justify-content:flex-start; padding-top: 32px;">
+    <!-- Stats bar -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-num" id="stat-total">—</div>
+            <div class="stat-label">Total Classified</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="stat-mismatch">—</div>
+            <div class="stat-label">Mismatch Rate</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="stat-disputes">—</div>
+            <div class="stat-label">Open Disputes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="stat-teams">—</div>
+            <div class="stat-label">GT Examples</div>
+        </div>
+    </div>
+
     <div class="menu-grid">
         <a href="/classify" class="menu-card classify">
             <div class="card-icon">💬</div>
@@ -480,7 +555,7 @@
 
         <a href="/history" class="menu-card dashboard">
             <div class="card-icon">📊</div>
-            <h2>Analytics</h2>
+            <h2>Analyze Stories</h2>
             <p>Upload JIRA data, AI verifies every story against the WAF framework, then explore insights — mismatches, trends, sprint and monthly breakdowns.</p>
             <span class="card-badge">PMOs &amp; Leadership</span>
         </a>
@@ -506,7 +581,8 @@
             <span class="card-badge">PMOs &amp; Leadership</span>
         </a>
 
-        <a href="/disputes" class="menu-card disputes">
+        <a href="/disputes" class="menu-card disputes" id="disputes-card">
+            <div class="disputes-badge" id="disputes-badge"></div>
             <div class="card-icon">🚩</div>
             <h2>Classification Disputes</h2>
             <p>Review AI classifications flagged as incorrect. Dismiss, accept into Ground Truth, or escalate for WAF definition review.</p>
@@ -548,17 +624,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const theme = document.documentElement.getAttribute('data-theme') || 'dark';
     const icon = document.querySelector('.theme-icon');
     if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+
+    // Nav dropdowns (click-based)
+    document.querySelectorAll('.nav-dropdown-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var dd = btn.closest('.nav-dropdown');
+            var isOpen = dd.classList.contains('open');
+            document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+            if (!isOpen) dd.classList.add('open');
+        });
+    });
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+    });
 });
 
 async function checkStatus() {
     try {
-        const [statusRes, dashRes] = await Promise.all([
+        const [statusRes, dashRes, disputesRes] = await Promise.all([
             fetch('/api/status'),
-            fetch('/api/dashboard/summary')
+            fetch('/api/dashboard/summary'),
+            fetch('/api/disputes?status=open&per_page=1').catch(() => null)
         ]);
         const status = await statusRes.json();
         const dash = await dashRes.json();
+        const disputesData = disputesRes ? await disputesRes.json().catch(() => null) : null;
 
+        // ── Status bar pills ──────────────────────────────────
         const apiDot = document.getElementById('api-dot');
         const apiText = document.getElementById('api-status');
         if (status.api_key_configured) {
@@ -593,6 +686,37 @@ async function checkStatus() {
         const dbText = document.getElementById('db-status');
         dbDot.className = 'status-dot green';
         dbText.textContent = 'History: ' + dash.total_classifications + ' records';
+
+        // ── Stats row ─────────────────────────────────────────
+        const total = dash.total_classifications || 0;
+        document.getElementById('stat-total').textContent = total.toLocaleString();
+
+        const mismatchEl = document.getElementById('stat-mismatch');
+        const mismatches = dash.total_mismatches ?? 0;
+        mismatchEl.textContent = total > 0
+            ? ((mismatches / total) * 100).toFixed(1) + '%'
+            : '0.0%';
+
+        const teamsEl = document.getElementById('stat-teams');
+        teamsEl.textContent = status.ground_truth_count > 0 ? status.ground_truth_count : '—';
+
+        // ── Open disputes + badge ─────────────────────────────
+        const disputesEl = document.getElementById('stat-disputes');
+        const badge = document.getElementById('disputes-badge');
+        const openCount = disputesData?.counts?.open ?? disputesData?.total ?? null;
+        if (openCount != null) {
+            disputesEl.textContent = openCount;
+            if (openCount > 0) {
+                disputesEl.classList.add('disputes-alert');
+                badge.textContent = openCount;
+                badge.style.display = 'block';
+            } else {
+                disputesEl.classList.remove('disputes-alert');
+                badge.style.display = 'none';
+            }
+        } else {
+            disputesEl.textContent = '—';
+        }
 
     } catch (err) {
         console.error('Status check failed:', err);
@@ -663,7 +787,7 @@ checkStatus();
             if (r.epic_id || r.epic) crumbs.push(_esc((r.epic_id ? r.epic_id + ' ' : '') + (r.epic||'')).trim());
             if (r.feature_id || r.feature) crumbs.push(_esc((r.feature_id ? r.feature_id + ' ' : '') + (r.feature||'')).trim());
             if (r.story_id) crumbs.push(_esc(r.story_id));
-            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+\'/history\';">';
+            html += `<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+'/history';">`;
             html += '<div class="search-result-title">' + _highlight(_esc(r.title), q) + '</div>';
             if (crumbs.length) html += '<div class="search-result-breadcrumb">' + crumbs.join('<span> › </span>') + '</div>';
             html += '<div class="search-result-badges">';

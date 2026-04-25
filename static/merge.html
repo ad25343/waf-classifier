@@ -90,7 +90,7 @@
             padding: 8px 24px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            overflow-x: auto;
+            overflow: visible;
             flex-wrap: nowrap;
         }
         .top-nav-link {
@@ -115,14 +115,14 @@
         .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
         .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
         .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
-        .nav-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
         .nav-dropdown-menu {
             display: none; position: absolute; top: calc(100% + 6px); left: 0;
             min-width: 160px; background: var(--bg-secondary); border: 1px solid var(--border);
-            border-radius: 10px; padding: 6px; z-index: 1000;
+            border-radius: 10px; padding: 6px; z-index: 9999;
             box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         }
-        .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
         .nav-dropdown-item {
             display: block; padding: 8px 12px; border-radius: 7px;
             font-size: 13px; font-weight: 500; color: var(--text-secondary);
@@ -677,7 +677,7 @@
     <div class="nav-dropdown">
         <span class="top-nav-link nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
         <div class="nav-dropdown-menu">
-            <a href="/history"  class="nav-dropdown-item">Analytics</a>
+            <a href="/history"  class="nav-dropdown-item">Analyze Stories</a>
             <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
             <a href="/teams"    class="nav-dropdown-item">Teams</a>
             <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
@@ -778,7 +778,7 @@
         <!-- Story -->
         <div class="upload-card" id="card-story">
             <div class="upload-card-title">Story Attributes File <span style="font-size:11px;font-weight:400;color:var(--accent);">Required</span></div>
-            <div class="upload-card-subtitle">Story #, Story Name, Story Points, Parent Feature, WAF Derived, Team</div>
+            <div class="upload-card-subtitle">Story #, Story Name, Story Points, Feature Name, WAF Derived, Team</div>
             <div class="upload-zone">
                 <div class="upload-zone-icon">&#128196;</div>
                 <div class="upload-zone-text">Click to select CSV or XLSX</div>
@@ -911,6 +911,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
         inp.value = 'Merged Import - ' + dateStr + ' ' + timeStr;
     }
+
+    // Nav dropdowns (click-based)
+    document.querySelectorAll('.nav-dropdown-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var dd = btn.closest('.nav-dropdown');
+            var isOpen = dd.classList.contains('open');
+            document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+            if (!isOpen) dd.classList.add('open');
+        });
+    });
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+    });
 });
 
 // ── Status bar ────────────────────────────────────────────────────────
@@ -1072,7 +1086,7 @@ function renderValidation(issues) {
         notice.style.cssText = 'padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;margin-bottom:14px;font-size:13px;';
         const missing = missingFiles.map(f => '<strong>' + esc(names[f] || f) + '</strong>').join(' and ');
         notice.innerHTML = '\u26A0 ' + missing + ' file' + (missingFiles.length > 1 ? 's were' : ' was') +
-            ' not uploaded &mdash; related columns (Epic ID, Feature ID, Epic, Parent Feature) will be blank in the output. ' +
+            ' not uploaded &mdash; related columns (Epic ID, Feature ID, Epic, Feature Name) will be blank in the output. ' +
             'Upload the missing file' + (missingFiles.length > 1 ? 's' : '') + ' and re-process for a complete merge.';
         container.appendChild(notice);
     }
@@ -1238,7 +1252,7 @@ function renderDetection(colMap) {
     const storyFields = [
         { key: 'id_col',            label: 'Story ID' },
         { key: 'title_col',         label: 'Story Title' },
-        { key: 'feature_col',       label: 'Parent Feature' },
+        { key: 'feature_col',       label: 'Feature Name' },
         { key: 'team_col',          label: 'Team' },
         { key: 'waf_col',           label: 'WAF' },
         { key: 'story_points_col',  label: 'Story Points' },
@@ -1297,7 +1311,7 @@ function renderStats(stats, missingFiles) {
 
 // ── Preview render ───────────────────────────────────────────────────
 const PREVIEW_COLS = [
-    'Epic ID', 'Feature ID', 'Story ID', 'Epic', 'Parent Feature',
+    'Epic ID', 'Feature ID', 'Story ID', 'Epic', 'Feature Name',
     'Story Title', 'Story Points', 'Team', 'WAF Category', 'WAF Color', 'Timestamp'
 ];
 
@@ -1519,7 +1533,7 @@ async function sendToClassifier() {
             if (r.epic_id || r.epic) crumbs.push(_esc((r.epic_id ? r.epic_id + ' ' : '') + (r.epic||'')).trim());
             if (r.feature_id || r.feature) crumbs.push(_esc((r.feature_id ? r.feature_id + ' ' : '') + (r.feature||'')).trim());
             if (r.story_id) crumbs.push(_esc(r.story_id));
-            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+\'/history\';">';
+            html += `<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+'/history';">`;
             html += '<div class="search-result-title">' + _highlight(_esc(r.title), q) + '</div>';
             if (crumbs.length) html += '<div class="search-result-breadcrumb">' + crumbs.join('<span> \u203a </span>') + '</div>';
             html += '<div class="search-result-badges">';

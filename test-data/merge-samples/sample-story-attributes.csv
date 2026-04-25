@@ -1,4 +1,4 @@
-Issue Type,WAF Derived,Resolved Date,Story #,Story Type,Story Name,Story Points,Fix versions,Parent Feature,Status,Teams,Team,Assignee
+Issue Type,WAF Derived,Resolved Date,Story #,Story Type,Story Name,Story Points,Fix versions,Feature Name,Status,Teams,Team,Assignee
 Story,Regulatory Mandated,2026-01-15,STORY-C001,User Story,Implement automated SOX control testing framework,3,PI-3,FEAT-C001,In Progress,Compliance Engineering,Compliance Engineering,TBD
 Story,Regulatory Mandated,2026-01-10,STORY-C002,User Story,Build SOX control evidence collection service,5,PI-3,FEAT-C001,Done,Compliance Engineering,Compliance Engineering,TBD
 Bug,Regulatory Mandated,2026-01-08,STORY-C003,Bug,Fix SOX control gap in quarterly reconciliation report,2,PI-3,FEAT-C001,Done,Compliance Engineering,Compliance Engineering,TBD

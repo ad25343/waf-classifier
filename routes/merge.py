@@ -76,7 +76,7 @@ STORY_KEYWORDS = {
 
 OUTPUT_COLUMNS = [
     "Epic ID", "Feature ID", "Story ID",
-    "Epic", "Parent Feature", "Story Title", "Story Description",
+    "Epic", "Feature Name", "Story Title", "Story Description",
     "Story Points", "Team", "WAF Category", "WAF Color",
     "Sub-Category", "Confidence", "Run/Change",
     "Timestamp", "Issue Key",
@@ -219,7 +219,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             "Feature ID":        feat_ref,
             "Story ID":          story_id,
             "Epic":              epic_name,
-            "Parent Feature":    feat_name,
+            "Feature Name":      feat_name,
             "Story Title":       title,
             "Story Description": "",
             "Story Points":      story_points,
@@ -295,7 +295,7 @@ def build_issues(merged_rows, epic_lookup, feature_lookup, has_feature=True, has
                 orphan_stories.append({
                     "story_id":        sid,
                     "story_title":     title,
-                    "missing_feature": "(no Parent Feature set)",
+                    "missing_feature": "(no Feature Name set)",
                 })
 
         # Missing WAF
@@ -491,31 +491,42 @@ def merge_send_to_classifier(token):
     original_columns = list(df.columns)
     df.columns = [c.strip().lower() for c in df.columns]
 
-    def _find(keywords):
+    def _find(keywords, exclude=None):
+        exclude = exclude or set()
         for kw in keywords:
             for col in df.columns:
-                if kw in col:
+                if kw in col and col not in exclude:
                     return col
         return None
 
     target_fields = [
-        {"key": "title",          "label": "Story Title",      "required": True,  "keywords": ["story title", "title", "summary"]},
-        {"key": "description",    "label": "Story Description", "required": False, "keywords": ["story description", "description", "desc"]},
-        {"key": "waf_category",   "label": "WAF Category",      "required": False, "keywords": ["waf category", "waf_category", "category"]},
-        {"key": "waf_color",      "label": "WAF Color",         "required": False, "keywords": ["waf color", "waf_color", "color"]},
-        {"key": "run_change",     "label": "Run/Change",        "required": False, "keywords": ["run/change", "run_change", "run change"]},
-        {"key": "subcategory",    "label": "Sub-Category",      "required": False, "keywords": ["sub-category", "subcategory", "waf sub"]},
-        {"key": "confidence",     "label": "Confidence",        "required": False, "keywords": ["confidence", "conf"]},
-        {"key": "team",           "label": "Team",              "required": False, "keywords": ["team", "squad", "group"]},
-        {"key": "epic",           "label": "Epic",              "required": False, "keywords": ["epic", "initiative"]},
-        {"key": "parent_feature", "label": "Parent Feature",    "required": False, "keywords": ["parent feature", "feature", "capability"]},
-        {"key": "timestamp",      "label": "Timestamp",         "required": False, "keywords": ["timestamp", "date", "created"]},
-        {"key": "story_id",       "label": "Story ID",          "required": False, "keywords": ["story id", "story_id", "issue key"]},
-        {"key": "feature_id",     "label": "Feature ID",        "required": False, "keywords": ["feature id", "feature_id", "feature key"]},
-        {"key": "epic_id",        "label": "Epic ID",           "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic link"]},
-        {"key": "story_points",   "label": "Story Points",      "required": False, "keywords": ["story points", "story_points", "points"]},
+        # ── Required story content ─────────────────────────────
+        {"key": "title",          "label": "Story Title",       "required": True,  "keywords": ["story title", "title", "summary"]},
+        {"key": "description",    "label": "Story Description",  "required": False, "keywords": ["story description", "description", "desc"]},
+        # ── Hierarchy: Epic → Feature → Story ─────────────────
+        {"key": "epic_id",        "label": "Epic ID",            "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic link"]},
+        {"key": "epic",           "label": "Epic Name",          "required": False, "keywords": ["epic", "initiative"]},
+        {"key": "feature_id",     "label": "Feature ID",         "required": False, "keywords": ["feature id", "feature_id", "feature key"]},
+        {"key": "parent_feature", "label": "Feature Name",        "required": False, "keywords": ["feature name", "parent feature", "feature", "capability"]},
+        {"key": "story_id",       "label": "Story ID",           "required": False, "keywords": ["story id", "story_id", "issue key"]},
+        {"key": "story_points",   "label": "Story Points",       "required": False, "keywords": ["story points", "story_points", "points"]},
+        # ── WAF Classification ────────────────────────────────
+        {"key": "waf_category",   "label": "WAF Category",       "required": False, "keywords": ["waf category", "waf_category", "category"]},
+        {"key": "waf_color",      "label": "WAF Color",          "required": False, "keywords": ["waf color", "waf_color", "color"]},
+        {"key": "subcategory",    "label": "WAF Sub-Category",   "required": False, "keywords": ["sub-category", "subcategory", "waf sub"]},
+        {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run_change", "run change"]},
+        {"key": "confidence",     "label": "Confidence",         "required": False, "keywords": ["confidence", "conf"]},
+        # ── Organisation ──────────────────────────────────────
+        {"key": "team",           "label": "Team",               "required": False, "keywords": ["team", "squad", "group"]},
+        {"key": "timestamp",      "label": "Timestamp",          "required": False, "keywords": ["timestamp", "date", "created"]},
     ]
-    suggested    = {f["key"]: (_find(f["keywords"]) or "") for f in target_fields}
+    claimed_cols = set()
+    suggested    = {}
+    for f in target_fields:
+        matched = _find(f["keywords"], exclude=claimed_cols)
+        suggested[f["key"]] = matched or ""
+        if matched:
+            claimed_cols.add(matched)
     sample_rows  = [{col: str(row.get(col, "")) for col in df.columns}
                     for _, row in df.head(3).iterrows()]
     preview_id   = str(uuid.uuid4())

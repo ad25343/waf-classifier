@@ -14,7 +14,7 @@ COLUMNS = [
     # Hierarchy IDs (top → bottom)
     "Epic ID", "Feature ID", "Story ID",
     # Hierarchy names + content
-    "Epic", "Parent Feature", "Story Title", "Story Description",
+    "Epic", "Feature Name", "Story Title", "Story Description",
     # Organisation
     "Team",
     # WAF Classification
@@ -230,7 +230,7 @@ def build_compliance_dataset() -> list[dict]:
             "Team": team,
             "Epic": epic,
             "Epic ID": epic_id,
-            "Parent Feature": feat_name,
+            "Feature Name": feat_name,
             "Feature ID": feat_id,
             "WAF Category": waf_category,
             "WAF Color": waf_color,
@@ -418,7 +418,7 @@ def build_platform_dataset() -> list[dict]:
             "Team": team,
             "Epic": epic,
             "Epic ID": epic_id,
-            "Parent Feature": feat_name,
+            "Feature Name": feat_name,
             "Feature ID": feat_id,
             "WAF Category": waf_category,
             "WAF Color": waf_color,
@@ -640,7 +640,7 @@ def build_product_dataset() -> list[dict]:
             "Team": team,
             "Epic": epic,
             "Epic ID": epic_id,
-            "Parent Feature": feat_name,
+            "Feature Name": feat_name,
             "Feature ID": feat_id,
             "WAF Category": waf_category,
             "WAF Color": waf_color,

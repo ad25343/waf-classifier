@@ -1,4 +1,4 @@
-Epic ID,Feature ID,Story ID,Epic,Parent Feature,Story Title,Story Description,Story Points,Team,WAF Category,WAF Color,Sub-Category,Confidence,Run/Change,Timestamp,PI Number
+Epic ID,Feature ID,Story ID,Epic,Feature Name,Story Title,Story Description,Story Points,Team,WAF Category,WAF Color,Sub-Category,Confidence,Run/Change,Timestamp,PI Number
 EP-P010,F-P010,STR-51004,SAST/DAST Pipeline,Secrets Management,Upgrade Secrets to Python 3.12,Technical debt reduction in Secrets to improve quality and developer velocity.,1,Security,Enterprise Strategic Priority,ORANGE,Technical,LOW,Change,2023-07-03T09:35:00Z,PI-23-3
 EP-P010,F-P010,STR-51006,SAST/DAST Pipeline,SBOM Generation,Refactor SBOM service layer,Technical debt reduction in SBOM to improve quality and developer velocity.,1,Security,Technical Maintenance,BLACK,Technical,MEDIUM,Run,2023-07-06T08:37:00Z,PI-23-3
 EP-P009,F-P009,STR-51008,Zero Trust Network,Pen Test Remediation,Rotate Pen credentials,Operational keep-the-lights-on task to maintain Pen stability and security.,1,Security,KTLO (Keep the Lights On),GRAY,KTLO,LOW,Run,2023-07-06T13:16:00Z,PI-23-3

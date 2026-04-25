@@ -157,7 +157,7 @@
             padding: 8px 24px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            overflow-x: auto;
+            overflow: visible;
             flex-wrap: nowrap;
         }
         .top-nav-link {
@@ -182,14 +182,14 @@
         .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
         .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
         .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
-        .nav-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
         .nav-dropdown-menu {
             display: none; position: absolute; top: calc(100% + 6px); left: 0;
             min-width: 160px; background: var(--bg-secondary); border: 1px solid var(--border);
-            border-radius: 10px; padding: 6px; z-index: 1000;
+            border-radius: 10px; padding: 6px; z-index: 9999;
             box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         }
-        .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
         .nav-dropdown-item {
             display: block; padding: 8px 12px; border-radius: 7px;
             font-size: 13px; font-weight: 500; color: var(--text-secondary);
@@ -353,7 +353,7 @@
     <div class="nav-dropdown">
         <span class="top-nav-link nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
         <div class="nav-dropdown-menu">
-            <a href="/history"  class="nav-dropdown-item">Analytics</a>
+            <a href="/history"  class="nav-dropdown-item">Analyze Stories</a>
             <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
             <a href="/teams"    class="nav-dropdown-item">Teams</a>
             <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
@@ -551,6 +551,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const theme = document.documentElement.getAttribute('data-theme') || 'dark';
     const icon = document.querySelector('.theme-icon');
     if (icon) icon.textContent = theme === 'dark' ? '\u263E' : '\u2600';
+
+    // Nav dropdowns (click-based)
+    document.querySelectorAll('.nav-dropdown-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var dd = btn.closest('.nav-dropdown');
+            var isOpen = dd.classList.contains('open');
+            document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+            if (!isOpen) dd.classList.add('open');
+        });
+    });
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+    });
 });
 
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -1059,7 +1073,7 @@ checkStatus();
             if (r.epic_id || r.epic) crumbs.push(_esc(((r.epic_id ? r.epic_id + ' ' : '') + (r.epic||'')).trim()));
             if (r.feature_id || r.feature) crumbs.push(_esc(((r.feature_id ? r.feature_id + ' ' : '') + (r.feature||'')).trim()));
             if (r.story_id) crumbs.push(_esc(r.story_id));
-            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+\'/history\';">';
+            html += `<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+'/history';">`;
             html += '<div class="search-result-title">' + _highlight(_esc(r.title), q) + '</div>';
             if (crumbs.length) html += '<div class="search-result-breadcrumb">' + crumbs.join('<span> &rsaquo; </span>') + '</div>';
             html += '<div class="search-result-badges">';

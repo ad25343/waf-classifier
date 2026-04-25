@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAF Classifier | Analytics</title>
+    <title>WAF Classifier | Analyze Stories</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root { color-scheme: dark; }
         [data-theme="dark"] {
@@ -313,7 +316,7 @@
             padding: 8px 24px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            overflow-x: auto;
+            overflow: visible;
             flex-wrap: nowrap;
         }
         .top-nav-link {
@@ -338,14 +341,14 @@
         .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
         .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
         .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
-        .nav-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
         .nav-dropdown-menu {
             display: none; position: absolute; top: calc(100% + 6px); left: 0;
             min-width: 160px; background: var(--bg-secondary); border: 1px solid var(--border);
-            border-radius: 10px; padding: 6px; z-index: 1000;
+            border-radius: 10px; padding: 6px; z-index: 9999;
             box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         }
-        .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
         .nav-dropdown-item {
             display: block; padding: 8px 12px; border-radius: 7px;
             font-size: 13px; font-weight: 500; color: var(--text-secondary);
@@ -519,7 +522,7 @@
     <div class="nav-dropdown">
         <span class="top-nav-link active nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
         <div class="nav-dropdown-menu">
-            <a href="/history"  class="nav-dropdown-item active">Analytics</a>
+            <a href="/history"  class="nav-dropdown-item active">Analyze Stories</a>
             <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
             <a href="/teams"    class="nav-dropdown-item">Teams</a>
             <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
@@ -561,7 +564,7 @@
 
 <div class="content">
     <div style="margin-bottom:20px;">
-        <h1 style="font-size:22px;font-weight:700;">Analytics</h1>
+        <h1 style="font-size:22px;font-weight:700;">Analyze Stories</h1>
         <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">Upload JIRA data, AI verifies every story, then explore insights and trends.</p>
     </div>
 
@@ -636,7 +639,10 @@
                     <span id="drilldown-title" style="font-weight:600;font-size:14px;color:var(--text-primary);"></span>
                     <span id="drilldown-count" style="font-size:12px;color:var(--text-muted);"></span>
                 </div>
-                <div id="drilldown-pagination" style="display:flex;align-items:center;gap:8px;"></div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="btn btn-sm btn-outline" onclick="showExportMenu(this,[{l:'Excel (.xlsx)',i:'📊',f:downloadDrillDownExcel},{l:'PDF',i:'📑',f:downloadDrillDownPDF}])" style="font-size:12px;">⬇ Export ▾</button>
+                    <div id="drilldown-pagination" style="display:flex;align-items:center;gap:8px;"></div>
+                </div>
             </div>
             <div style="overflow-x:auto;">
                 <table id="drilldown-table" style="width:100%;font-size:13px;">
@@ -883,7 +889,7 @@
                         <tr><td style="color:var(--text-primary)">Story ID</td><td><span class="badge medium">Optional</span></td><td>Alphanumeric story identifier (e.g. STR-10001)</td></tr>
                         <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Hierarchy Names —</td></tr>
                         <tr><td style="color:var(--text-primary)">Epic</td><td><span class="badge medium">Optional</span></td><td>Parent epic name for lineage tracking</td></tr>
-                        <tr><td style="color:var(--text-primary)">Parent Feature</td><td><span class="badge medium">Optional</span></td><td>Feature grouping under the epic</td></tr>
+                        <tr><td style="color:var(--text-primary)">Feature Name</td><td><span class="badge medium">Optional</span></td><td>Feature grouping under the epic</td></tr>
                         <tr><td style="color:var(--text-primary)">Story Title</td><td><span class="badge high">Required</span></td><td>JIRA story title or summary</td></tr>
                         <tr><td style="color:var(--text-primary)">Story Description</td><td><span class="badge medium">Optional</span></td><td>Helps AI classify more accurately</td></tr>
                         <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Organisation —</td></tr>
@@ -961,11 +967,12 @@
                 <div class="kpi-mini-row" id="verify-kpis" style="margin-bottom:16px;"></div>
 
                 <!-- Action bar -->
-                <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
+                <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
                     <button class="btn btn-sm btn-outline" onclick="selectAll(true)">Select All</button>
                     <button class="btn btn-sm btn-outline" onclick="selectAll(false)">Deselect All</button>
                     <button class="btn btn-sm btn-outline" onclick="selectMismatches()">Select Mismatches Only</button>
                     <div style="flex:1;"></div>
+                    <button class="btn btn-sm btn-outline" onclick="showExportMenu(this,[{l:'Excel (.xlsx)',i:'📊',f:downloadVerifyExcel},{l:'PDF',i:'📑',f:downloadVerifyPDF}])" style="font-size:12px;">⬇ Export ▾</button>
                     <span style="font-size:13px;color:var(--text-secondary);" id="selected-count">0 selected</span>
                     <button class="btn btn-primary" onclick="saveVerified()" id="save-verified-btn">Save All to History</button>
                     <button class="btn btn-outline" onclick="backToUpload()">Start Over</button>
@@ -1302,6 +1309,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch(e) { /* corrupt sessionStorage — ignore */ }
     }
+
+    // Nav dropdowns (click-based)
+    document.querySelectorAll('.nav-dropdown-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var dd = btn.closest('.nav-dropdown');
+            var isOpen = dd.classList.contains('open');
+            document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+            if (!isOpen) dd.classList.add('open');
+        });
+    });
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.classList.remove('open'); });
+    });
 });
 
 const WAF_COLORS_MAP = {
@@ -1867,22 +1888,26 @@ function showMappingStep(data) {
     document.getElementById('mapping-rowcount').textContent = `(${data.total_rows} rows)`;
 
     const fieldHints = {
+        // Required
         title:          'e.g. Story Title, Summary, Name',
         description:    'e.g. Story Description, Description, Details, Body',
+        // Hierarchy
+        pi_number:      'e.g. PI Number, PI, PI #, Program Increment',
+        epic_id:        'e.g. Epic ID (EP-C001), Epic Key, Epic Link',
+        epic:           'e.g. Epic, Initiative, Epic Name',
+        feature_id:     'e.g. Feature ID (F-C001), Feature Key',
+        parent_feature: 'e.g. Feature Name, Parent Feature, Feature',
+        story_id:       'e.g. Story ID (STR-10001), Issue Key (PROJ-123)',
+        story_points:   'e.g. Story Points, Points, SP, Estimate',
+        // WAF Classification
         waf_category:   'e.g. WAF Category, Category',
         waf_color:      'e.g. WAF Color, Color',
-        run_change:     'e.g. Run/Change',
-        subcategory:    'e.g. Sub-Category, WAF Sub',
-        confidence:     'e.g. Confidence',
+        subcategory:    'e.g. WAF Sub-Category, Sub-Category, WAF Sub',
+        run_change:     'e.g. Run/Change, Run Change',
+        confidence:     'e.g. Confidence, Conf',
+        // Organisation
         team:           'e.g. Team, Squad, Group',
-        epic:           'e.g. Epic, Initiative',
-        parent_feature: 'e.g. Parent Feature, Feature, Capability',
-        timestamp:      'e.g. Created, Date, Timestamp',
-        story_id:       'e.g. Story ID (STR-10001) or Issue Key (PROJ-123) — either maps here',
-        feature_id:     'e.g. Feature ID (F-C001) or Feature Key',
-        epic_id:        'e.g. Epic ID (EP-C001), Epic Key, or Epic Link',
-        story_points:   'e.g. Story Points, Points, SP, Estimate',
-        pi_number:      'e.g. PI Number, PI, PI #, Program Increment',
+        timestamp:      'e.g. Timestamp, Date, Created',
     };
     const fieldsEl = document.getElementById('mapping-fields');
     fieldsEl.innerHTML = data.target_fields.map(f => {
@@ -3249,7 +3274,7 @@ function showStoryDetail(data) {
             ${field('Sub-Category', esc(data.ai_subcategory || data.waf_subcategory || ''))}
             ${field('Team', esc(data.team || ''))}
             ${field('Epic', esc(data.epic || ''))}
-            ${field('Parent Feature', esc(data.parent_feature || data.feature || ''))}
+            ${field('Feature Name', esc(data.parent_feature || data.feature || ''))}
             ${field('AI Reasoning', esc(data.ai_reason || data.waf_reasoning || ''), true)}
             ${field('Timestamp', esc(data.timestamp || ''))}
         </div>
@@ -3365,7 +3390,7 @@ checkStatus();
             if (r.epic_id || r.epic) crumbs.push(_esc(((r.epic_id ? r.epic_id + ' ' : '') + (r.epic||'')).trim()));
             if (r.feature_id || r.feature) crumbs.push(_esc(((r.feature_id ? r.feature_id + ' ' : '') + (r.feature||'')).trim()));
             if (r.story_id) crumbs.push(_esc(r.story_id));
-            html += '<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+\'/history\';">';
+            html += `<div class="search-result-item" style="cursor:pointer;" onclick="window.location=(window.APP_ROOT||'')+'/history';">`;
             html += '<div class="search-result-title">' + _highlight(_esc(r.title), q) + '</div>';
             if (crumbs.length) html += '<div class="search-result-breadcrumb">' + crumbs.join('<span> &rsaquo; </span>') + '</div>';
             html += '<div class="search-result-badges">';
@@ -3795,6 +3820,120 @@ function toggleQualityRow(detailId, rowEl) {
     detail.style.display = isOpen ? 'none' : 'table-row';
     const chevron = rowEl.querySelector('td:last-child');
     if (chevron) chevron.textContent = isOpen ? '▼' : '▲';
+}
+
+// ── Export Utilities ──────────────────────────────────────────
+
+function showExportMenu(btn, items) {
+    document.querySelectorAll('.waf-export-popup').forEach(el => el.remove());
+    const popup = document.createElement('div');
+    popup.className = 'waf-export-popup';
+    popup.style.cssText = 'position:fixed;z-index:9999;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:160px;';
+    items.forEach(({ l, i, f }) => {
+        const item = document.createElement('button');
+        item.style.cssText = 'display:block;width:100%;text-align:left;padding:7px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:13px;border-radius:5px;white-space:nowrap;';
+        item.innerHTML = `${i} ${l}`;
+        item.onmouseenter = () => item.style.background = 'var(--bg-tertiary)';
+        item.onmouseleave = () => item.style.background = 'none';
+        item.onclick = () => { popup.remove(); f(); };
+        popup.appendChild(item);
+    });
+    const rect = btn.getBoundingClientRect();
+    popup.style.top  = (rect.bottom + 4) + 'px';
+    popup.style.right = (window.innerWidth - rect.right) + 'px';
+    document.body.appendChild(popup);
+    setTimeout(() => {
+        document.addEventListener('click', function _c(e) {
+            if (!popup.contains(e.target) && e.target !== btn) { popup.remove(); document.removeEventListener('click', _c); }
+        });
+    }, 10);
+}
+
+function _triggerDownload(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+
+function downloadCSV(filename, headers, rows) {
+    function cell(v) { const s = String(v == null ? '' : v).replace(/"/g,'""'); return /[",\n\r]/.test(s) ? `"${s}"` : s; }
+    const lines = [headers.map(cell).join(','), ...rows.map(r => r.map(cell).join(','))];
+    _triggerDownload(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' }), filename);
+}
+
+function downloadExcel(filename, sheetName, headers, rows) {
+    if (!window.XLSX) { alert('Excel library not loaded yet. Try again in a moment.'); return; }
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
+    XLSX.writeFile(wb, filename);
+}
+
+function downloadPDF(filename, title, headers, rows) {
+    if (!window.jspdf) { alert('PDF library not loaded yet. Try again in a moment.'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: rows[0] && rows[0].length > 8 ? 'landscape' : 'portrait' });
+    doc.setFontSize(13); doc.setTextColor(40);
+    doc.text(title, 14, 14);
+    doc.autoTable({ head: [headers], body: rows, startY: 20,
+        styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+        headStyles: { fillColor: [212, 114, 42], textColor: [255,255,255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 245, 248] } });
+    doc.save(filename);
+}
+
+// ── Verify exports ────────────────────────────────────────────
+function _verifyExportData() {
+    if (!verifyResultsFull || !verifyResultsFull.length) return null;
+    const headers = ['Story Title','Description','Team','Epic','Epic ID','Feature Name','Story ID','PI Number','Story Points',
+                     'User Submitted WAF','AI Suggested WAF','User Color','AI Color','AI Confidence','AI Reasoning','Status'];
+    const rows = verifyResultsFull.map(r => {
+        const status = r.is_match === true ? 'Match' : r.is_match === false ? 'Mismatch' : 'New';
+        return [r.title, r.description||'', r.team||'', r.epic||'', r.epic_id||'',
+                r.feature||'', r.story_id||'', r.pi_number||'', r.story_points||'',
+                r.user_submitted_waf||'', r.ai_suggested_waf||'',
+                r.file_color||'', r.ai_color||'', r.ai_confidence||'', r.ai_reason||'', status];
+    });
+    return { headers, rows };
+}
+function downloadVerifyCSV() {
+    const d = _verifyExportData(); if (!d) return;
+    downloadCSV(`waf-ai-review-${new Date().toISOString().slice(0,10)}.csv`, d.headers, d.rows);
+}
+function downloadVerifyExcel() {
+    const d = _verifyExportData(); if (!d) return;
+    downloadExcel(`waf-ai-review-${new Date().toISOString().slice(0,10)}.xlsx`, 'AI Review', d.headers, d.rows);
+}
+function downloadVerifyPDF() {
+    const d = _verifyExportData(); if (!d) return;
+    downloadPDF(`waf-ai-review-${new Date().toISOString().slice(0,10)}.pdf`, 'WAF AI Classification Review', d.headers, d.rows);
+}
+
+// ── Drilldown exports ─────────────────────────────────────────
+function _drillDownExportData() {
+    if (!drillDownStories || !drillDownStories.length) return null;
+    const slug = (document.getElementById('drilldown-title').textContent || 'stories').replace(/\s+/g,'-').toLowerCase();
+    const headers = ['Story Title','Epic','User Submitted WAF','AI Suggested WAF','Color','Run/Change','Confidence','Status'];
+    const rows = drillDownStories.map(s => [
+        s.title, s.epic||'', s.original_tag||'', s.category||'',
+        s.color||'', s.run_change||'', s.confidence||'', s.mismatch ? 'Mismatch' : 'Correct'
+    ]);
+    return { headers, rows, slug };
+}
+function downloadDrillDownCSV() {
+    const d = _drillDownExportData(); if (!d) return;
+    downloadCSV(`waf-drilldown-${d.slug}-${new Date().toISOString().slice(0,10)}.csv`, d.headers, d.rows);
+}
+function downloadDrillDownExcel() {
+    const d = _drillDownExportData(); if (!d) return;
+    downloadExcel(`waf-drilldown-${d.slug}-${new Date().toISOString().slice(0,10)}.xlsx`, 'Drilldown', d.headers, d.rows);
+}
+function downloadDrillDownPDF() {
+    const d = _drillDownExportData(); if (!d) return;
+    const title = document.getElementById('drilldown-title').textContent || 'Stories';
+    downloadPDF(`waf-drilldown-${d.slug}-${new Date().toISOString().slice(0,10)}.pdf`, title, d.headers, d.rows);
 }
 
 // ── Export ────────────────────────────────────────────────────

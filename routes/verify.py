@@ -34,11 +34,13 @@ DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "waf_history.
 _JOB_TTL = 2 * 60 * 60  # 2 hours — evict completed/errored jobs after this
 
 
-def _find_col(df_columns, keywords):
-    """Return the first column name matching any keyword (substring, priority order)."""
+def _find_col(df_columns, keywords, exclude=None):
+    """Return the first column matching any keyword (substring, priority order).
+    Columns in `exclude` are skipped so each column can only be claimed once."""
+    exclude = exclude or set()
     for kw in keywords:
         for col in df_columns:
-            if kw in col:
+            if kw in col and col not in exclude:
                 return col
     return None
 
@@ -283,29 +285,36 @@ def bulk_verify_preview():
 
         find_col = lambda kws: _find_col(df.columns, kws)
 
-        # Auto-detect suggested mappings
+        # Auto-detect suggested mappings — each column can only be claimed once
         suggested = {}
+        claimed_cols = set()
         target_fields = [
-            {"key": "title", "label": "Story Title", "required": True, "keywords": ["story title", "title", "summary", "story", "name"]},
-            {"key": "description", "label": "Story Description", "required": True, "keywords": ["story description", "description", "desc", "detail", "body", "acceptance"]},
-            {"key": "waf_category", "label": "WAF Category", "required": False, "keywords": ["waf category", "waf_category", "category"]},
-            {"key": "waf_color", "label": "WAF Color", "required": False, "keywords": ["waf color", "waf_color", "color"]},
-            {"key": "run_change", "label": "Run/Change", "required": False, "keywords": ["run/change", "run_change", "run change"]},
-            {"key": "subcategory", "label": "Sub-Category", "required": False, "keywords": ["sub-category", "sub_category", "subcategory", "waf sub"]},
-            {"key": "confidence", "label": "Confidence", "required": False, "keywords": ["confidence", "conf"]},
-            {"key": "team", "label": "Team", "required": False, "keywords": ["team", "squad", "group"]},
-            {"key": "story_points", "label": "Story Points", "required": False, "keywords": ["story points", "story_points", "points", " sp ", "estimate"]},
-            {"key": "epic", "label": "Epic", "required": False, "keywords": ["epic", "initiative", "program"]},
-            {"key": "parent_feature", "label": "Parent Feature", "required": False, "keywords": ["feature", "parent feature", "parent_feature", "capability"]},
-            {"key": "timestamp", "label": "Timestamp", "required": False, "keywords": ["timestamp", "date", "created", "created_at"]},
-            {"key": "story_id", "label": "Story ID", "required": False, "keywords": ["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"]},
-            {"key": "feature_id", "label": "Feature ID", "required": False, "keywords": ["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"]},
-            {"key": "epic_id", "label": "Epic ID", "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"]},
-            {"key": "pi_number", "label": "PI Number", "required": False, "keywords": ["pi number", "pi_number", "pi #", "program increment", "pi"]},
+            # ── Required story content ─────────────────────────────
+            {"key": "title",          "label": "Story Title",       "required": True,  "keywords": ["story title", "title", "summary", "story", "name"]},
+            {"key": "description",    "label": "Story Description",  "required": True,  "keywords": ["story description", "description", "desc", "detail", "body", "acceptance"]},
+            # ── Hierarchy: PI → Epic → Feature → Story ────────────
+            {"key": "pi_number",      "label": "PI Number",          "required": False, "keywords": ["pi number", "pi_number", "pi #", "program increment", "pi"]},
+            {"key": "epic_id",        "label": "Epic ID",            "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"]},
+            {"key": "epic",           "label": "Epic Name",          "required": False, "keywords": ["epic", "initiative", "program"]},
+            {"key": "feature_id",     "label": "Feature ID",         "required": False, "keywords": ["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"]},
+            {"key": "parent_feature", "label": "Feature Name",        "required": False, "keywords": ["feature name", "feature", "parent feature", "parent_feature", "capability"]},
+            {"key": "story_id",       "label": "Story ID",           "required": False, "keywords": ["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"]},
+            {"key": "story_points",   "label": "Story Points",       "required": False, "keywords": ["story points", "story_points", "points", " sp ", "estimate"]},
+            # ── WAF Classification ────────────────────────────────
+            {"key": "waf_category",   "label": "WAF Category",       "required": False, "keywords": ["waf category", "waf_category", "category"]},
+            {"key": "waf_color",      "label": "WAF Color",          "required": False, "keywords": ["waf color", "waf_color", "color"]},
+            {"key": "subcategory",    "label": "WAF Sub-Category",   "required": False, "keywords": ["sub-category", "sub_category", "subcategory", "waf sub"]},
+            {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run_change", "run change"]},
+            {"key": "confidence",     "label": "Confidence",         "required": False, "keywords": ["confidence", "conf"]},
+            # ── Organisation ──────────────────────────────────────
+            {"key": "team",           "label": "Team",               "required": False, "keywords": ["team", "squad", "group"]},
+            {"key": "timestamp",      "label": "Timestamp",          "required": False, "keywords": ["timestamp", "date", "created", "created_at"]},
         ]
         for field in target_fields:
-            matched = find_col(field["keywords"])
+            matched = _find_col(df.columns, field["keywords"], exclude=claimed_cols)
             suggested[field["key"]] = matched or ""
+            if matched:
+                claimed_cols.add(matched)
 
         # Get sample rows
         sample_rows = []
