@@ -873,6 +873,9 @@ function toggleInsights(type) {
 async function loadTeamsData() {
     try {
         const uid = uploadParam();
+        const area = document.getElementById('team-detail-area');
+        area.innerHTML = '<div class="loading-spinner" style="padding:40px;text-align:center;color:var(--text-muted);">Loading teams…</div>';
+
         const [sumRes, epicsRes] = await Promise.all([
             fetch('/api/teams/summary?' + uid),
             fetch('/api/teams/epics-list?' + uid)
@@ -880,19 +883,37 @@ async function loadTeamsData() {
         summaryData = await sumRes.json();
         epicsList = await epicsRes.json();
 
-        // Collect all categories globally
         const catSet = new Set();
         summaryData.teams.forEach(t => Object.keys(t.categories).forEach(c => catSet.add(c)));
         allCategories = [...catSet].sort();
 
+        // Pre-fetch all team details in parallel so pills can filter instantly
+        const teamNames = (summaryData.teams || []).map(t => t.name);
+        const detailResults = await Promise.all(
+            teamNames.map(name =>
+                fetch('/api/teams/detail?team=' + encodeURIComponent(name) + (uid ? '&' + uid : ''))
+                    .then(r => r.json()).catch(() => null)
+            )
+        );
+        window._teamDetailMap = {};
+        detailResults.forEach((data, i) => { if (data) window._teamDetailMap[teamNames[i]] = data; });
+
+        // Flatten all stories across all teams
+        window._allTeamStories = [];
+        detailResults.forEach(data => {
+            if (!data) return;
+            (data.epics || []).forEach(ep => (ep.features || []).forEach(ft =>
+                (ft.stories || []).forEach(s => window._allTeamStories.push(s))
+            ));
+        });
+
         renderTeamPills();
         renderEpicPills();
-
-        // Reset detail areas
-        document.getElementById('team-detail-area').innerHTML = '<div class="empty-state"><div class="icon">&#128101;</div><h3>Select a team above</h3><p>Choose a team to view its story breakdown</p></div>';
         document.getElementById('epic-detail-area').innerHTML = '<div class="empty-state"><div class="icon">&#128209;</div><h3>Select an epic above</h3><p>Choose an epic to see which teams contribute to it</p></div>';
-        document.getElementById('team-insights-wrap').style.display = 'none';
         document.getElementById('epic-insights-wrap').style.display = 'none';
+
+        // Show all teams by default — no empty state
+        selectAllTeams();
     } catch (err) {
         console.error('Failed to load data:', err);
     }
@@ -905,37 +926,105 @@ function renderTeamPills() {
         row.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">No teams found</span>';
         return;
     }
-    row.innerHTML = summaryData.teams.map(t =>
-        `<button class="selector-pill" onclick="selectTeam('${escapeAttr(t.name)}')">${escapeHtml(t.name)}<span class="pill-count">(${t.total_stories})</span></button>`
+    const allPill = `<button class="selector-pill active" id="pill-all-teams" onclick="selectAllTeams()">All Teams<span class="pill-count">(${window._allTeamStories.length})</span></button>`;
+    const teamPills = summaryData.teams.map(t =>
+        `<button class="selector-pill" id="pill-${escapeAttr(t.name)}" onclick="selectTeam('${escapeAttr(t.name)}')">${escapeHtml(t.name)}<span class="pill-count">(${t.total_stories})</span></button>`
     ).join('');
+    row.innerHTML = allPill + teamPills;
 }
 
-async function selectTeam(name) {
-    selectedTeam = name;
-    document.querySelectorAll('#team-selector .selector-pill').forEach(p => {
-        p.classList.toggle('active', p.textContent.startsWith(name));
-    });
+function selectAllTeams() {
+    selectedTeam = null;
+    document.querySelectorAll('#team-selector .selector-pill').forEach(p => p.classList.remove('active'));
+    const allPill = document.getElementById('pill-all-teams');
+    if (allPill) allPill.classList.add('active');
 
-    const area = document.getElementById('team-detail-area');
-    area.innerHTML = '<div class="loading-spinner">Loading team data...</div>';
+    // KPIs from summary aggregate
+    const teams = summaryData?.teams || [];
+    const totalStories = window._allTeamStories.length;
+    const totalMismatches = window._allTeamStories.filter(s => s.was_mismatch).length;
+    const mismatchRate = totalStories > 0 ? (totalMismatches / totalStories * 100).toFixed(1) : '0.0';
+    const catTotals = {};
+    teams.forEach(t => Object.entries(t.categories || {}).forEach(([c, n]) => { catTotals[c] = (catTotals[c] || 0) + n; }));
+    const dominant = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
+    const epicSet = new Set();
+    teams.forEach(t => (t.epics || []).forEach(e => epicSet.add(e)));
 
-    // Show insights wrap, reset to collapsed
+    document.getElementById('kt-stories').textContent = totalStories.toLocaleString();
+    document.getElementById('kt-epics').textContent = epicSet.size;
+    document.getElementById('kt-mismatch').textContent = mismatchRate + '%';
+    document.getElementById('kt-dominant').textContent = dominant;
+
+    // Show insights open by default
     const wrap = document.getElementById('team-insights-wrap');
     wrap.style.display = 'block';
     const insSection = document.getElementById('team-insights');
     const insBtn = document.getElementById('team-insights-btn');
-    insSection.classList.remove('open');
-    insBtn.classList.remove('open');
-    insBtn.innerHTML = '&#128200; Show Insights';
+    insSection.classList.add('open');
+    insBtn.classList.add('open');
+    insBtn.innerHTML = '&#128200; Hide Insights';
 
-    try {
-        const res = await fetch('/api/teams/detail?team=' + encodeURIComponent(name) + uploadParam());
-        const data = await res.json();
-        renderTeamKPIs(data);
-        renderTeamTree(data, area);
-    } catch (err) {
-        area.innerHTML = '<div class="empty-state"><h3>Error loading team</h3></div>';
-    }
+    // Render the team list on the left, all stories on the right
+    const area = document.getElementById('team-detail-area');
+    const teams_ = summaryData?.teams || [];
+    const leftHtml = `<div class="tree-panel-label">Teams</div>` +
+        teams_.map(t => `<div class="tree-nav-item">
+            <div class="nav-epic" onclick="selectTeam('${escapeAttr(t.name)}')" style="cursor:pointer;">
+                <span class="nav-name" title="${escapeAttr(t.name)}">${escapeHtml(t.name)}</span>
+                <span class="tree-stat">${t.total_stories}</span>
+            </div>
+        </div>`).join('');
+
+    const rightHtml = `
+    <div class="story-panel-header">
+        <span class="story-panel-title" id="story-panel-title">All Teams</span>
+        <span class="story-panel-count" id="story-panel-count">${totalStories} stories</span>
+        <button class="btn btn-sm btn-outline" onclick="showExportMenu(this,[{l:'Excel (.xlsx)',i:'📊',f:downloadTeamExcel},{l:'PDF',i:'📑',f:downloadTeamPDF}])" title="Export current stories" style="font-size:12px;margin-left:auto;">⬇ Export ▾</button>
+    </div>
+    <div class="list-search" style="margin-bottom:12px;">
+        <input type="text" id="story-search" placeholder="Search stories..." oninput="filterStoryTable()">
+        <button class="clear-btn" onclick="clearStorySearch()">&times;</button>
+    </div>
+    <table class="story-table" id="team-story-table">
+    <thead><tr>
+        <th onclick="sortStoryTable('title')">Story <span class="sa"></span></th>
+        <th onclick="sortStoryTable('team')">Team <span class="sa"></span></th>
+        <th onclick="sortStoryTable('epic')">Epic <span class="sa"></span></th>
+        <th onclick="sortStoryTable('waf_category')">Category <span class="sa"></span></th>
+        <th onclick="sortStoryTable('waf_color')">Color <span class="sa"></span></th>
+        <th onclick="sortStoryTable('confidence')">Confidence <span class="sa"></span></th>
+        <th onclick="sortStoryTable('is_mismatch')">Status <span class="sa"></span></th>
+    </tr></thead>
+    <tbody id="story-tbody"></tbody>
+    </table>`;
+
+    area.innerHTML = `<div class="two-panel"><div class="tree-panel" style="min-width:180px;max-width:220px;"><div style="padding:0 8px;">${leftHtml}</div></div><div class="story-panel">${rightHtml}</div></div>`;
+    window._currentStories = window._allTeamStories;
+    renderStoryRows(window._allTeamStories);
+}
+
+function selectTeam(name) {
+    selectedTeam = name;
+    document.querySelectorAll('#team-selector .selector-pill').forEach(p => p.classList.remove('active'));
+    const pill = document.getElementById('pill-' + name);
+    if (pill) pill.classList.add('active');
+
+    const data = window._teamDetailMap?.[name];
+    if (!data) return;
+
+    renderTeamKPIs(data);
+
+    // Show insights open
+    const wrap = document.getElementById('team-insights-wrap');
+    wrap.style.display = 'block';
+    const insSection = document.getElementById('team-insights');
+    const insBtn = document.getElementById('team-insights-btn');
+    insSection.classList.add('open');
+    insBtn.classList.add('open');
+    insBtn.innerHTML = '&#128200; Hide Insights';
+
+    const area = document.getElementById('team-detail-area');
+    renderTeamTree(data, area);
 }
 
 function renderTeamKPIs(data) {
@@ -994,6 +1083,7 @@ function renderTeamTree(data, container) {
     <table class="story-table" id="team-story-table">
     <thead><tr>
         <th onclick="sortStoryTable('title')">Story <span class="sa"></span></th>
+        <th onclick="sortStoryTable('epic')">Epic <span class="sa"></span></th>
         <th onclick="sortStoryTable('waf_category')">Category <span class="sa"></span></th>
         <th onclick="sortStoryTable('waf_color')">Color <span class="sa"></span></th>
         <th onclick="sortStoryTable('confidence')">Confidence <span class="sa"></span></th>
@@ -1057,8 +1147,12 @@ function renderStoryRows(stories) {
     const tbody = document.getElementById('story-tbody');
     if (!tbody) return;
     window._renderedStories = stories;  // store for onclick handlers — survives re-renders
+    const showTeamCol = !selectedTeam; // show team column when viewing all teams
+    // All Teams: Story | Team | Epic | Category | Color | Confidence | Status = 7
+    // Single Team: Story | Epic | Category | Color | Confidence | Status = 6
+    const colCount = showTeamCol ? 7 : 6;
     if (!stories.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">No stories</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;color:var(--text-muted);padding:24px;">No stories</td></tr>`;
         document.getElementById('story-panel-count').textContent = '0 stories';
         return;
     }
@@ -1070,13 +1164,16 @@ function renderStoryRows(stories) {
         const colorHex = WAF_COLOR_MAP[(s.waf_color || '').toUpperCase()] || '#888';
         const idTags = [
             s.story_id   ? `<span title="Story ID"  style="font-size:10px;color:var(--text-muted);margin-left:4px;background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${escapeHtml(s.story_id)}</span>`   : '',
-            s.feature_id ? `<span title="Feature ID" style="font-size:10px;color:var(--text-muted);margin-left:2px;background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${escapeHtml(s.feature_id)}</span>` : '',
-            s.epic_id    ? `<span title="Epic ID"    style="font-size:10px;color:var(--text-muted);margin-left:2px;background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;">${escapeHtml(s.epic_id)}</span>`    : '',
             s.pi_number  ? `<span title="PI Number"  style="font-size:10px;color:var(--teal);margin-left:2px;background:rgba(13,148,136,0.1);border:1px solid rgba(13,148,136,0.25);padding:1px 4px;border-radius:3px;">${escapeHtml(s.pi_number)}</span>` : '',
         ].join('');
+        const teamCell = showTeamCol ? `<td style="font-size:12px;color:var(--text-secondary);white-space:nowrap;">${escapeHtml(s.team || '—')}</td>` : '';
+        const epicName = s.epic || s.epic_id || '—';
+        const epicCell = `<td style="font-size:12px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeAttr(epicName)}">${escapeHtml(epicName)}</td>`;
         return `<tr style="cursor:pointer;" title="Click to view story details"
                     onclick="showStoryDetail(window._renderedStories[${idx}])">
             <td><span class="color-dot" style="background:${colorHex};display:inline-block;margin-right:6px;flex-shrink:0;"></span><span class="story-title" title="${escapeAttr(s.title)}">${escapeHtml(s.title)}</span>${idTags}</td>
+            ${teamCell}
+            ${epicCell}
             <td><span class="badge badge-cat" style="background:${catColor}22;color:${catColor}">${escapeHtml(s.waf_category)}</span></td>
             <td>${escapeHtml(s.waf_color || '-')}</td>
             <td><span class="badge ${confClass}">${escapeHtml(s.confidence)}</span></td>
@@ -1096,16 +1193,25 @@ function sortStoryTable(col) {
         _storySortCol = col;
         _storySortDir = 'asc';
     }
-    // Update header classes
+    // Update header classes — column order differs between All Teams (7 cols) and Single Team (6 cols)
     document.querySelectorAll('#team-story-table th').forEach(th => th.classList.remove('asc', 'desc'));
-    const idx = ['title','waf_category','waf_color','confidence','is_mismatch'].indexOf(col);
+    const showTeam = !selectedTeam;
+    const colOrder = showTeam
+        ? ['title', 'team', 'epic', 'waf_category', 'waf_color', 'confidence', 'is_mismatch']
+        : ['title', 'epic', 'waf_category', 'waf_color', 'confidence', 'is_mismatch'];
+    const idx = colOrder.indexOf(col);
     const ths = document.querySelectorAll('#team-story-table th');
-    if (ths[idx]) ths[idx].classList.add(_storySortDir);
+    if (idx >= 0 && ths[idx]) ths[idx].classList.add(_storySortDir);
+
+    // Map UI column key to actual data field name
+    const fieldMap = { 'is_mismatch': 'was_mismatch' };
+    const dataField = fieldMap[col] || col;
 
     const sorted = [...(window._currentStories || [])].sort((a, b) => {
-        let av = a[col] || '', bv = b[col] || '';
+        let av = a[dataField], bv = b[dataField];
         if (typeof av === 'boolean') { av = av ? 1 : 0; bv = bv ? 1 : 0; }
-        const cmp = String(av).toLowerCase() < String(bv).toLowerCase() ? -1 : String(av).toLowerCase() > String(bv).toLowerCase() ? 1 : 0;
+        else { av = (av || '').toString().toLowerCase(); bv = (bv || '').toString().toLowerCase(); }
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0;
         return _storySortDir === 'asc' ? cmp : -cmp;
     });
     renderStoryRows(sorted);
