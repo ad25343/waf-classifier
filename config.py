@@ -27,12 +27,33 @@ except ImportError:
     _BEDROCK_AVAILABLE = False
 
 
-# Priority: ANTHROPIC_API_KEY in .env → AWS Bedrock (uses AWS env creds)
 def _setup_ai_backend():
+    """Determine AI backend from environment.
+
+    Resolution order:
+      1. AI_GATEWAY=portkey   → PortKey AI gateway (proxies to any provider)
+      2. AI_GATEWAY=apigee    → Apigee gateway (OAuth2 client-creds, proxies to Bedrock)
+      3. ANTHROPIC_API_KEY    → Direct Anthropic API
+      4. (fallback)           → AWS Bedrock via AnthropicBedrock SDK
+    """
+    gateway = os.environ.get("AI_GATEWAY", "").strip().lower()
+
+    if gateway == "portkey":
+        model = os.environ.get("PORTKEY_MODEL", "claude-sonnet-4-5-20250929")
+        return "portkey", model
+
+    if gateway == "apigee":
+        model = os.environ.get(
+            "BEDROCK_MODEL_ID",
+            "anthropic.claude-sonnet-4-5-20250929-v1:0"
+        )
+        return "apigee", model
+
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if api_key:
         return "anthropic", "claude-sonnet-4-5-20250929"
-    # No API key — try Bedrock
+
+    # Fallback: direct Bedrock
     bedrock_model = os.environ.get(
         "BEDROCK_MODEL_ID",
         "anthropic.claude-sonnet-4-5-20250929-v1:0"
@@ -41,6 +62,34 @@ def _setup_ai_backend():
 
 
 AI_BACKEND, AI_MODEL = _setup_ai_backend()
+
+# ── PortKey Gateway Config ─────────────────────────────────────────
+# Used when AI_GATEWAY=portkey
+PORTKEY_API_KEY      = os.environ.get("PORTKEY_API_KEY", "").strip()
+PORTKEY_VIRTUAL_KEY  = os.environ.get("PORTKEY_VIRTUAL_KEY", "").strip()
+PORTKEY_GATEWAY_URL  = os.environ.get(
+    "PORTKEY_GATEWAY_URL", "https://api.portkey.ai/v1"
+).rstrip("/")
+
+# ── Apigee Gateway Config ──────────────────────────────────────────
+# Used when AI_GATEWAY=apigee
+APIGEE_GATEWAY_URL     = os.environ.get("APIGEE_GATEWAY_URL", "").strip().rstrip("/")
+APIGEE_TOKEN_URL       = os.environ.get("APIGEE_TOKEN_URL", "").strip()
+APIGEE_CLIENT_ID       = os.environ.get("APIGEE_CLIENT_ID", "").strip()
+APIGEE_CLIENT_SECRET   = os.environ.get("APIGEE_CLIENT_SECRET", "").strip()
+# Optional: extra headers the Apigee proxy requires (JSON object string)
+# e.g. APIGEE_EXTRA_HEADERS={"x-api-version":"2024-01","x-env":"prod"}
+_apigee_headers_raw    = os.environ.get("APIGEE_EXTRA_HEADERS", "{}").strip()
+try:
+    import json as _json
+    APIGEE_EXTRA_HEADERS: dict = _json.loads(_apigee_headers_raw)
+except Exception:
+    APIGEE_EXTRA_HEADERS = {}
+
+# ── SSO / Auth Config ──────────────────────────────────────────────
+# AUTH_MODE=none (default) — all routes public, no session required
+# AUTH_MODE=oidc           — OIDC login required; see auth.py for full docs
+AUTH_MODE = os.environ.get("AUTH_MODE", "none").strip().lower()
 
 # ── Paths ─────────────────────────────────────────────────────────────
 DB_PATH = os.path.join(os.path.dirname(__file__), "waf_history.db")

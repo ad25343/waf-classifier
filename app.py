@@ -11,7 +11,7 @@ import shutil
 from flask import Flask, g
 
 # ── Foundation modules ────────────────────────────────────────────
-from config import AI_BACKEND, AI_MODEL, DB_PATH, BASELINE_DIR, APPLICATION_ROOT
+from config import AI_BACKEND, AI_MODEL, DB_PATH, BASELINE_DIR, APPLICATION_ROOT, AUTH_MODE
 from database import init_db
 from state import waf_store, ground_truth_store
 from waf_core import parse_waf_file, parse_ground_truth
@@ -44,6 +44,10 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max upload
 app.secret_key = os.urandom(24)
 if APPLICATION_ROOT:
     app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=APPLICATION_ROOT)
+
+# ── SSO / OIDC (opt-in via AUTH_MODE=oidc in .env) ────────────────
+from auth import init_sso
+init_sso(app)
 
 
 @app.teardown_appcontext

@@ -10,7 +10,12 @@ import time as _time
 import pandas as pd
 from anthropic import Anthropic
 
-from config import AI_BACKEND, AI_MODEL, _BEDROCK_AVAILABLE, MAX_BULK_JOBS_PER_MINUTE
+from config import (
+    AI_BACKEND, AI_MODEL, _BEDROCK_AVAILABLE, MAX_BULK_JOBS_PER_MINUTE,
+    PORTKEY_API_KEY, PORTKEY_VIRTUAL_KEY, PORTKEY_GATEWAY_URL,
+    APIGEE_GATEWAY_URL, APIGEE_TOKEN_URL, APIGEE_CLIENT_ID,
+    APIGEE_CLIENT_SECRET, APIGEE_EXTRA_HEADERS,
+)
 from state import (
     waf_store,
     ground_truth_store,
@@ -198,9 +203,24 @@ def parse_ground_truth(filepath, filename):
 
 
 def get_client():
-    """Return AI client. Uses Anthropic API key if set, otherwise AWS Bedrock."""
+    """Return an AI client based on AI_BACKEND / AI_GATEWAY configuration.
+
+    Supported backends (set via .env):
+      anthropic  — direct Anthropic API          (ANTHROPIC_API_KEY)
+      bedrock    — AWS Bedrock (direct)           (AWS credentials)
+      portkey    — PortKey AI gateway             (PORTKEY_API_KEY + PORTKEY_VIRTUAL_KEY)
+      apigee     — Apigee gateway → Bedrock       (APIGEE_* credentials)
+    """
     if AI_BACKEND == "anthropic":
         return Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+    if AI_BACKEND == "portkey":
+        return _get_portkey_client()
+
+    if AI_BACKEND == "apigee":
+        return _get_apigee_client()
+
+    # Default: direct Bedrock
     if not _BEDROCK_AVAILABLE:
         raise RuntimeError(
             "No ANTHROPIC_API_KEY found and AnthropicBedrock is not installed. "
@@ -209,6 +229,104 @@ def get_client():
     aws_region = os.environ.get("AWS_DEFAULT_REGION",
                                 os.environ.get("AWS_REGION", "us-east-1"))
     return _AnthropicBedrock(aws_region=aws_region)
+
+
+def _get_portkey_client():
+    """Build an Anthropic client that routes through the PortKey AI gateway.
+
+    PortKey exposes an Anthropic-compatible endpoint.  The SDK just needs a
+    custom base_url and the PortKey auth headers.
+
+    Install: pip install portkey-ai
+    Docs:    https://portkey.ai/docs/integrations/llms/anthropic
+    """
+    if not PORTKEY_API_KEY:
+        raise RuntimeError(
+            "AI_GATEWAY=portkey requires PORTKEY_API_KEY in .env"
+        )
+    headers = {
+        "x-portkey-api-key": PORTKEY_API_KEY,
+    }
+    if PORTKEY_VIRTUAL_KEY:
+        headers["x-portkey-virtual-key"] = PORTKEY_VIRTUAL_KEY
+
+    # Try the official portkey-ai SDK helper first; fall back to raw headers
+    try:
+        from portkey_ai import createHeaders
+        pk_headers = createHeaders(
+            api_key=PORTKEY_API_KEY,
+            virtual_key=PORTKEY_VIRTUAL_KEY or None,
+            provider="anthropic",
+        )
+        headers.update(pk_headers)
+    except ImportError:
+        pass  # portkey-ai not installed — use raw headers (still works)
+
+    return Anthropic(
+        api_key=PORTKEY_VIRTUAL_KEY or "dummy",   # virtual key carries the real creds
+        base_url=PORTKEY_GATEWAY_URL,
+        default_headers=headers,
+    )
+
+
+# ── Apigee token cache ──────────────────────────────────────────────
+_apigee_token_cache: dict = {}  # {"token": str, "expires_at": float}
+
+
+def _get_apigee_token() -> str:
+    """Fetch (and cache) an OAuth2 client-credentials token from Apigee."""
+    import time
+    import requests as _req
+
+    cached = _apigee_token_cache
+    if cached.get("token") and time.time() < cached.get("expires_at", 0) - 30:
+        return cached["token"]
+
+    if not APIGEE_TOKEN_URL:
+        raise RuntimeError("AI_GATEWAY=apigee requires APIGEE_TOKEN_URL in .env")
+    if not APIGEE_CLIENT_ID or not APIGEE_CLIENT_SECRET:
+        raise RuntimeError(
+            "AI_GATEWAY=apigee requires APIGEE_CLIENT_ID and APIGEE_CLIENT_SECRET in .env"
+        )
+
+    resp = _req.post(
+        APIGEE_TOKEN_URL,
+        data={
+            "grant_type": "client_credentials",
+            "client_id": APIGEE_CLIENT_ID,
+            "client_secret": APIGEE_CLIENT_SECRET,
+        },
+        timeout=15,
+    )
+    resp.raise_for_status()
+    token_data = resp.json()
+    token = token_data["access_token"]
+    expires_in = int(token_data.get("expires_in", 3600))
+
+    _apigee_token_cache["token"] = token
+    _apigee_token_cache["expires_at"] = time.time() + expires_in
+    return token
+
+
+def _get_apigee_client():
+    """Build an Anthropic client that routes through the Apigee gateway.
+
+    Apigee acts as a reverse proxy in front of AWS Bedrock.
+    Auth: OAuth2 client-credentials bearer token (auto-refreshed on expiry).
+    The gateway URL must accept Anthropic-SDK-style requests.
+    """
+    if not APIGEE_GATEWAY_URL:
+        raise RuntimeError("AI_GATEWAY=apigee requires APIGEE_GATEWAY_URL in .env")
+
+    token = _get_apigee_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    headers.update(APIGEE_EXTRA_HEADERS)
+
+    return Anthropic(
+        api_key="apigee",   # placeholder — bearer token carries real auth
+        base_url=APIGEE_GATEWAY_URL,
+        default_headers=headers,
+    )
 
 
 def build_ground_truth_section(examples=None, stats=None):
