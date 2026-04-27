@@ -11,3 +11,22 @@ Regulatory Reporting Suite,FT-402,Audit Trail Service,Immutable audit log for al
 Mobile Banking App v4,FT-501,Biometric Authentication,Face ID and fingerprint login flows,Digital ToT,PI 2026-1
 Mobile Banking App v4,FT-502,Account Dashboard,Real-time balance and transaction feed,Digital ToT,PI 2026-1
 Mobile Banking App v4,FT-503,Push Notifications,Personalised spend alerts and payment confirmations,Digital ToT,PI 2026-2
+Core Banking Upgrade,FT-601,Core Ledger Migration,Migrate general ledger to distributed cloud platform,Payments ToT,PI 2026-2
+Core Banking Upgrade,FT-602,Transaction History API,Unified transaction history API for all channels,Payments ToT,PI 2026-2
+Cloud Infrastructure Migration,FT-701,Compute Lift and Shift,Migrate all application servers to AWS EC2,Platform ToT,PI 2026-1
+Cloud Infrastructure Migration,FT-702,Network Topology Redesign,VPC and transit gateway setup for cloud landing zone,Platform ToT,PI 2026-1
+Security Zero Trust Programme,FT-801,Zero Trust Network Access,Deploy ZTNA broker for all remote access,Security ToT,PI 2026-1
+Security Zero Trust Programme,FT-802,Privileged Access Management,PAM tooling for all privileged accounts,Security ToT,PI 2026-2
+Data Governance Framework,FT-901,Data Catalogue,Enterprise data catalogue with lineage and ownership,Data ToT,PI 2026-2
+Data Governance Framework,FT-902,Data Quality Rules Engine,Automated data quality checks across all domains,Data ToT,PI 2026-2
+Customer Onboarding Automation,FT-1001,Digital KYC,Automated ID verification and AML screening,Digital ToT,PI 2026-1
+Customer Onboarding Automation,FT-1002,e-Signature Integration,Integrate DocuSign for digital agreement signing,Digital ToT,PI 2026-1
+Treasury Management System,FT-1101,Cash Position Dashboard,Real-time multi-currency cash position view,Payments ToT,PI 2026-3
+Treasury Management System,FT-1102,FX Hedging Workflows,Automated FX hedging strategy execution,Payments ToT,PI 2026-3
+Fraud Prevention Platform,FT-1201,ML Fraud Scoring Engine,Real-time fraud scoring using gradient boosting model,Risk ToT,PI 2026-2
+Fraud Prevention Platform,FT-1202,Case Management Portal,Fraud analyst portal for investigation and resolution,Risk ToT,PI 2026-2
+Audit & Controls Automation,FT-1301,Controls Testing Automation,Automated execution of SOX control test scripts,Risk ToT,PI 2026-1
+API Gateway Modernisation,FT-1401,API Gateway Deployment,Deploy Kong API gateway across all service domains,Platform ToT,PI 2026-1
+API Gateway Modernisation,FT-1402,Developer Portal,Self-service API documentation and key management portal,Platform ToT,PI 2026-2
+Real-time Payments,FT-1701,ISO 20022 Message Builder,Generate and validate ISO 20022 payment messages,Payments ToT,PI 2026-2
+Real-time Payments,FT-1702,Instant Payment Confirmation,Sub-second payment confirmation via webhook and push,Payments ToT,PI 2026-2

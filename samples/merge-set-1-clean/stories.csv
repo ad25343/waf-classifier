@@ -12,7 +12,7 @@ Payment Fraud Detection,ST-1010,Rules engine for hard declines,Configurable rule
 SSO Integration,ST-2001,OIDC provider configuration,Configure Okta as enterprise OIDC provider,3,Platform Engineering
 SSO Integration,ST-2002,Service-to-service JWT validation,Shared JWT validation middleware for all microservices,5,Platform Engineering
 SSO Integration,ST-2003,Session timeout and refresh,Implement sliding session with silent refresh,3,Platform Engineering
-Role-Based Access Control,ST-2004,Permission matrix definition,Define resource/action permission matrix for all services,5,Platform Engineering
+Role-Based Access Control,ST-2004,Permission matrix definition,Define resource and action permission matrix for all services,5,Platform Engineering
 Role-Based Access Control,ST-2005,Admin console for role management,UI for assigning roles and reviewing access grants,5,Platform Engineering
 Event Streaming Pipeline,ST-3001,Kafka topic design and provisioning,Design partition strategy and provision topics for all event types,3,Data Platform Team
 Event Streaming Pipeline,ST-3002,Schema registry integration,Enforce Avro schemas via Confluent Schema Registry,5,Data Platform Team
@@ -33,3 +33,45 @@ Account Dashboard,ST-5006,Account summary tiles,Card UI for savings and checking
 Push Notifications,ST-5007,Spend alert configuration,User-configurable threshold alerts for spend categories,3,Mobile iOS Team
 Push Notifications,ST-5008,Payment confirmation push,Instant push on payment settled event,3,Mobile Android Team
 Push Notifications,ST-5009,Notification preference centre,In-app UI to manage push notification subscriptions,5,Mobile iOS Team
+Core Ledger Migration,ST-6001,Ledger schema design,Design cloud-native double-entry ledger schema,8,Core Banking Team
+Core Ledger Migration,ST-6002,Data migration runbook,Create and test phased data migration runbook,8,Core Banking Team
+Core Ledger Migration,ST-6003,Parallel run validation,Run legacy and new ledger in parallel and reconcile,13,Core Banking Team
+Transaction History API,ST-6004,Transaction query endpoint,GET /accounts/{id}/transactions with filters,5,Core Banking Team
+Transaction History API,ST-6005,Balance at date endpoint,Point-in-time balance calculation endpoint,5,Core Banking Team
+Compute Lift and Shift,ST-7001,Server inventory and sizing,Document and right-size all servers for AWS migration,3,Infra Team
+Compute Lift and Shift,ST-7002,AMI creation for app tier,Create golden AMIs for all application server types,5,Infra Team
+Compute Lift and Shift,ST-7003,Dev environment cutover,Migrate dev environment as first migration wave,8,Infra Team
+Network Topology Redesign,ST-7004,VPC design and CIDR planning,Design VPC layout with non-overlapping CIDR blocks,5,Networking Team
+Network Topology Redesign,ST-7005,Transit gateway configuration,Set up AWS Transit Gateway for spoke VPC connectivity,5,Networking Team
+Zero Trust Network Access,ST-8001,ZTNA broker deployment,Deploy Zscaler Private Access broker in DMZ,8,Security Team
+Zero Trust Network Access,ST-8002,Application onboarding to ZTNA,Migrate first 20 internal apps to ZTNA access model,5,Security Team
+Privileged Access Management,ST-8003,PAM tool deployment,Deploy CyberArk for privileged account vaulting,8,Security Team
+Privileged Access Management,ST-8004,Privileged session recording,Enable session recording for all privileged access,5,Security Team
+Data Catalogue,ST-9001,Catalogue tool deployment,Deploy Collibra as enterprise data catalogue platform,5,Data Governance Team
+Data Catalogue,ST-9002,Domain owner assignment,Assign data domain owners for all critical data assets,3,Data Governance Team
+Data Quality Rules Engine,ST-9003,Rule authoring UI,Build no-code rule authoring interface for data stewards,8,Data Governance Team
+Data Quality Rules Engine,ST-9004,Automated quality scoring,Daily data quality score per domain with trend tracking,5,Data Governance Team
+Digital KYC,ST-1001A,ID document scanning,Integrate Jumio for passport and driving licence scanning,5,Digital Onboarding Team
+Digital KYC,ST-1002A,AML screening integration,Integrate with World-Check for sanctions and PEP screening,5,Digital Onboarding Team
+Digital KYC,ST-1003A,KYC decision workflow,Automated pass/refer/fail decision engine for KYC results,8,Digital Onboarding Team
+e-Signature Integration,ST-1004A,DocuSign envelope creation,Create and send signature envelopes via DocuSign API,3,Digital Onboarding Team
+e-Signature Integration,ST-1005A,Signed document storage,Store completed signed documents in document management system,3,Digital Onboarding Team
+Cash Position Dashboard,ST-1101A,Multi-currency position feed,Aggregate balances across all Nostro accounts in real time,8,Treasury Tech
+Cash Position Dashboard,ST-1102A,Intraday liquidity view,Visualise projected intraday liquidity position by hour,5,Treasury Tech
+FX Hedging Workflows,ST-1103A,Hedge recommendation engine,Generate automated hedge recommendations based on exposure,8,Treasury Tech
+FX Hedging Workflows,ST-1104A,Trade execution integration,Connect to FX trading platform for straight-through processing,8,Treasury Tech
+ML Fraud Scoring Engine,ST-1201A,Model training pipeline,Automated retraining pipeline for fraud gradient boosting model,8,Data Science Team
+ML Fraud Scoring Engine,ST-1202A,Model serving infrastructure,Low-latency model serving via feature store and REST endpoint,5,Data Science Team
+Case Management Portal,ST-1203A,Investigation queue UI,Analyst portal showing prioritised fraud investigation queue,5,Risk Engineering
+Case Management Portal,ST-1204A,Case resolution workflow,Workflow for fraud case investigation and resolution actions,5,Risk Engineering
+Controls Testing Automation,ST-1301A,Control test script library,Build library of automated SOX control test scripts,8,Risk Engineering
+Controls Testing Automation,ST-1302A,Evidence collection pipeline,Automated collection and storage of audit evidence artefacts,5,Risk Engineering
+API Gateway Deployment,ST-1401A,Kong installation and config,Install and configure Kong gateway across all environments,5,Platform Engineering
+API Gateway Deployment,ST-1402A,Rate limiting and throttling,Configure rate limiting policies for all external APIs,3,Platform Engineering
+API Gateway Deployment,ST-1403A,API authentication plugin,Deploy OAuth2 and API key authentication plugins,5,Platform Engineering
+Developer Portal,ST-1404A,API catalogue publishing,Publish all internal APIs to developer portal with OpenAPI specs,5,Platform Engineering
+Developer Portal,ST-1405A,API key self-service,Self-service API key generation and rotation for developers,3,Platform Engineering
+ISO 20022 Message Builder,ST-1701A,pacs.008 message generation,Build pacs.008 credit transfer message generator,8,International Payments Team
+ISO 20022 Message Builder,ST-1702A,Schema validation service,Validate all outbound ISO 20022 messages against XSD schemas,5,International Payments Team
+Instant Payment Confirmation,ST-1703A,Settlement webhook publisher,Publish settlement events to downstream subscribers on completion,5,International Payments Team
+Instant Payment Confirmation,ST-1704A,Confirmation push notification,Trigger mobile push notification on payment confirmed event,3,Mobile iOS Team

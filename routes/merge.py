@@ -186,7 +186,8 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
     # e.g. "Payments Modernization (Change)" indexes under:
     #   "payments modernization (change)"  ← full form
     #   "payments modernization"           ← clean form (no suffix)
-    epic_lookup = {}   # lower_epic_name -> {id, name, desc, block, waf, waf_color, waf_category, run_change}
+    epic_lookup   = {}   # lower_epic_name -> {id, name, desc, block, waf, waf_color, waf_category, run_change}
+    _epic_count_set = set()   # unique clean names — used for accurate count in stats
     if df_epic is not None:
         for _, row in df_epic.iterrows():
             raw_name = safe_str(row.get(em["name_col"], "")) if em.get("name_col") else ""
@@ -211,6 +212,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             }
             epic_lookup[raw_name.lower()]   = entry   # full name key
             epic_lookup[clean_name.lower()] = entry   # clean name key (no-op if no suffix)
+            _epic_count_set.add(clean_name.lower())
 
     # ── Build feature lookup keyed by lowercased Feature Name ─────────────────
     feature_lookup = {}  # lower_feature_name -> {id, name, desc, tot, pi, epic_name}
@@ -299,7 +301,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
         })
 
     stats = {
-        "epics":              len(epic_lookup),
+        "epics":              len(_epic_count_set) or len(epic_lookup),
         "features":           len(feature_lookup),
         "stories":            len(df_story),
         "matched":            sum(1 for r in merged_rows if r["_feat_found"]),
