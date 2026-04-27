@@ -83,6 +83,22 @@ def find_col(headers, keywords):
     return None
 
 
+_RUN_CHANGE_SUFFIX = re.compile(r'\s*\((run|change)\)\s*$', re.IGNORECASE)
+
+def extract_run_change_from_name(name):
+    """
+    Strip a trailing '(Run)' or '(Change)' from an epic name.
+    Returns (clean_name, run_change_value).
+    e.g. 'Payments Modernization (Change)' -> ('Payments Modernization', 'Change')
+    e.g. 'Identity Mgmt'                   -> ('Identity Mgmt', '')
+    """
+    m = _RUN_CHANGE_SUFFIX.search(name)
+    if m:
+        clean = _RUN_CHANGE_SUFFIX.sub("", name).strip()
+        return clean, m.group(1).capitalize()   # 'Run' or 'Change'
+    return name, ""
+
+
 def parse_waf_field(waf_value):
     """
     Parse a WAF field like 'ORANGE - Enterprise Strategic Priority'.
@@ -165,24 +181,36 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
     sm = col_map["story"]
 
     # ── Build epic lookup keyed by lowercased Epic Name ───────────────────────
-    epic_lookup = {}   # lower_epic_name -> {id, name, desc, block, waf, waf_color, waf_category}
+    # Indexed by BOTH the raw name and the clean name (suffix stripped) so that
+    # Feature files referencing either form resolve correctly.
+    # e.g. "Payments Modernization (Change)" indexes under:
+    #   "payments modernization (change)"  ← full form
+    #   "payments modernization"           ← clean form (no suffix)
+    epic_lookup = {}   # lower_epic_name -> {id, name, desc, block, waf, waf_color, waf_category, run_change}
     if df_epic is not None:
         for _, row in df_epic.iterrows():
-            name = safe_str(row.get(em["name_col"], "")) if em.get("name_col") else ""
-            if not name:
+            raw_name = safe_str(row.get(em["name_col"], "")) if em.get("name_col") else ""
+            if not raw_name:
                 continue
+            # Extract (Run)/(Change) suffix from name as fallback for run_change
+            clean_name, rc_from_name = extract_run_change_from_name(raw_name)
             waf_raw   = safe_str(row.get(em["waf_col"],  "")) if em.get("waf_col")  else ""
             waf_color, waf_category = parse_waf_field(waf_raw)
-            epic_lookup[name.lower()] = {
-                "id":           safe_str(row.get(em["id_col"],         "")) if em.get("id_col")         else "",
-                "name":         name,
-                "desc":         safe_str(row.get(em["desc_col"],       "")) if em.get("desc_col")       else "",
-                "block":        safe_str(row.get(em["block_col"],      "")) if em.get("block_col")      else "",
+            # Explicit column wins over name-derived value
+            rc_explicit = safe_str(row.get(em["run_change_col"], "")) if em.get("run_change_col") else ""
+            entry = {
+                "id":           safe_str(row.get(em["id_col"],    "")) if em.get("id_col")   else "",
+                "name":         raw_name,          # preserve original name in output
+                "clean_name":   clean_name,        # name without suffix
+                "desc":         safe_str(row.get(em["desc_col"],  "")) if em.get("desc_col") else "",
+                "block":        safe_str(row.get(em["block_col"], "")) if em.get("block_col") else "",
                 "waf":          waf_raw,
                 "waf_color":    waf_color,
                 "waf_category": waf_category,
-                "run_change":   safe_str(row.get(em["run_change_col"], "")) if em.get("run_change_col") else "",
+                "run_change":   rc_explicit or rc_from_name,
             }
+            epic_lookup[raw_name.lower()]   = entry   # full name key
+            epic_lookup[clean_name.lower()] = entry   # clean name key (no-op if no suffix)
 
     # ── Build feature lookup keyed by lowercased Feature Name ─────────────────
     feature_lookup = {}  # lower_feature_name -> {id, name, desc, tot, pi, epic_name}
@@ -232,7 +260,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             unmatched_epics += 1
 
         epic_id       = epic_data.get("id",           "")
-        epic_name     = epic_data.get("name",         epic_name_ref)
+        epic_name     = epic_data.get("clean_name",   epic_data.get("name", epic_name_ref))
         epic_desc     = epic_data.get("desc",         "")
         block         = epic_data.get("block",        "")
         waf_raw       = epic_data.get("waf",          "")
