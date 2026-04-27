@@ -702,6 +702,16 @@
 
     <!-- ========== BY TEAM TAB ========== -->
     <div class="tab-content active" id="tab-by-team">
+
+        <!-- Team of Teams filter (shown only when ToT data exists) -->
+        <div id="tot-filter-wrap" style="display:none;margin-bottom:12px;">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;">Team of Teams</div>
+            <div class="selector-row" id="tot-selector" style="max-height:56px;"></div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Teams</div>
+        </div>
         <div class="list-search">
             <input type="text" id="team-search" placeholder="Search teams..." oninput="filterPills('team-search', '#team-selector')">
             <button class="clear-btn" onclick="clearSearch('team-search', '#team-selector')">&times;</button>
@@ -842,6 +852,7 @@ function onJobChange() {
     currentUploadId = document.getElementById('job-select').value;
     selectedTeam = null;
     selectedEpic = null;
+    _activeTot = null;
     loadTeamsData();
 }
 
@@ -907,6 +918,7 @@ async function loadTeamsData() {
             ));
         });
 
+        renderTotPills();
         renderTeamPills();
         renderEpicPills();
         document.getElementById('epic-detail-area').innerHTML = '<div class="empty-state"><div class="icon">&#128209;</div><h3>Select an epic above</h3><p>Choose an epic to see which teams contribute to it</p></div>';
@@ -919,6 +931,34 @@ async function loadTeamsData() {
     }
 }
 
+// ── By Team: Team of Teams filter ──────────────────────────
+let _activeTot = null;   // null = all
+
+function renderTotPills() {
+    const totList = summaryData?.team_of_teams || [];
+    const wrap = document.getElementById('tot-filter-wrap');
+    const row  = document.getElementById('tot-selector');
+    if (!totList.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    const allPill = `<button class="selector-pill active" id="tot-pill-all" onclick="selectTot(null)">All<span class="pill-count">(${summaryData.teams.length})</span></button>`;
+    const pills = totList.map(t =>
+        `<button class="selector-pill" id="tot-pill-${escapeAttr(t.name)}" onclick="selectTot('${escapeAttr(t.name)}')">${escapeHtml(t.name)}<span class="pill-count">(${t.team_count})</span></button>`
+    ).join('');
+    row.innerHTML = allPill + pills;
+}
+
+function selectTot(tot) {
+    _activeTot = tot;
+    // Highlight active pill
+    document.querySelectorAll('#tot-selector .selector-pill').forEach(p => p.classList.remove('active'));
+    const activePill = tot ? document.getElementById('tot-pill-' + tot) : document.getElementById('tot-pill-all');
+    if (activePill) activePill.classList.add('active');
+    // Re-render team pills filtered by ToT
+    renderTeamPills();
+    // Reset to all teams view with the new filter applied
+    selectAllTeams();
+}
+
 // ── By Team: Pills ─────────────────────────────────────────
 function renderTeamPills() {
     const row = document.getElementById('team-selector');
@@ -926,8 +966,17 @@ function renderTeamPills() {
         row.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">No teams found</span>';
         return;
     }
-    const allPill = `<button class="selector-pill active" id="pill-all-teams" onclick="selectAllTeams()">All Teams<span class="pill-count">(${window._allTeamStories.length})</span></button>`;
-    const teamPills = summaryData.teams.map(t =>
+    // Filter teams by active ToT
+    const visibleTeams = _activeTot
+        ? summaryData.teams.filter(t => t.team_of_teams === _activeTot)
+        : summaryData.teams;
+
+    const visibleStoryCount = _activeTot
+        ? visibleTeams.reduce((s, t) => s + t.total_stories, 0)
+        : window._allTeamStories.length;
+
+    const allPill = `<button class="selector-pill active" id="pill-all-teams" onclick="selectAllTeams()">All Teams<span class="pill-count">(${visibleStoryCount})</span></button>`;
+    const teamPills = visibleTeams.map(t =>
         `<button class="selector-pill" id="pill-${escapeAttr(t.name)}" onclick="selectTeam('${escapeAttr(t.name)}')">${escapeHtml(t.name)}<span class="pill-count">(${t.total_stories})</span></button>`
     ).join('');
     row.innerHTML = allPill + teamPills;
@@ -939,10 +988,15 @@ function selectAllTeams() {
     const allPill = document.getElementById('pill-all-teams');
     if (allPill) allPill.classList.add('active');
 
-    // KPIs from summary aggregate
-    const teams = summaryData?.teams || [];
-    const totalStories = window._allTeamStories.length;
-    const totalMismatches = window._allTeamStories.filter(s => s.was_mismatch).length;
+    // KPIs from summary aggregate — respect active ToT filter
+    const allTeams = summaryData?.teams || [];
+    const teams = _activeTot ? allTeams.filter(t => t.team_of_teams === _activeTot) : allTeams;
+    const visibleTeamNames = new Set(teams.map(t => t.name));
+    const allStories = _activeTot
+        ? window._allTeamStories.filter(s => visibleTeamNames.has(s.team))
+        : window._allTeamStories;
+    const totalStories = allStories.length;
+    const totalMismatches = allStories.filter(s => s.was_mismatch).length;
     const mismatchRate = totalStories > 0 ? (totalMismatches / totalStories * 100).toFixed(1) : '0.0';
     const catTotals = {};
     teams.forEach(t => Object.entries(t.categories || {}).forEach(([c, n]) => { catTotals[c] = (catTotals[c] || 0) + n; }));
@@ -999,8 +1053,8 @@ function selectAllTeams() {
     </table>`;
 
     area.innerHTML = `<div class="two-panel"><div class="tree-panel" style="min-width:180px;max-width:220px;"><div style="padding:0 8px;">${leftHtml}</div></div><div class="story-panel">${rightHtml}</div></div>`;
-    window._currentStories = window._allTeamStories;
-    renderStoryRows(window._allTeamStories);
+    window._currentStories = allStories;
+    renderStoryRows(allStories);
 }
 
 function selectTeam(name) {

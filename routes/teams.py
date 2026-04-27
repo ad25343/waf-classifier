@@ -18,7 +18,8 @@ def teams_summary():
 
     query = """
         SELECT team, epic, waf_category, waf_color, run_change,
-               was_mismatch, approved, confidence
+               was_mismatch, approved, confidence,
+               COALESCE(waf_subcategory, '') as team_of_teams
         FROM classifications
         WHERE team != '' AND team != 'default'
     """
@@ -39,10 +40,13 @@ def teams_summary():
         "colors": defaultdict(int),
         "run_change": defaultdict(int),
         "confidence": defaultdict(int),
+        "team_of_teams": defaultdict(int),   # ToT → story count
     })
 
     # Cross-team tracking
     epic_teams = defaultdict(set)
+    # Team of Teams → teams mapping
+    tot_teams = defaultdict(set)
 
     for row in rows:
         team = row["team"]
@@ -63,6 +67,10 @@ def teams_summary():
             t["run_change"][row["run_change"]] += 1
         if row["confidence"]:
             t["confidence"][row["confidence"].upper()] += 1
+        tot = row["team_of_teams"]
+        if tot:
+            t["team_of_teams"][tot] += 1
+            tot_teams[tot].add(team)
 
     # Build response
     teams = []
@@ -80,6 +88,9 @@ def teams_summary():
         if t["categories"]:
             dominant_category = max(t["categories"], key=t["categories"].get)
 
+        # Determine primary Team of Teams (most common value for this team)
+        primary_tot = max(t["team_of_teams"], key=t["team_of_teams"].get) if t["team_of_teams"] else ""
+
         teams.append({
             "name": name,
             "total_stories": t["stories"],
@@ -93,6 +104,7 @@ def teams_summary():
             "run_change": dict(t["run_change"]),
             "dominant_category": dominant_category,
             "confidence_breakdown": dict(t["confidence"]),
+            "team_of_teams": primary_tot,
         })
 
     # Cross-team data
@@ -103,8 +115,15 @@ def teams_summary():
     avg_mismatch = round(sum(total_mismatch_rates) / len(total_mismatch_rates), 1) if total_mismatch_rates else 0
     most_active = max(teams, key=lambda x: x["total_stories"])["name"] if teams else ""
 
+    # Build Team of Teams list sorted by name
+    tot_list = sorted([
+        {"name": tot, "teams": sorted(tms), "team_count": len(tms)}
+        for tot, tms in tot_teams.items()
+    ], key=lambda x: x["name"])
+
     return jsonify({
         "teams": teams,
+        "team_of_teams": tot_list,
         "cross_team": {
             "teams_by_epic": teams_by_epic,
             "epics_by_team": epics_by_team,

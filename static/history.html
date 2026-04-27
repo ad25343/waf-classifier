@@ -1055,9 +1055,16 @@
                         <option value="data_reporting">Data &amp; Reporting</option>
                     </select>
                 </div>
+                <!-- Team of Teams filter -->
+                <div style="min-width:180px;" id="quality-tot-wrap" style="display:none;">
+                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Team of Teams</div>
+                    <select id="quality-tot" onchange="onQualityTotChange()" style="width:100%;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:7px;color:var(--text-primary);font-size:13px;">
+                        <option value="">All</option>
+                    </select>
+                </div>
                 <!-- Teams multi-select -->
                 <div style="min-width:220px;flex:1;">
-                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Teams</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Assigned Teams</div>
                     <div id="quality-teams-dropdown" style="position:relative;">
                         <button onclick="toggleQualityTeamsDropdown()" id="quality-teams-btn"
                                 style="width:100%;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:7px;color:var(--text-secondary);font-size:13px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
@@ -3054,6 +3061,9 @@ function onAnalyticsFilterChange() {
         document.getElementById('quality-results-section').style.display = 'none';
         document.getElementById('quality-empty').style.display = 'block';
         document.getElementById('quality-desc-warning').style.display = 'none';
+        const totSel = document.getElementById('quality-tot');
+        if (totSel) { totSel.innerHTML = '<option value="">All</option>'; }
+        document.getElementById('quality-tot-wrap').style.display = 'none';
         loadQualityTab();
         return;
     }
@@ -3617,7 +3627,7 @@ async function loadQualityTab() {
 
     const upload_id = getQualityUploadId();
     if (upload_id) {
-        await loadQualityTeams(upload_id);
+        await Promise.all([loadQualityTot(upload_id), loadQualityTeams(upload_id)]);
         await loadSavedQualityResults();
     } else {
         // No specific upload selected — show empty state
@@ -3637,11 +3647,40 @@ function onQualityDomainChange() {
     saveQualityState();
 }
 
+// ── Team of Teams filter ──────────────────────────────────────
+async function loadQualityTot(upload_id) {
+    try {
+        const res = await fetch(`/api/quality/team-of-teams?upload_id=${upload_id}`);
+        const data = await res.json();
+        const list = data.team_of_teams || [];
+        const sel = document.getElementById('quality-tot');
+        const wrap = document.getElementById('quality-tot-wrap');
+        sel.innerHTML = '<option value="">All</option>';
+        list.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.name;
+            opt.textContent = `${t.name} (${t.teams.length} teams)`;
+            sel.appendChild(opt);
+        });
+        wrap.style.display = list.length ? '' : 'none';
+    } catch(e) { /* silent */ }
+}
+
+async function onQualityTotChange() {
+    const upload_id = getQualityUploadId();
+    if (!upload_id) return;
+    const tot = document.getElementById('quality-tot').value;
+    _qualityState.teams = [];   // reset selection when filter changes
+    await loadQualityTeams(upload_id, tot);
+}
+
 // ── Teams multi-select ────────────────────────────────────────
 
-async function loadQualityTeams(upload_id) {
+async function loadQualityTeams(upload_id, tot_filter) {
     try {
-        const res = await fetch(`/api/quality/teams?upload_id=${upload_id}`);
+        let url = `/api/quality/teams?upload_id=${upload_id}`;
+        if (tot_filter) url += `&team_of_teams=${encodeURIComponent(tot_filter)}`;
+        const res = await fetch(url);
         const data = await res.json();
         _qualityAllTeams = data.teams || [];
         renderQualityTeamsList();

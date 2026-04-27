@@ -341,19 +341,57 @@ def quality_uploads():
     })
 
 
-@quality_bp.route("/api/quality/teams", methods=["GET"])
-def quality_teams():
+@quality_bp.route("/api/quality/team-of-teams", methods=["GET"])
+def quality_team_of_teams():
+    """Return distinct Team of Teams values for a given upload, with their teams."""
     upload_id = request.args.get("upload_id", type=int)
     if not upload_id:
         return jsonify({"error": "upload_id required"}), 400
     db = get_db()
     rows = db.execute(
-        """SELECT COALESCE(team, 'default') as team, COUNT(*) as cnt
+        """SELECT COALESCE(waf_subcategory, '') as tot,
+                  COALESCE(team, 'default') as team,
+                  COUNT(*) as cnt
            FROM classifications
-           WHERE upload_id=?
-           GROUP BY team ORDER BY team""",
+           WHERE upload_id=? AND waf_subcategory != '' AND waf_subcategory IS NOT NULL
+           GROUP BY tot, team ORDER BY tot, team""",
         (upload_id,),
     ).fetchall()
+    from collections import defaultdict
+    tot_map = defaultdict(lambda: {"teams": [], "count": 0})
+    for r in rows:
+        tot_map[r["tot"]]["teams"].append({"name": r["team"], "count": r["cnt"]})
+        tot_map[r["tot"]]["count"] += r["cnt"]
+    result = sorted([
+        {"name": tot, "teams": v["teams"], "count": v["count"]}
+        for tot, v in tot_map.items()
+    ], key=lambda x: x["name"])
+    return jsonify({"team_of_teams": result})
+
+
+@quality_bp.route("/api/quality/teams", methods=["GET"])
+def quality_teams():
+    upload_id = request.args.get("upload_id", type=int)
+    if not upload_id:
+        return jsonify({"error": "upload_id required"}), 400
+    tot_filter = request.args.get("team_of_teams", "").strip()
+    db = get_db()
+    if tot_filter:
+        rows = db.execute(
+            """SELECT COALESCE(team, 'default') as team, COUNT(*) as cnt
+               FROM classifications
+               WHERE upload_id=? AND COALESCE(waf_subcategory,'')=?
+               GROUP BY team ORDER BY team""",
+            (upload_id, tot_filter),
+        ).fetchall()
+    else:
+        rows = db.execute(
+            """SELECT COALESCE(team, 'default') as team, COUNT(*) as cnt
+               FROM classifications
+               WHERE upload_id=?
+               GROUP BY team ORDER BY team""",
+            (upload_id,),
+        ).fetchall()
     return jsonify({"teams": [{"name": r["team"], "count": r["cnt"]} for r in rows]})
 
 
