@@ -1237,11 +1237,12 @@ function renderDetection(colMap) {
     }
 
     const epicFields = [
-        { key: 'id_col',    label: 'Epic Id' },
-        { key: 'name_col',  label: 'Epic Name' },
-        { key: 'desc_col',  label: 'Epic Desc' },
-        { key: 'block_col', label: 'Block' },
-        { key: 'waf_col',   label: 'WAF' },
+        { key: 'id_col',         label: 'Epic Id' },
+        { key: 'name_col',       label: 'Epic Name' },
+        { key: 'desc_col',       label: 'Epic Desc' },
+        { key: 'block_col',      label: 'Block' },
+        { key: 'waf_col',        label: 'WAF' },
+        { key: 'run_change_col', label: 'Run/Change' },
     ];
     const featFields = [
         { key: 'epic_name_col', label: 'Epic Name (join key)' },
@@ -1313,7 +1314,7 @@ function renderStats(stats, missingFiles) {
 // ── Preview render ───────────────────────────────────────────────────
 const PREVIEW_COLS = [
     'PI Name', 'Epic Id', 'Epic Name', 'Block',
-    'WAF Color', 'WAF Category',
+    'WAF Color', 'WAF Category', 'Run/Change',
     'Feature Name', 'Team of Teams',
     'Story Id', 'Story Name', 'Story Points', 'Assigned Teams'
 ];

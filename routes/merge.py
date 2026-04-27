@@ -37,11 +37,12 @@ KNOWN_COLORS = {"GRAY", "BLACK", "RED", "ORANGE", "YELLOW", "GREEN", "BLUE", "PU
 
 # ── Column keyword definitions ─────────────────────────────────────────────────
 EPIC_KEYWORDS = {
-    "id_col":    ["epic id", "jira saas epic", "epic#", "epic key", "epic number"],
-    "name_col":  ["epic name", "epic summary", "epic title", "summary"],
-    "desc_col":  ["epic description", "epic desc"],
-    "block_col": ["block", "program/org", "program org", "org block"],
-    "waf_col":   ["work alignment framework", "work alignment", "waf"],
+    "id_col":         ["epic id", "jira saas epic", "epic#", "epic key", "epic number"],
+    "name_col":       ["epic name", "epic summary", "epic title", "summary"],
+    "desc_col":       ["epic description", "epic desc"],
+    "block_col":      ["block", "program/org", "program org", "org block"],
+    "waf_col":        ["work alignment framework", "work alignment", "waf"],
+    "run_change_col": ["run/change", "run or change", "run change", "run_change"],
 }
 
 FEATURE_KEYWORDS = {
@@ -65,7 +66,7 @@ STORY_KEYWORDS = {
 OUTPUT_COLUMNS = [
     "PI Name",
     "Epic Id", "Epic Name", "Epic Desc", "Block",
-    "WAF", "WAF Color", "WAF Category",
+    "WAF", "WAF Color", "WAF Category", "Run/Change",
     "Feature Id", "Feature Name", "Feature Desc", "Team of Teams",
     "Story Id", "Story Name", "Story Desc", "Story Points", "Assigned Teams",
 ]
@@ -173,13 +174,14 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             waf_raw   = safe_str(row.get(em["waf_col"],  "")) if em.get("waf_col")  else ""
             waf_color, waf_category = parse_waf_field(waf_raw)
             epic_lookup[name.lower()] = {
-                "id":           safe_str(row.get(em["id_col"],   "")) if em.get("id_col")   else "",
+                "id":           safe_str(row.get(em["id_col"],         "")) if em.get("id_col")         else "",
                 "name":         name,
-                "desc":         safe_str(row.get(em["desc_col"], "")) if em.get("desc_col") else "",
-                "block":        safe_str(row.get(em["block_col"],"")) if em.get("block_col") else "",
+                "desc":         safe_str(row.get(em["desc_col"],       "")) if em.get("desc_col")       else "",
+                "block":        safe_str(row.get(em["block_col"],      "")) if em.get("block_col")      else "",
                 "waf":          waf_raw,
                 "waf_color":    waf_color,
                 "waf_category": waf_category,
+                "run_change":   safe_str(row.get(em["run_change_col"], "")) if em.get("run_change_col") else "",
             }
 
     # ── Build feature lookup keyed by lowercased Feature Name ─────────────────
@@ -236,6 +238,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
         waf_raw       = epic_data.get("waf",          "")
         waf_color     = epic_data.get("waf_color",    "")
         waf_category  = epic_data.get("waf_category", "")
+        run_change    = epic_data.get("run_change",   "")
 
         merged_rows.append({
             # ── Output columns ──────────────────────────────────────────────
@@ -247,6 +250,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             "WAF":            waf_raw,
             "WAF Color":      waf_color,
             "WAF Category":   waf_category,
+            "Run/Change":     run_change,
             "Feature Id":     feat_id,
             "Feature Name":   feat_name,
             "Feature Desc":   feat_desc,
@@ -513,7 +517,7 @@ def merge_send_to_classifier(token):
         {"key": "waf_category",   "label": "WAF Category",       "required": False, "keywords": ["waf category", "waf_category"]},
         {"key": "waf_color",      "label": "WAF Color",          "required": False, "keywords": ["waf color", "waf_color"]},
         {"key": "subcategory",    "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams"]},
-        {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run_change", "run change"]},
+        {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run or change", "run_change", "run change"]},
         {"key": "confidence",     "label": "Confidence",         "required": False, "keywords": ["confidence", "conf"]},
         # ── Organisation ───────────────────────────────────────────────────────
         {"key": "team",           "label": "Assigned Teams",     "required": False, "keywords": ["assigned teams", "assigned team", "team"]},
