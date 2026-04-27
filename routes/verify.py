@@ -81,7 +81,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
     else:
         raise RuntimeError("No ANTHROPIC_API_KEY and AnthropicBedrock not available")
     batch_prompt = "Classify each story below into the correct WAF category. For EACH story, respond with EXACTLY this format on separate lines:\n\n"
-    batch_prompt += "STORY 1: [WAF Category] | [WAF Sub-Category] | [WAF Color] | [Run or Change] | [Confidence: HIGH/MEDIUM/LOW] | [One-line reasoning]\n\n"
+    batch_prompt += "STORY 1: [WAF Category] | [Team of Teams] | [WAF Color] | [Run or Change] | [Confidence: HIGH/MEDIUM/LOW] | [One-line reasoning]\n\n"
     batch_prompt += "If a story has no description, set Confidence to LOW and note that classification is based on title only.\n\n"
     batch_prompt += "Here are the stories:\n\n"
     for j, s in enumerate(batch, 1):
@@ -293,22 +293,22 @@ def bulk_verify_preview():
             {"key": "title",          "label": "Story Title",       "required": True,  "keywords": ["story title", "title", "summary", "story", "name"]},
             {"key": "description",    "label": "Story Description",  "required": True,  "keywords": ["story description", "description", "desc", "detail", "body", "acceptance"]},
             # ── Hierarchy: PI → Epic → Feature → Story ────────────
-            {"key": "pi_number",      "label": "PI Number",          "required": False, "keywords": ["pi number", "pi_number", "pi #", "program increment", "pi"]},
+            {"key": "pi_number",      "label": "PI Number",          "required": False, "keywords": ["pi number", "pi_number", "pi #", "program increment", " pi "]},
             {"key": "epic_id",        "label": "Epic ID",            "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"]},
-            {"key": "epic",           "label": "Epic Name",          "required": False, "keywords": ["epic", "initiative", "program"]},
+            {"key": "epic",           "label": "Epic Name",          "required": False, "keywords": ["epic name", "epic", "initiative", "program"]},
             {"key": "feature_id",     "label": "Feature ID",         "required": False, "keywords": ["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"]},
-            {"key": "parent_feature", "label": "Feature Name",        "required": False, "keywords": ["feature name", "feature", "parent feature", "parent_feature", "capability"]},
+            {"key": "parent_feature", "label": "Feature Name",       "required": False, "keywords": ["feature name", "feature", "parent feature", "parent_feature", "capability"]},
             {"key": "story_id",       "label": "Story ID",           "required": False, "keywords": ["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"]},
             {"key": "story_points",   "label": "Story Points",       "required": False, "keywords": ["story points", "story_points", "points", " sp ", "estimate"]},
             # ── WAF Classification ────────────────────────────────
             {"key": "waf_category",   "label": "WAF Category",       "required": False, "keywords": ["waf category", "waf_category", "category"]},
             {"key": "waf_color",      "label": "WAF Color",          "required": False, "keywords": ["waf color", "waf_color", "color"]},
-            {"key": "subcategory",    "label": "WAF Sub-Category",   "required": False, "keywords": ["sub-category", "sub_category", "subcategory", "waf sub"]},
+            {"key": "subcategory",    "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"]},
             {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run_change", "run change"]},
             {"key": "confidence",     "label": "Confidence",         "required": False, "keywords": ["confidence", "conf"]},
             # ── Organisation ──────────────────────────────────────
-            {"key": "team",           "label": "Team",               "required": False, "keywords": ["team", "squad", "group"]},
-            {"key": "timestamp",      "label": "Timestamp",          "required": False, "keywords": ["timestamp", "date", "created", "created_at"]},
+            {"key": "team",           "label": "Assigned Teams",     "required": False, "keywords": ["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"]},
+            {"key": "timestamp",      "label": "Timestamp",          "required": False, "keywords": ["timestamp", "time stamp", "date", "created", "created_at"]},
         ]
         for field in target_fields:
             matched = _find_col(df.columns, field["keywords"], exclude=claimed_cols)
@@ -415,22 +415,22 @@ def bulk_verify():
         df.columns = [c.strip().lower() for c in df.columns]
         find_col = lambda kws: _find_col(df.columns, kws)
 
-        title_col = find_col(["story title", "title", "summary", "story", "name"])
-        desc_col = find_col(["story description", "description", "desc", "detail", "body", "acceptance"])
-        cat_col = find_col(["waf category", "waf_category", "category"])
-        color_col = find_col(["waf color", "waf_color", "color"])
-        rc_col = find_col(["run/change", "run_change", "run change"])
-        subcat_col = find_col(["sub-category", "sub_category", "subcategory", "waf sub"])
-        conf_col = find_col(["confidence", "conf"])
-        team_col = find_col(["team", "squad", "group"])
-        epic_col = find_col(["epic", "initiative", "program"])
-        feature_col = find_col(["feature", "parent feature", "parent_feature", "capability"])
-        ts_col = find_col(["timestamp", "date", "created", "created_at"])
-        story_id_col = find_col(["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"])
-        feature_id_col = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"])
-        epic_id_col = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
+        title_col        = find_col(["story title", "story name", "title", "summary", "story", "name"])
+        desc_col         = find_col(["story description", "description", "desc", "detail", "body", "acceptance"])
+        cat_col          = find_col(["waf category", "waf_category", "category"])
+        color_col        = find_col(["waf color", "waf_color", "color"])
+        rc_col           = find_col(["run/change", "run_change", "run change"])
+        subcat_col       = find_col(["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"])
+        conf_col         = find_col(["confidence", "conf"])
+        team_col         = find_col(["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"])
+        epic_col         = find_col(["epic name", "epic", "initiative", "program"])
+        feature_col      = find_col(["feature name", "feature", "parent feature", "parent_feature", "capability"])
+        ts_col           = find_col(["timestamp", "time stamp", "date", "created", "created_at"])
+        story_id_col     = find_col(["story id", "story_id", "issue key", "issue_key", "ticket", "jira id", "item id"])
+        feature_id_col   = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"])
+        epic_id_col      = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
         story_points_col = find_col(["story points", "story_points", "points", " sp ", "estimate"])
-        pi_number_col = find_col(["pi number", "pi_number", "pi #", "program increment", "pi"])
+        pi_number_col    = find_col(["pi number", "pi_number", "pi #", "program increment", " pi "])
 
         if not title_col:
             return jsonify({"error": "File must have a 'Story Title' or 'Summary' column"}), 400

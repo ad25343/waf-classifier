@@ -505,20 +505,20 @@ def merge_send_to_classifier(token):
         {"key": "description",    "label": "Story Description",  "required": False, "keywords": ["story description", "description", "desc"]},
         # ── Hierarchy: Epic → Feature → Story ─────────────────
         {"key": "epic_id",        "label": "Epic ID",            "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic link"]},
-        {"key": "epic",           "label": "Epic Name",          "required": False, "keywords": ["epic", "initiative"]},
+        {"key": "epic",           "label": "Epic Name",          "required": False, "keywords": ["epic name", "epic", "initiative"]},
         {"key": "feature_id",     "label": "Feature ID",         "required": False, "keywords": ["feature id", "feature_id", "feature key"]},
-        {"key": "parent_feature", "label": "Feature Name",        "required": False, "keywords": ["feature name", "parent feature", "feature", "capability"]},
+        {"key": "parent_feature", "label": "Feature Name",       "required": False, "keywords": ["feature name", "parent feature", "feature", "capability"]},
         {"key": "story_id",       "label": "Story ID",           "required": False, "keywords": ["story id", "story_id", "issue key"]},
         {"key": "story_points",   "label": "Story Points",       "required": False, "keywords": ["story points", "story_points", "points"]},
         # ── WAF Classification ────────────────────────────────
         {"key": "waf_category",   "label": "WAF Category",       "required": False, "keywords": ["waf category", "waf_category", "category"]},
         {"key": "waf_color",      "label": "WAF Color",          "required": False, "keywords": ["waf color", "waf_color", "color"]},
-        {"key": "subcategory",    "label": "WAF Sub-Category",   "required": False, "keywords": ["sub-category", "subcategory", "waf sub"]},
+        {"key": "subcategory",    "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams", "sub-category", "subcategory", "waf sub"]},
         {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run_change", "run change"]},
         {"key": "confidence",     "label": "Confidence",         "required": False, "keywords": ["confidence", "conf"]},
         # ── Organisation ──────────────────────────────────────
-        {"key": "team",           "label": "Team",               "required": False, "keywords": ["team", "squad", "group"]},
-        {"key": "timestamp",      "label": "Timestamp",          "required": False, "keywords": ["timestamp", "date", "created"]},
+        {"key": "team",           "label": "Assigned Teams",     "required": False, "keywords": ["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"]},
+        {"key": "timestamp",      "label": "Timestamp",          "required": False, "keywords": ["timestamp", "time stamp", "date", "created"]},
     ]
     claimed_cols = set()
     suggested    = {}

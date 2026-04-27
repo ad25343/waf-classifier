@@ -677,7 +677,7 @@ function _gtInlineForm(i, ex) {
                 ${fld('WAF Category',`gt-f-cat-${i}`,   sel(`gt-f-cat-${i}`,     _gtOpts(_GT_CATS,  ex?.category)))}
                 ${fld('WAF Color',  `gt-f-color-${i}`,   sel(`gt-f-color-${i}`,   _gtOpts(_GT_COLORS,ex?.color)))}
                 ${fld('Run/Change', `gt-f-rc-${i}`,      sel(`gt-f-rc-${i}`,      _gtOpts(['Run','Change'],ex?.run_change)))}
-                ${fld('Sub-Category',`gt-f-subcat-${i}`, inp(`gt-f-subcat-${i}`,  ex?.subcategory))}
+                ${fld('Team of Teams',`gt-f-subcat-${i}`, inp(`gt-f-subcat-${i}`,  ex?.subcategory))}
             </div>
             <div style="display:flex;gap:8px;">
                 <button onclick="saveGTInline('${i}')" class="btn btn-primary btn-sm">Save</button>

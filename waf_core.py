@@ -172,7 +172,7 @@ def parse_ground_truth(filepath, filename):
             col_map["title"] = col
         elif any(kw in cl for kw in ["desc", "detail", "acceptance", "body"]) and not col_map["description"]:
             col_map["description"] = col
-        elif any(kw in cl for kw in ["sub-category", "subcategory", "sub category", "sub_cat"]) and not col_map["waf_subcategory"]:
+        elif any(kw in cl for kw in ["team of teams", "team_of_teams", "sub-category", "subcategory", "sub category", "sub_cat"]) and not col_map["waf_subcategory"]:
             col_map["waf_subcategory"] = col
         elif any(kw in cl for kw in ["category", "waf cat", "waf_cat", "waf category"]) and not col_map["waf_category"]:
             col_map["waf_category"] = col
@@ -373,7 +373,7 @@ When classifying new stories, pattern-match against these examples for consisten
         categories_shown[cat] += 1
         section += f"EXAMPLE — Category: {cat}"
         if ex.get("waf_subcategory"):
-            section += f" | Sub-category: {ex['waf_subcategory']}"
+            section += f" | Team of Teams: {ex['waf_subcategory']}"
         if ex.get("waf_color"):
             section += f" | Color: {ex['waf_color']}"
         section += "\n"
@@ -409,14 +409,14 @@ When classifying a story:
 1. Analyze the story title and description carefully
 2. Match it against the WAF category definitions provided
 3. Cross-reference with ground truth examples to see how similar stories were classified
-4. Recommend the BEST-FIT WAF category AND sub-category with clear reasoning
+4. Recommend the BEST-FIT WAF category AND Team of Teams with clear reasoning
 5. If the user provides the current WAF tag, compare it to your recommendation and flag if it's a mismatch
 6. Rate your confidence (High / Medium / Low)
 7. If the story is ambiguous, explain what additional context would help
 
 Format your response clearly with:
 - **Recommended WAF Category:** [category name]
-- **Recommended WAF Sub-Category:** [sub-category name, if applicable]
+- **Team of Teams:** [team of teams value, if applicable]
 - **WAF Color:** [use ONLY the exact color from this fixed mapping — do not guess or deviate:
   KTLO (Keep the Lights On) → GRAY
   Business Maintenance → BLACK

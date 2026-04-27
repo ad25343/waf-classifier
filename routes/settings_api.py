@@ -181,7 +181,7 @@ def save_baseline():
         gt_df = pd.DataFrame(ground_truth_store["examples"])
         # Rename columns to match expected format
         col_map = {"title": "Story Title", "description": "Description", "run_change": "Run/Change",
-                    "color": "WAF Color", "category": "WAF Category", "subcategory": "WAF Sub-Category"}
+                    "color": "WAF Color", "category": "WAF Category", "subcategory": "Team of Teams"}
         gt_df = gt_df.rename(columns=col_map)
         gt_df.to_csv(gt_path, index=False)
         saved["ground_truth"] = gt_path
@@ -399,7 +399,7 @@ def save_gt_version():
 
     col_map = {"title": "Story Title", "description": "Description",
                "run_change": "Run/Change", "color": "WAF Color",
-               "category": "WAF Category", "subcategory": "WAF Sub-Category"}
+               "category": "WAF Category", "subcategory": "Team of Teams"}
     gt_df = pd.DataFrame(ground_truth_store["examples"]).rename(columns=col_map)
     gt_df.to_csv(filepath, index=False)
 

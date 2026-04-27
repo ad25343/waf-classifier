@@ -544,22 +544,25 @@ def history_import():
 
         find_col = lambda kws: next((col for col in df.columns if any(kw in col for kw in kws)), None)
 
-        title_col   = find_col(["story title", "title", "summary", "story", "name"])
-        desc_col    = find_col(["story description", "description", "desc", "detail", "body"])
-        cat_col     = find_col(["waf category", "waf_category", "category"])
-        color_col   = find_col(["waf color", "waf_color", "color"])
-        rc_col      = find_col(["run/change", "run_change", "run change"])
-        subcat_col  = find_col(["sub-category", "sub_category", "subcategory", "waf sub"])
-        conf_col    = find_col(["confidence", "conf"])
-        team_col    = find_col(["team", "squad", "group"])
-        epic_col    = find_col(["epic", "initiative", "program"])
-        feature_col = find_col(["feature", "parent feature", "parent_feature", "capability"])
-        ts_col      = find_col(["timestamp", "date", "created", "created_at"])
-        story_id_col   = find_col(["story id", "story_id", "issue key", "issue_key", "ticket", "jira id"])
+        title_col        = find_col(["story title", "story name", "title", "summary", "story", "name"])
+        desc_col         = find_col(["story description", "description", "desc", "detail", "body"])
+        cat_col          = find_col(["waf category", "waf_category", "category"])
+        color_col        = find_col(["waf color", "waf_color", "color"])
+        rc_col           = find_col(["run/change", "run_change", "run change"])
+        subcat_col       = find_col(["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"])
+        conf_col         = find_col(["confidence", "conf"])
+        team_col         = find_col(["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"])
+        epic_col         = find_col(["epic name", "epic", "initiative", "program"])
+        feature_col      = find_col(["feature name", "feature", "parent feature", "parent_feature", "capability"])
+        ts_col           = find_col(["timestamp", "time stamp", "date", "created", "created_at"])
+        story_id_col     = find_col(["story id", "story_id", "issue key", "issue_key", "ticket", "jira id"])
         story_points_col = find_col(["story points", "story_points", "points", "estimate"])
+        pi_number_col    = find_col(["pi number", "pi_number", "pi #", "program increment", " pi "])
+        epic_id_col      = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
+        feature_id_col   = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id"])
 
         if not title_col or not cat_col:
-            return jsonify({"error": "File must have at least 'Story Title' and 'WAF Category' columns"}), 400
+            return jsonify({"error": "File must have at least 'Story Title' (or 'Story Name') and 'WAF Category' columns"}), 400
 
         db = get_db()
 
@@ -593,13 +596,14 @@ def history_import():
                    (timestamp, story_title, story_description, waf_category,
                     waf_subcategory, waf_color, run_change, confidence,
                     was_mismatch, original_tag, approved, team, epic, parent_feature,
-                    story_id, story_points, upload_id)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 1, ?, ?, ?, ?, ?, ?)""",
+                    story_id, story_points, pi_number, epic_id, feature_id, upload_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (ts, title,
                  _v(desc_col), _v(cat_col), _v(subcat_col), _v(color_col),
                  _v(rc_col), _v(conf_col), _v(team_col, "default"),
                  _v(epic_col), _v(feature_col),
                  _v(story_id_col), _v(story_points_col),
+                 _v(pi_number_col), _v(epic_id_col), _v(feature_id_col),
                  upload_id)
             )
             imported += 1

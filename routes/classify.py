@@ -169,7 +169,7 @@ def batch_classify():
     if not waf_store["definitions"]:
         return jsonify({"error": "Please upload WAF definitions first"}), 400
 
-    batch_prompt = "Please classify each of the following JIRA stories into the appropriate WAF category and sub-category. For each story, provide the recommended category, sub-category, WAF color, confidence level, and brief reasoning. Reference ground truth examples where applicable.\n\n"
+    batch_prompt = "Please classify each of the following JIRA stories into the appropriate WAF category and Team of Teams. For each story, provide the recommended category, Team of Teams, WAF color, confidence level, and brief reasoning. Reference ground truth examples where applicable.\n\n"
 
     for i, story in enumerate(stories, 1):
         batch_prompt += f"**Story {i}:**\n"
@@ -278,7 +278,7 @@ def approve_classification():
             writer = csv.writer(f)
             if not file_exists:
                 writer.writerow(["Story Title", "Description", "Run/Change",
-                                 "WAF Color", "WAF Category", "WAF Sub-Category"])
+                                 "WAF Color", "WAF Category", "Team of Teams"])
             writer.writerow(row)
     except Exception as e:
         logger.error("Failed to write ground truth: %s", e, exc_info=True)

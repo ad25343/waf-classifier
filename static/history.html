@@ -923,7 +923,7 @@
                         <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— WAF Classification —</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Category</td><td><span class="badge medium">Optional</span></td><td>Existing tag — AI will verify against this</td></tr>
                         <tr><td style="color:var(--text-primary)">WAF Color</td><td><span class="badge medium">Optional</span></td><td>GRAY, BLACK, RED, ORANGE, YELLOW, GREEN</td></tr>
-                        <tr><td style="color:var(--text-primary)">WAF Sub-Category</td><td><span class="badge medium">Optional</span></td><td>Sub-category within the WAF category</td></tr>
+                        <tr><td style="color:var(--text-primary)">Team of Teams</td><td><span class="badge medium">Optional</span></td><td>Sub-category within the WAF category</td></tr>
                         <tr><td style="color:var(--text-primary)">Confidence</td><td><span class="badge medium">Optional</span></td><td>HIGH, MEDIUM, or LOW</td></tr>
                         <tr><td style="color:var(--text-primary)">Run/Change</td><td><span class="badge medium">Optional</span></td><td>RUN (BAU) or CHANGE (project work)</td></tr>
                         <tr><td style="color:var(--text-secondary);font-size:11px;padding-top:8px;" colspan="3">— Metadata —</td></tr>
@@ -2055,7 +2055,7 @@ function showMappingStep(data) {
         // WAF Classification
         waf_category:   'e.g. WAF Category, Category',
         waf_color:      'e.g. WAF Color, Color',
-        subcategory:    'e.g. WAF Sub-Category, Sub-Category, WAF Sub',
+        subcategory:    'e.g. Team of Teams, team_of_teams',
         run_change:     'e.g. Run/Change, Run Change',
         confidence:     'e.g. Confidence, Conf',
         // Organisation
@@ -3424,7 +3424,7 @@ function showStoryDetail(data) {
             ${field('Run / Change', esc(data.ai_run_change || data.run_change || ''))}
             ${field('Confidence', '<span class="badge ' + confClass + '">' + esc(conf || '—') + '</span>')}
             ${field('Match Status', matchHtml)}
-            ${field('Sub-Category', esc(data.ai_subcategory || data.waf_subcategory || ''))}
+            ${field('Team of Teams', esc(data.ai_subcategory || data.waf_subcategory || ''))}
             ${field('Team', esc(data.team || ''))}
             ${field('Epic', esc(data.epic || ''))}
             ${field('Feature Name', esc(data.parent_feature || data.feature || ''))}
