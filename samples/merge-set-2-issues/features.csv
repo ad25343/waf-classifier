@@ -1,0 +1,9 @@
+Epic Name,Feature Id,Feature Name,Feature Desc,Team of Teams,PI Name
+Cloud Migration,FT-601,Lift and Shift Compute,Migrate EC2-equivalent workloads to AWS,Infra ToT,PI 2026-2
+Cloud Migration,FT-602,Network Topology Redesign,VPC peering and transit gateway setup,Infra ToT,PI 2026-2
+Security Hardening,FT-701,Zero Trust Network Access,Deploy ZTNA broker for all remote access,Security ToT,PI 2026-1
+Security Hardening,FT-702,Vulnerability Scanning,Automated CVE scanning in CI/CD pipeline,Security ToT,PI 2026-1
+Data Warehouse Rebuild,FT-801,Snowflake Provisioning,Provision Snowflake environments and IAM,Data ToT,PI 2026-2
+Data Warehouse Rebuild,FT-802,ETL Pipeline Migration,Migrate Informatica pipelines to dbt + Airflow,Data ToT,PI 2026-2
+Customer Portal Refresh,FT-901,Dashboard Redesign,New React-based dashboard for account summary,Digital ToT,PI 2026-3
+DELETED EPIC - DO NOT USE,FT-999,Ghost Feature,This feature references an epic that no longer exists,Orphan ToT,PI 2026-1

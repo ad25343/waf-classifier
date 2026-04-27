@@ -1,0 +1,5 @@
+Epic Id,Epic Name,Epic Desc,Block,WAF
+EP-010,Cloud Migration,Move on-prem workloads to AWS,Infrastructure Org,BLUE - Efficiency
+EP-011,Security Hardening,Zero-trust network and vulnerability remediation,Security Org,PURPLE - Security
+EP-012,Data Warehouse Rebuild,Replace legacy EDW with Snowflake,Data Org,BLUE - Efficiency
+EP-013,Customer Portal Refresh,Redesign self-service customer portal,Digital Org,TBD - Needs Classification

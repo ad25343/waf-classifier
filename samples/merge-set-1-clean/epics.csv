@@ -1,0 +1,6 @@
+Epic Id,Epic Name,Epic Desc,Block,WAF
+EP-001,Payments Modernization,Migrate legacy payment rails to cloud-native microservices,Banking & Payments Org,ORANGE - Enterprise Strategic Priority
+EP-002,Identity & Access Management,Consolidate SSO and RBAC across all enterprise applications,Platform & Infra Org,GRAY - KTLO
+EP-003,Customer Data Platform,Build unified customer 360 view with real-time event streaming,Data & Analytics Org,BLUE - Efficiency
+EP-004,Regulatory Reporting Suite,Automate regulatory filings and audit trails for compliance,Risk & Compliance Org,RED - Regulatory (Operational)
+EP-005,Mobile Banking App v4,Complete redesign of iOS and Android banking apps,Digital Channels Org,ORANGE - Enterprise Strategic Priority

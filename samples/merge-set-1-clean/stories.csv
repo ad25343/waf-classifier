@@ -1,0 +1,35 @@
+Feature Name,Story Id,Story Name,Story Desc,Story Points,Assigned Teams
+Card Processing Engine,ST-1001,Implement card tokenisation service,Build PCI-DSS compliant tokenisation using Vault Transit,5,Treasury Tech
+Card Processing Engine,ST-1002,Real-time authorisation gateway,Sub-100ms card authorisation with fallback routing,8,Treasury Tech
+Card Processing Engine,ST-1003,3DS2 authentication flow,Integrate 3D Secure 2.0 for card-not-present transactions,5,Treasury Tech
+Card Processing Engine,ST-1004,Decline reason code enrichment,Map issuer decline codes to customer-friendly messages,3,Treasury Tech
+ACH & Wire Transfers,ST-1005,SWIFT MT103 message builder,Generate and validate SWIFT MT103 wire transfer messages,8,International Payments Team
+ACH & Wire Transfers,ST-1006,ACH NACHA file generation,Build NACHA-compliant batch file creation for ACH credits,5,Domestic Payments Team
+ACH & Wire Transfers,ST-1007,Wire transfer status webhooks,Real-time status push to downstream systems via webhooks,3,International Payments Team
+Payment Fraud Detection,ST-1008,Feature engineering pipeline,Build real-time feature store for ML fraud model,8,Data Science Team
+Payment Fraud Detection,ST-1009,Fraud score API integration,Expose fraud score via low-latency REST endpoint,5,Treasury Tech
+Payment Fraud Detection,ST-1010,Rules engine for hard declines,Configurable rules engine for velocity and geo-block rules,5,Risk Engineering
+SSO Integration,ST-2001,OIDC provider configuration,Configure Okta as enterprise OIDC provider,3,Platform Engineering
+SSO Integration,ST-2002,Service-to-service JWT validation,Shared JWT validation middleware for all microservices,5,Platform Engineering
+SSO Integration,ST-2003,Session timeout and refresh,Implement sliding session with silent refresh,3,Platform Engineering
+Role-Based Access Control,ST-2004,Permission matrix definition,Define resource/action permission matrix for all services,5,Platform Engineering
+Role-Based Access Control,ST-2005,Admin console for role management,UI for assigning roles and reviewing access grants,5,Platform Engineering
+Event Streaming Pipeline,ST-3001,Kafka topic design and provisioning,Design partition strategy and provision topics for all event types,3,Data Platform Team
+Event Streaming Pipeline,ST-3002,Schema registry integration,Enforce Avro schemas via Confluent Schema Registry,5,Data Platform Team
+Event Streaming Pipeline,ST-3003,Dead letter queue handling,Route malformed events to DLQ with alerting,3,Data Platform Team
+Customer 360 API,ST-3004,Aggregate customer profile endpoint,GET /customers/{id}/profile returning unified view,8,Data Platform Team
+Customer 360 API,ST-3005,Transaction history pagination,Cursor-based pagination for high-volume transaction history,5,Data Platform Team
+Automated CCAR Filing,ST-4001,Data extraction from core banking,Pull FR Y-14A schedule data from core banking system,8,Risk Engineering
+Automated CCAR Filing,ST-4002,Report generation engine,Populate CCAR templates with extracted data,8,Risk Engineering
+Automated CCAR Filing,ST-4003,Filing submission API,Submit generated reports to Federal Reserve via REST API,5,Risk Engineering
+Audit Trail Service,ST-4004,Immutable event log writer,Append-only write path using event sourcing pattern,5,Risk Engineering
+Audit Trail Service,ST-4005,Audit query API,Searchable read API with time-range and actor filters,5,Risk Engineering
+Biometric Authentication,ST-5001,Face ID integration iOS,Native Face ID integration with fallback to passcode,5,Mobile iOS Team
+Biometric Authentication,ST-5002,Fingerprint integration Android,Android BiometricPrompt API integration,5,Mobile Android Team
+Biometric Authentication,ST-5003,Biometric enrollment flow,Guided enrollment UI with liveness detection,3,Mobile iOS Team
+Account Dashboard,ST-5004,Real-time balance display,WebSocket connection for live balance updates,5,Mobile iOS Team
+Account Dashboard,ST-5005,Transaction feed with search,Filterable transaction list with full-text search,5,Mobile Android Team
+Account Dashboard,ST-5006,Account summary tiles,Card UI for savings and checking account summary,3,Mobile iOS Team
+Push Notifications,ST-5007,Spend alert configuration,User-configurable threshold alerts for spend categories,3,Mobile iOS Team
+Push Notifications,ST-5008,Payment confirmation push,Instant push on payment settled event,3,Mobile Android Team
+Push Notifications,ST-5009,Notification preference centre,In-app UI to manage push notification subscriptions,5,Mobile iOS Team

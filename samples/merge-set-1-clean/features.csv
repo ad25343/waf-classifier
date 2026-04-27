@@ -1,0 +1,13 @@
+Epic Name,Feature Id,Feature Name,Feature Desc,Team of Teams,PI Name
+Payments Modernization,FT-101,Card Processing Engine,Real-time card authorisation and tokenisation,Payments ToT,PI 2026-1
+Payments Modernization,FT-102,ACH & Wire Transfers,Domestic and international wire transfer processing,Payments ToT,PI 2026-1
+Payments Modernization,FT-103,Payment Fraud Detection,ML-based fraud scoring and decisioning,Payments ToT,PI 2026-2
+Identity & Access Management,FT-201,SSO Integration,OIDC/SAML federation with enterprise IdP,Platform ToT,PI 2026-1
+Identity & Access Management,FT-202,Role-Based Access Control,Fine-grained RBAC engine across microservices,Platform ToT,PI 2026-1
+Customer Data Platform,FT-301,Event Streaming Pipeline,Kafka-based real-time event ingestion,Data ToT,PI 2026-1
+Customer Data Platform,FT-302,Customer 360 API,Unified read API for aggregated customer profile,Data ToT,PI 2026-2
+Regulatory Reporting Suite,FT-401,Automated CCAR Filing,Automate Comprehensive Capital Analysis filings,Risk ToT,PI 2026-1
+Regulatory Reporting Suite,FT-402,Audit Trail Service,Immutable audit log for all regulated transactions,Risk ToT,PI 2026-2
+Mobile Banking App v4,FT-501,Biometric Authentication,Face ID and fingerprint login flows,Digital ToT,PI 2026-1
+Mobile Banking App v4,FT-502,Account Dashboard,Real-time balance and transaction feed,Digital ToT,PI 2026-1
+Mobile Banking App v4,FT-503,Push Notifications,Personalised spend alerts and payment confirmations,Digital ToT,PI 2026-2
