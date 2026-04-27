@@ -746,7 +746,7 @@
         <!-- Epic -->
         <div class="upload-card" id="card-epic">
             <div class="upload-card-title">Epic Attributes File <span style="font-size:11px;font-weight:400;color:var(--text-muted);">Optional</span></div>
-            <div class="upload-card-subtitle">Jira SaaS Epic#, Summary, Work Alignment Framework</div>
+            <div class="upload-card-subtitle">Epic Id, Epic Name, Epic Description, Block, Work Alignment Framework (WAF)</div>
             <div class="upload-zone">
                 <div class="upload-zone-icon">&#128196;</div>
                 <div class="upload-zone-text">Click to select CSV or XLSX</div>
@@ -762,7 +762,7 @@
         <!-- Feature -->
         <div class="upload-card" id="card-feature">
             <div class="upload-card-title">Feature Attributes File <span style="font-size:11px;font-weight:400;color:var(--text-muted);">Optional</span></div>
-            <div class="upload-card-subtitle">Feature Key, Feature Summary, Parent Epic Number, Team</div>
+            <div class="upload-card-subtitle">Epic Name <em>(join key)</em>, Feature Id, Feature Name, Feature Description, Team of Teams, PI Name</div>
             <div class="upload-zone">
                 <div class="upload-zone-icon">&#128196;</div>
                 <div class="upload-zone-text">Click to select CSV or XLSX</div>
@@ -778,7 +778,7 @@
         <!-- Story -->
         <div class="upload-card" id="card-story">
             <div class="upload-card-title">Story Attributes File <span style="font-size:11px;font-weight:400;color:var(--accent);">Required</span></div>
-            <div class="upload-card-subtitle">Story #, Story Name, Story Points, Feature Name, WAF Derived, Team</div>
+            <div class="upload-card-subtitle">Feature Name <em>(join key)</em>, Story Id, Story Name, Story Description, Story Points, Assigned Teams</div>
             <div class="upload-zone">
                 <div class="upload-zone-icon">&#128196;</div>
                 <div class="upload-zone-text">Click to select CSV or XLSX</div>
@@ -1103,11 +1103,10 @@ function renderValidation(issues) {
     }
 
     const CARD_DEFS = [
-        { id: 'issue-orphan-stories',  severity: 'red',    label: 'Orphan Stories',         sub: 'Parent feature not found',         hasReject: true,  items: (data.orphan_stories  || []).map(s => ({ id: s.story_id,   title: s.story_title   || s.story_id   || '?', meta: 'Parent feature: ' + (s.missing_feature || '—') })) },
-        { id: 'issue-orphan-features', severity: 'orange', label: 'Orphan Features',         sub: 'Parent epic not found',            hasReject: false, info: 'Stories under these features will have a blank Epic field.', items: (data.orphan_features || []).map(f => ({ id: null,           title: f.feature_name  || f.feature_id  || '?', meta: 'Feature: ' + (f.feature_id || '—') + ' · Missing epic: ' + (f.missing_epic || '—') })) },
-        { id: 'issue-missing-waf',     severity: 'yellow', label: 'Missing WAF Category',    sub: 'No category at any level',         hasReject: true,  items: (data.missing_waf     || []).map(s => ({ id: s.story_id,   title: s.story_title   || s.story_id   || '?', meta: 'No WAF category at story, feature, or epic level' })) },
-        { id: 'issue-unknown-color',   severity: 'yellow', label: 'Unknown WAF Color',       sub: 'Category has no color mapping',    hasReject: true,  items: (data.unknown_color   || []).map(s => ({ id: s.story_id,   title: s.story_title   || s.story_id   || '?', meta: 'Category "' + (s.waf_category || '') + '" has no color mapping' })) },
-        { id: 'issue-waf-divergence',  severity: 'blue',   label: 'WAF Divergence',          sub: 'Story vs feature category differ', hasReject: true,  items: (data.waf_divergence  || []).map(s => ({ id: s.story_id,   title: s.story_title   || s.story_id   || '?', meta: 'Story: ' + (s.story_waf || '—') + ' vs Feature (' + (s.feature_id || '') + '): ' + (s.feature_waf || '—') })) },
+        { id: 'issue-orphan-stories',  severity: 'red',    label: 'Orphan Stories',       sub: 'Feature name not found in Feature file', hasReject: true,  items: (data.orphan_stories  || []).map(s => ({ id: s.story_id,   title: s.story_title  || s.story_id  || '?', meta: 'Missing feature: ' + (s.missing_feature || '—') })) },
+        { id: 'issue-orphan-features', severity: 'orange', label: 'Orphan Features',      sub: 'Epic name not found in Epic file',       hasReject: false, info: 'Stories under these features will have a blank Epic field.', items: (data.orphan_features || []).map(f => ({ id: null, title: f.feature_name || f.feature_id || '?', meta: 'Feature: ' + (f.feature_id || '—') + ' · Missing epic name: ' + (f.missing_epic || '—') })) },
+        { id: 'issue-missing-waf',     severity: 'yellow', label: 'Missing WAF Category', sub: 'No WAF value on linked Epic',            hasReject: true,  items: (data.missing_waf     || []).map(s => ({ id: s.story_id,   title: s.story_title  || s.story_id  || '?', meta: 'Epic has no WAF field value' })) },
+        { id: 'issue-unknown-color',   severity: 'yellow', label: 'Unknown WAF Color',    sub: 'WAF field format not recognised',        hasReject: true,  items: (data.unknown_color   || []).map(s => ({ id: s.story_id,   title: s.story_title  || s.story_id  || '?', meta: 'WAF value "' + (s.waf_category || '') + '" — expected format: "COLOR - Category Name"' })) },
     ];
 
     CARD_DEFS.forEach(function(card) {
@@ -1238,25 +1237,27 @@ function renderDetection(colMap) {
     }
 
     const epicFields = [
-        { key: 'id_col',   label: 'Epic ID' },
-        { key: 'name_col', label: 'Epic Name' },
-        { key: 'waf_col',  label: 'WAF' },
+        { key: 'id_col',    label: 'Epic Id' },
+        { key: 'name_col',  label: 'Epic Name' },
+        { key: 'desc_col',  label: 'Epic Desc' },
+        { key: 'block_col', label: 'Block' },
+        { key: 'waf_col',   label: 'WAF' },
     ];
     const featFields = [
-        { key: 'id_col',   label: 'Feature ID' },
-        { key: 'name_col', label: 'Feature Name' },
-        { key: 'epic_col', label: 'Parent Epic' },
-        { key: 'team_col', label: 'Team' },
-        { key: 'waf_col',  label: 'WAF' },
+        { key: 'epic_name_col', label: 'Epic Name (join key)' },
+        { key: 'id_col',        label: 'Feature Id' },
+        { key: 'name_col',      label: 'Feature Name' },
+        { key: 'desc_col',      label: 'Feature Desc' },
+        { key: 'tot_col',       label: 'Team of Teams' },
+        { key: 'pi_col',        label: 'PI Name' },
     ];
     const storyFields = [
-        { key: 'id_col',            label: 'Story ID' },
-        { key: 'title_col',         label: 'Story Title' },
-        { key: 'feature_col',       label: 'Feature Name' },
-        { key: 'team_col',          label: 'Team' },
-        { key: 'waf_col',           label: 'WAF' },
-        { key: 'story_points_col',  label: 'Story Points' },
-        { key: 'timestamp_col',     label: 'Timestamp' },
+        { key: 'feature_name_col', label: 'Feature Name (join key)' },
+        { key: 'id_col',           label: 'Story Id' },
+        { key: 'name_col',         label: 'Story Name' },
+        { key: 'desc_col',         label: 'Story Desc' },
+        { key: 'points_col',       label: 'Story Points' },
+        { key: 'team_col',         label: 'Assigned Teams' },
     ];
 
     function groupHtml(title, fields, map) {
@@ -1311,8 +1312,10 @@ function renderStats(stats, missingFiles) {
 
 // ── Preview render ───────────────────────────────────────────────────
 const PREVIEW_COLS = [
-    'Epic ID', 'Feature ID', 'Story ID', 'Epic', 'Feature Name',
-    'Story Title', 'Story Points', 'Team', 'WAF Category', 'WAF Color', 'Timestamp'
+    'PI Name', 'Epic Id', 'Epic Name', 'Block',
+    'WAF Color', 'WAF Category',
+    'Feature Name', 'Team of Teams',
+    'Story Id', 'Story Name', 'Story Points', 'Assigned Teams'
 ];
 
 const WAF_COLOR_CSS = {
@@ -1338,12 +1341,11 @@ function renderPreview(rows, allCols) {
     let diffCount = 0;
     let bHtml = '';
     rows.forEach(row => {
-        const sid = esc(row['Story ID'] != null ? String(row['Story ID']) : '');
+        const sid = esc(row['Story Id'] != null ? String(row['Story Id']) : '');
         const cbId = 'prev-cb-' + sid.replace(/[^a-z0-9]/gi, '_');
-        const isConflict = row['_diff_waf_conflict'];
         const isMissingWaf = row['_diff_missing_waf'];
-        if (isConflict || isMissingWaf) diffCount++;
-        const rowClass = isConflict ? ' class="diff-conflict"' : isMissingWaf ? ' class="diff-missing"' : '';
+        if (isMissingWaf) diffCount++;
+        const rowClass = isMissingWaf ? ' class="diff-missing"' : '';
         bHtml += `<tr${rowClass}>`;
         bHtml += `<td style="text-align:center;"><input type="checkbox" id="${cbId}" style="accent-color:var(--accent);cursor:pointer;" ${sid ? `onchange="_toggleReject('${sid}',this.checked)"` : 'disabled'}></td>`;
         PREVIEW_COLS.forEach(col => {
@@ -1351,16 +1353,8 @@ function renderPreview(rows, allCols) {
             if (col === 'WAF Color' && val) {
                 const style = WAF_COLOR_CSS[val] || { bg: 'rgba(107,114,128,0.2)', fg: '#9ca3af' };
                 bHtml += `<td><span class="waf-color-badge" style="background:${esc(style.bg)};color:${esc(style.fg)};border-color:${esc(style.fg)}33;">${esc(val)}</span></td>`;
-            } else if (col === 'WAF Category') {
-                if (isConflict) {
-                    const sWaf = esc(row['_diff_s_waf'] || '');
-                    const fWaf = esc(row['_diff_f_waf'] || '');
-                    bHtml += `<td class="diff-cell-conflict" title="Story WAF: ${sWaf} ≠ Feature WAF: ${fWaf}">⚠ ${esc(val)}<div class="diff-tooltip">Story: ${sWaf}<br>Feature: ${fWaf}</div></td>`;
-                } else if (isMissingWaf) {
-                    bHtml += `<td class="diff-cell-missing" title="No WAF category assigned">— missing</td>`;
-                } else {
-                    bHtml += `<td title="${esc(val)}">${esc(val)}</td>`;
-                }
+            } else if (col === 'WAF Category' && isMissingWaf) {
+                bHtml += `<td class="diff-cell-missing" title="No WAF category assigned">— missing</td>`;
             } else {
                 bHtml += `<td title="${esc(val)}">${esc(val)}</td>`;
             }
@@ -1378,7 +1372,6 @@ function renderPreview(rows, allCols) {
         legendEl.style.cssText = 'margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;';
         legendEl.innerHTML = `
             <span style="color:var(--text-muted);">Diff highlights (first 50 rows):</span>
-            <span style="background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.4);border-radius:4px;padding:2px 8px;color:#fbbf24;">⚠ WAF conflict — Story ≠ Feature</span>
             <span style="background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:4px;padding:2px 8px;color:#f87171;">— Missing WAF</span>
             <span style="color:var(--text-muted);">${diffCount} row${diffCount !== 1 ? 's' : ''} flagged</span>`;
         document.getElementById('preview-table-wrap').insertAdjacentElement('beforebegin', legendEl);
