@@ -704,12 +704,20 @@
     <div class="tab-content active" id="tab-by-team">
 
         <!-- Team of Teams filter (shown only when ToT data exists) -->
-        <div id="tot-filter-wrap" style="display:none;margin-bottom:12px;">
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;">Team of Teams</div>
-            <div class="selector-row" id="tot-selector"></div>
+        <div id="tot-filter-wrap" style="display:none;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <label for="tot-selector" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);white-space:nowrap;">Team of Teams</label>
+                <select id="tot-selector" onchange="selectTot(this.value || null)"
+                    style="flex:1;max-width:360px;background:var(--bg-secondary);border:1px solid var(--border);
+                           border-radius:8px;padding:7px 12px;color:var(--text-primary);font-size:13px;
+                           cursor:pointer;outline:none;appearance:none;
+                           background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%23888%22 d=%22M6 8L1 3h10z%22/></svg>');
+                           background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;">
+                </select>
+            </div>
         </div>
 
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-top:4px;border-top:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
             <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Teams</div>
         </div>
         <div class="list-search">
@@ -937,22 +945,22 @@ let _activeTot = null;   // null = all
 function renderTotPills() {
     const totList = summaryData?.team_of_teams || [];
     const wrap = document.getElementById('tot-filter-wrap');
-    const row  = document.getElementById('tot-selector');
+    const sel  = document.getElementById('tot-selector');
     if (!totList.length) { wrap.style.display = 'none'; return; }
     wrap.style.display = 'block';
-    const allPill = `<button class="selector-pill active" id="tot-pill-all" onclick="selectTot(null)">All<span class="pill-count">(${summaryData.teams.length})</span></button>`;
-    const pills = totList.map(t =>
-        `<button class="selector-pill" id="tot-pill-${escapeAttr(t.name)}" onclick="selectTot('${escapeAttr(t.name)}')">${escapeHtml(t.name)}<span class="pill-count">(${t.team_count})</span></button>`
-    ).join('');
-    row.innerHTML = allPill + pills;
+    const opts = [`<option value="">All Teams of Teams (${summaryData.teams.length} teams)</option>`]
+        .concat(totList.map(t =>
+            `<option value="${escapeAttr(t.name)}">${escapeHtml(t.name)} (${t.team_count} team${t.team_count !== 1 ? 's' : ''})</option>`
+        ));
+    sel.innerHTML = opts.join('');
+    sel.value = _activeTot || '';
 }
 
 function selectTot(tot) {
-    _activeTot = tot;
-    // Highlight active pill
-    document.querySelectorAll('#tot-selector .selector-pill').forEach(p => p.classList.remove('active'));
-    const activePill = tot ? document.getElementById('tot-pill-' + tot) : document.getElementById('tot-pill-all');
-    if (activePill) activePill.classList.add('active');
+    _activeTot = tot || null;
+    // Keep dropdown in sync (in case called programmatically)
+    const sel = document.getElementById('tot-selector');
+    if (sel) sel.value = _activeTot || '';
     // Re-render team pills filtered by ToT
     renderTeamPills();
     // Reset to all teams view with the new filter applied
