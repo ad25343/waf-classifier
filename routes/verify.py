@@ -293,7 +293,7 @@ def bulk_verify_preview():
             {"key": "title",          "label": "Story Title",       "required": True,  "keywords": ["story title", "title", "summary", "story", "name"]},
             {"key": "description",    "label": "Story Description",  "required": True,  "keywords": ["story description", "description", "desc", "detail", "body", "acceptance"]},
             # ── Hierarchy: PI → Epic → Feature → Story ────────────
-            {"key": "pi_number",      "label": "PI Number",          "required": False, "keywords": ["pi number", "pi_number", "pi #", "program increment", " pi "]},
+            {"key": "pi_number",      "label": "PI Number",          "required": False, "keywords": ["pi name", "pi number", "pi_number", "pi #", "program increment", " pi "]},
             {"key": "epic_id",        "label": "Epic ID",            "required": False, "keywords": ["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"]},
             {"key": "epic",           "label": "Epic Name",          "required": False, "keywords": ["epic name", "epic", "initiative", "program"]},
             {"key": "feature_id",     "label": "Feature ID",         "required": False, "keywords": ["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"]},
@@ -430,7 +430,7 @@ def bulk_verify():
         feature_id_col   = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id", "parent key"])
         epic_id_col      = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
         story_points_col = find_col(["story points", "story_points", "points", " sp ", "estimate"])
-        pi_number_col    = find_col(["pi number", "pi_number", "pi #", "program increment", " pi "])
+        pi_number_col    = find_col(["pi name", "pi number", "pi_number", "pi #", "program increment", " pi "])
 
         if not title_col:
             return jsonify({"error": "File must have a 'Story Title' or 'Summary' column"}), 400
@@ -607,7 +607,9 @@ def bulk_verify_save():
         # Determine which category to use (AI recommendation or file's original)
         use_ai = row.get("use_ai", True)
         category = row.get("ai_suggested_waf", "") if use_ai else row.get("user_submitted_waf", "")
-        subcategory = row.get("ai_subcategory", "") if use_ai else row.get("file_subcategory", "")
+        # Team of Teams comes from the source file (Feature file via merge).
+        # AI inference must NOT overwrite it — only fill in when the file had nothing.
+        subcategory = row.get("file_subcategory", "") or (row.get("ai_subcategory", "") if use_ai else "")
         color = row.get("ai_color", "") if use_ai else row.get("file_color", "")
         run_change = row.get("ai_run_change", "") if use_ai else row.get("file_run_change", "")
         confidence = row.get("ai_confidence", "") if use_ai else row.get("file_confidence", "")

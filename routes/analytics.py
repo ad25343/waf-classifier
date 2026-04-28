@@ -557,7 +557,7 @@ def history_import():
         ts_col           = find_col(["timestamp", "time stamp", "date", "created", "created_at"])
         story_id_col     = find_col(["story id", "story_id", "issue key", "issue_key", "ticket", "jira id"])
         story_points_col = find_col(["story points", "story_points", "points", "estimate"])
-        pi_number_col    = find_col(["pi number", "pi_number", "pi #", "program increment", " pi "])
+        pi_number_col    = find_col(["pi name", "pi number", "pi_number", "pi #", "program increment", " pi "])
         epic_id_col      = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
         feature_id_col   = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id"])
 
