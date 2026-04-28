@@ -127,7 +127,7 @@
         /* Selector pills */
         .selector-row {
             display: flex; flex-wrap: wrap; gap: 8px;
-            margin-bottom: 24px; max-height: 100px; overflow-y: auto;
+            margin-bottom: 16px;
             padding: 4px 0;
         }
         .selector-pill {
@@ -706,10 +706,10 @@
         <!-- Team of Teams filter (shown only when ToT data exists) -->
         <div id="tot-filter-wrap" style="display:none;margin-bottom:12px;">
             <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;">Team of Teams</div>
-            <div class="selector-row" id="tot-selector" style="max-height:56px;"></div>
+            <div class="selector-row" id="tot-selector"></div>
         </div>
 
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-top:4px;border-top:1px solid var(--border);">
             <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Teams</div>
         </div>
         <div class="list-search">
