@@ -217,31 +217,31 @@ footer(sl, 1)
 sl = new_slide()
 rect(sl, 0, 0, Inches(0.06), SLIDE_H, fill=RED).line.fill.background()
 slide_eyebrow(sl, "The Problem")
-slide_title(sl, "We deliver thousands of stories every quarter.")
-txt(sl, "But can we honestly say they're all aligned, accurately tracked, and tied to what matters most for the organisation?",
-    Inches(0.55), Inches(1.06), Inches(11.5), Inches(0.5),
+slide_title(sl, "Misclassification sends human capital to the wrong priorities.")
+txt(sl, "And we don't see the drift until quarter-end — when the PI is already over. Misalignment must surface in-PI, while leadership can still redirect effort.",
+    Inches(0.55), Inches(1.06), Inches(11.8), Inches(0.5),
     size=13, color=MUTED)
 divider(sl, Inches(1.52))
 
 rrect(sl, Inches(0.55), Inches(1.64), Inches(12.2), Inches(0.76),
       fill=RGBColor(0xFF, 0xF4, 0xF4), lc=RGBColor(0xF8, 0xC4, 0xC4))
-txt(sl, "❝  Are we working on the right things?  Are we aligned?  Are we focused on initiatives that drive real value?  ❞",
+txt(sl, "❝  Every misclassified story is engineering capacity flowing to the wrong priority — and today, we don't catch it until it's too late to fix.  ❞",
     Inches(0.75), Inches(1.74), Inches(11.8), Inches(0.52),
     size=12.5, italic=True, color=RED, align=PP_ALIGN.CENTER)
 
 pain_points = [
-    ("📉", "Inconsistent classification",
-     "Hundreds of teams tag stories against the WAF independently. Without a shared baseline, the same story gets classified differently depending on who's doing the tagging."),
-    ("⏱", "Doesn't scale manually",
-     "Reviewing and tagging thousands of stories per PI is slow, tedious, and error-prone. Central teams become a bottleneck. Deadlines get missed."),
-    ("📋", "Poor story quality",
-     "Stories missing acceptance criteria, source data, or clear outcomes can't be reliably classified — or delivered. Quality problems cascade."),
-    ("🔍", "No audit trail",
-     "When a classification is challenged — 'why is this tagged ORANGE?' — there's no record of the reasoning, who tagged it, or what version of the WAF was active."),
-    ("📊", "Leadership can't trust the data",
-     "If the Run vs. Change split or strategic category breakdown is based on inconsistent manual tagging, the numbers reported to senior leadership are unreliable."),
-    ("🎯", "Misalignment goes undetected",
-     "Without visibility across teams and epics, work that drifts away from strategic priorities — SPEED, tech modernisation, customer value — goes unnoticed until it's too late."),
+    ("📉", "Misclassification at the source",
+     "Hundreds of teams tag stories independently. Without a shared baseline, the same kind of work lands in different WAF buckets across teams — distorting the picture from day one."),
+    ("⚖️", "Capital flows to the wrong priorities",
+     "When tags are wrong, effort meant for strategic colours shows up as Run — or vice versa. Real allocation drifts from intent without anyone noticing."),
+    ("⏱", "Drift is invisible until quarter-end",
+     "By the time portfolio reports surface the misalignment, the PI is over. Leadership ends up reacting to last quarter's problem, not this one."),
+    ("🎯", "No in-PI course-correction lever",
+     "Even when drift is suspected, there's no fast way to surface mismatched stories — no mechanism to redirect effort while the PI is still live."),
+    ("🔍", "No audit trail when tags are challenged",
+     "When a classification is disputed — 'why is this tagged ORANGE?' — there's no record of who tagged it, the reasoning, or which WAF version was active."),
+    ("📊", "Manual review doesn't scale",
+     "Thousands of stories per PI, hundreds of teams. Central QA becomes the bottleneck — and gets skipped when deadlines hit."),
 ]
 
 cw, ch = Inches(3.9), Inches(1.56)
@@ -303,8 +303,8 @@ footer(sl, 3)
 sl = new_slide()
 rect(sl, 0, 0, Inches(0.06), SLIDE_H, fill=ACCENT).line.fill.background()
 slide_eyebrow(sl, "Outcomes")
-slide_title(sl, "What Leadership Gets")
-slide_sub(sl, "The decisions and visibility this platform enables — without dictating the work that produces them.")
+slide_title(sl, "What Leadership Gets — Course-Correct In-PI")
+slide_sub(sl, "Surface misalignment in days, not quarters — so engineering capacity gets redirected while the PI is still live.")
 divider(sl, Inches(1.42))
 
 # Top stat row — re-purposed to outcomes, not feature counts
@@ -354,7 +354,7 @@ for i, (ico, ttl, dsc) in enumerate(visibility):
         size=9.5, color=MUTED)
 
 # Closing line
-txt(sl, "WAF Classifier  ·  Built to bring consistency, auditability, and quality to every work item.",
+txt(sl, "WAF Classifier  ·  Built to ensure engineering capacity flows to the right priorities — and surface drift fast enough to fix it.",
     Inches(0.55), Inches(6.86), Inches(12.0), Inches(0.3),
     size=11, italic=True, color=MUTED, align=PP_ALIGN.CENTER)
 
