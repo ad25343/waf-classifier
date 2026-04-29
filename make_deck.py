@@ -374,24 +374,28 @@ divider(sl, Inches(1.42))
 txt(sl, "AI CALLS", Inches(0.55), Inches(1.5), Inches(4), Inches(0.24), size=8.5, bold=True, color=ACCENT)
 llm_calls = [
     ("💬", "Single-story classification",  "WAF category, colour, run/change, confidence"),
+    ("📋", "Batch-paste classification",    "Classify several stories pasted into the chat at once"),
     ("📦", "Bulk file verification",        "Same classification at scale with concurrent workers"),
     ("📝", "Executive narrative",           "AI-written paragraph summary of classification stats"),
     ("🎯", "DoR scoring",                   "9-criterion pass/fail scored per story"),
     ("💬", "Story improvement chat",        "Targeted fix suggestions per failing criterion"),
     ("✍️", "Story rewrite",                 "Full story rewrite addressing all failing criteria"),
 ]
+# Compress row height slightly to fit 7 rows in the same column
+row_h = Inches(0.7)
+gap_h = Inches(0.04)
 for i, (ico, ttl, sub) in enumerate(llm_calls):
-    ry = Inches(1.82) + i * Inches(0.82)
-    rrect(sl, Inches(0.55), ry, Inches(5.9), Inches(0.72), fill=WHITE, lc=BORDER)
+    ry = Inches(1.82) + i * (row_h + gap_h)
+    rrect(sl, Inches(0.55), ry, Inches(5.9), row_h, fill=WHITE, lc=BORDER)
     txt(sl, ico, Inches(0.72), ry + Inches(0.1), Inches(0.38), Inches(0.5), size=14)
-    txt(sl, ttl, Inches(1.22), ry + Inches(0.06), Inches(3.9), Inches(0.28), size=11, bold=True, color=HEAD)
-    txt(sl, sub, Inches(1.22), ry + Inches(0.36), Inches(4.1), Inches(0.3),  size=9.5, color=MUTED)
+    txt(sl, ttl, Inches(1.22), ry + Inches(0.04), Inches(3.9), Inches(0.28), size=10.5, bold=True, color=HEAD)
+    txt(sl, sub, Inches(1.22), ry + Inches(0.32), Inches(4.1), Inches(0.34), size=9, color=MUTED)
     r = rrect(sl, Inches(5.72), ry + Inches(0.22), Inches(0.65), Pt(15), fill=LLM_BG, lc=LLM_BG)
     txt(sl, "🤖 LLM", Inches(5.7), ry + Inches(0.2), Inches(0.7), Pt(17), size=7.5, bold=True, color=LLM_FG, align=PP_ALIGN.CENTER)
 
 txt(sl, "LLM USAGE BY MODULE", Inches(7.1), Inches(1.5), Inches(5.5), Inches(0.24), size=8.5, bold=True, color=ACCENT)
 bars = [
-    ("Classification",  6, 7),
+    ("Classification",  3, 7),
     ("Analytics",       1, 5),
     ("File Merge",      0, 3),
     ("Teams",           0, 4),
