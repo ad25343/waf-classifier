@@ -677,7 +677,7 @@ function _gtInlineForm(i, ex) {
                 ${fld('WAF Category',`gt-f-cat-${i}`,   sel(`gt-f-cat-${i}`,     _gtOpts(_GT_CATS,  ex?.category)))}
                 ${fld('WAF Color',  `gt-f-color-${i}`,   sel(`gt-f-color-${i}`,   _gtOpts(_GT_COLORS,ex?.color)))}
                 ${fld('Run/Change', `gt-f-rc-${i}`,      sel(`gt-f-rc-${i}`,      _gtOpts(['Run','Change'],ex?.run_change)))}
-                ${fld('Team of Teams',`gt-f-subcat-${i}`, inp(`gt-f-subcat-${i}`,  ex?.subcategory))}
+                ${fld('Team of Teams',`gt-f-subcat-${i}`, inp(`gt-f-subcat-${i}`,  ex?.team_of_teams))}
             </div>
             <div style="display:flex;gap:8px;">
                 <button onclick="saveGTInline('${i}')" class="btn btn-primary btn-sm">Save</button>
@@ -715,7 +715,7 @@ async function saveGTInline(i) {
         category:    g(`gt-f-cat-${i}`),
         color:       g(`gt-f-color-${i}`),
         run_change:  g(`gt-f-rc-${i}`),
-        subcategory: g(`gt-f-subcat-${i}`),
+        team_of_teams: g(`gt-f-subcat-${i}`),
     };
     if (!body.title) { showToast('Title is required', 'error'); return; }
     try {

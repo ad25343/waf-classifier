@@ -100,7 +100,7 @@ def update_ground_truth_row(idx):
     if idx < 0 or idx >= len(examples):
         return jsonify({"error": "Index out of range"}), 404
     # Update fields
-    for key in ["title", "description", "category", "subcategory", "color", "run_change"]:
+    for key in ["title", "description", "category", "team_of_teams", "color", "run_change"]:
         if key in data:
             examples[idx][key] = data[key]
     # Recalculate stats
@@ -122,7 +122,7 @@ def add_ground_truth_row():
         "title": data.get("title", ""),
         "description": data.get("description", ""),
         "category": data.get("category", ""),
-        "subcategory": data.get("subcategory", ""),
+        "team_of_teams": data.get("team_of_teams", ""),
         "color": data.get("color", ""),
         "run_change": data.get("run_change", ""),
     }
@@ -181,7 +181,7 @@ def save_baseline():
         gt_df = pd.DataFrame(ground_truth_store["examples"])
         # Rename columns to match expected format
         col_map = {"title": "Story Title", "description": "Description", "run_change": "Run/Change",
-                    "color": "WAF Color", "category": "WAF Category", "subcategory": "Team of Teams"}
+                    "color": "WAF Color", "category": "WAF Category", "team_of_teams": "Team of Teams"}
         gt_df = gt_df.rename(columns=col_map)
         gt_df.to_csv(gt_path, index=False)
         saved["ground_truth"] = gt_path
@@ -399,7 +399,7 @@ def save_gt_version():
 
     col_map = {"title": "Story Title", "description": "Description",
                "run_change": "Run/Change", "color": "WAF Color",
-               "category": "WAF Category", "subcategory": "Team of Teams"}
+               "category": "WAF Category", "team_of_teams": "Team of Teams"}
     gt_df = pd.DataFrame(ground_truth_store["examples"]).rename(columns=col_map)
     gt_df.to_csv(filepath, index=False)
 

@@ -546,7 +546,7 @@ def merge_send_to_classifier(token):
         # ── WAF Classification ─────────────────────────────────────────────────
         {"key": "waf_category",   "label": "WAF Category",       "required": False, "keywords": ["waf category", "waf_category"]},
         {"key": "waf_color",      "label": "WAF Color",          "required": False, "keywords": ["waf color", "waf_color"]},
-        {"key": "subcategory",    "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams"]},
+        {"key": "team_of_teams",  "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams"]},
         {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run or change", "run_change", "run change"]},
         {"key": "confidence",     "label": "Confidence",         "required": False, "keywords": ["confidence", "conf"]},
         # ── Organisation ───────────────────────────────────────────────────────

@@ -349,11 +349,11 @@ def quality_team_of_teams():
         return jsonify({"error": "upload_id required"}), 400
     db = get_db()
     rows = db.execute(
-        """SELECT COALESCE(waf_subcategory, '') as tot,
+        """SELECT COALESCE(team_of_teams, '') as tot,
                   COALESCE(team, 'default') as team,
                   COUNT(*) as cnt
            FROM classifications
-           WHERE upload_id=? AND waf_subcategory != '' AND waf_subcategory IS NOT NULL
+           WHERE upload_id=? AND team_of_teams != '' AND team_of_teams IS NOT NULL
            GROUP BY tot, team ORDER BY tot, team""",
         (upload_id,),
     ).fetchall()
@@ -380,7 +380,7 @@ def quality_teams():
         rows = db.execute(
             """SELECT COALESCE(team, 'default') as team, COUNT(*) as cnt
                FROM classifications
-               WHERE upload_id=? AND COALESCE(waf_subcategory,'')=?
+               WHERE upload_id=? AND COALESCE(team_of_teams,'')=?
                GROUP BY team ORDER BY team""",
             (upload_id, tot_filter),
         ).fetchall()

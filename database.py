@@ -33,7 +33,7 @@ def init_db():
             story_title TEXT NOT NULL,
             story_description TEXT,
             waf_category TEXT NOT NULL,
-            waf_subcategory TEXT,
+            team_of_teams TEXT,
             waf_color TEXT,
             run_change TEXT,
             confidence TEXT,
@@ -119,6 +119,11 @@ def init_db():
         conn.execute("ALTER TABLE classifications ADD COLUMN pi_number TEXT DEFAULT ''")
     except sqlite3.OperationalError:
         pass
+
+    # Rename waf_subcategory → team_of_teams if old column still exists
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(classifications)").fetchall()]
+    if "waf_subcategory" in cols and "team_of_teams" not in cols:
+        conn.execute("ALTER TABLE classifications RENAME COLUMN waf_subcategory TO team_of_teams")
 
     # Story quality scores table
     conn.execute("""
@@ -393,7 +398,7 @@ def _refresh_settings_cache():
     get_setting("_dummy")
 
 
-def save_classification(title, description, category, subcategory, color,
+def save_classification(title, description, category, team_of_teams, color,
                         run_change, confidence, was_mismatch=False,
                         original_tag="", approved=False, team="default",
                         epic="", parent_feature="",
@@ -405,13 +410,13 @@ def save_classification(title, description, category, subcategory, color,
     db.execute(
         """INSERT INTO classifications
            (timestamp, story_title, story_description, waf_category,
-            waf_subcategory, waf_color, run_change, confidence,
+            team_of_teams, waf_color, run_change, confidence,
             was_mismatch, original_tag, approved, team, epic, parent_feature,
             story_id, feature_id, epic_id, story_points, original_color, waf_reasoning,
             pi_number)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (datetime.now().isoformat(), title, description, category,
-         subcategory, color, run_change, confidence,
+         team_of_teams, color, run_change, confidence,
          1 if was_mismatch else 0, original_tag, 1 if approved else 0, team,
          epic, parent_feature, story_id, feature_id, epic_id, story_points,
          original_color, waf_reasoning, pi_number)

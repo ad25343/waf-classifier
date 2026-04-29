@@ -166,7 +166,7 @@ def resolve_dispute(dispute_id):
             title=dispute.get("story_title", ""),
             description=dispute.get("story_description", ""),
             category=resolved_category,
-            subcategory="",
+            team_of_teams="",
             color=resolved_color,
             run_change="",
             confidence=dispute.get("ai_confidence", ""),

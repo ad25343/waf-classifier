@@ -109,7 +109,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
 
         results = []
         for j, s in enumerate(batch):
-            ai_cat = ai_color = ai_rc = ai_conf = ai_reason = ai_subcat = ""
+            ai_cat = ai_color = ai_rc = ai_conf = ai_reason = ai_tot = ""
             if j < len(ai_lines):
                 parts = ai_lines[j].split("|")
                 first_part = parts[0] if parts else ""
@@ -117,7 +117,7 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 if colon_idx >= 0:
                     first_part = first_part[colon_idx + 1:]
                 if len(parts) >= 1: ai_cat = first_part.strip()
-                if len(parts) >= 2: ai_subcat = parts[1].strip()
+                if len(parts) >= 2: ai_tot = parts[1].strip()
                 if len(parts) >= 3: ai_color = parts[2].strip()
                 if len(parts) >= 4: ai_rc = parts[3].strip()
                 if len(parts) >= 5: ai_conf = parts[4].strip().replace("Confidence:", "").strip()
@@ -149,8 +149,8 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "user_submitted_waf_normalized": norm_cat if was_normalized else "",
                 "was_normalized": was_normalized,
                 "file_color": s["file_color"], "file_run_change": s["file_run_change"],
-                "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
-                "ai_suggested_waf": ai_cat, "ai_subcategory": ai_subcat, "ai_color": ai_color,
+                "file_tot": s.get("file_tot", ""), "file_confidence": s.get("file_confidence", ""),
+                "ai_suggested_waf": ai_cat, "ai_tot": ai_tot, "ai_color": ai_color,
                 "ai_run_change": ai_rc, "ai_confidence": ai_conf, "ai_reason": ai_reason,
                 "is_match": is_match,
             })
@@ -168,8 +168,8 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "pi_number": s.get("pi_number", ""),
                 "timestamp": s["timestamp"], "user_submitted_waf": s["user_submitted_waf"],
                 "file_color": s["file_color"], "file_run_change": s["file_run_change"],
-                "file_subcategory": s.get("file_subcategory", ""), "file_confidence": s.get("file_confidence", ""),
-                "ai_suggested_waf": "", "ai_subcategory": "", "ai_color": "", "ai_run_change": "",
+                "file_tot": s.get("file_tot", ""), "file_confidence": s.get("file_confidence", ""),
+                "ai_suggested_waf": "", "ai_tot": "", "ai_color": "", "ai_run_change": "",
                 "ai_confidence": "", "ai_reason": f"API error: {str(e)[:100]}", "is_match": None,
             })
         return results
@@ -303,7 +303,7 @@ def bulk_verify_preview():
             # ── WAF Classification ────────────────────────────────
             {"key": "waf_category",   "label": "WAF Category",       "required": False, "keywords": ["waf category", "waf_category", "category"]},
             {"key": "waf_color",      "label": "WAF Color",          "required": False, "keywords": ["waf color", "waf_color", "color"]},
-            {"key": "subcategory",    "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"]},
+            {"key": "team_of_teams",  "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"]},
             {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run_change", "run change"]},
             {"key": "confidence",     "label": "Confidence",         "required": False, "keywords": ["confidence", "conf"]},
             # ── Organisation ──────────────────────────────────────
@@ -374,7 +374,7 @@ def bulk_verify():
         cat_col = mappings.get("waf_category", "") or None
         color_col = mappings.get("waf_color", "") or None
         rc_col = mappings.get("run_change", "") or None
-        subcat_col = mappings.get("subcategory", "") or None
+        subcat_col = mappings.get("team_of_teams", "") or None
         conf_col = mappings.get("confidence", "") or None
         team_col = mappings.get("team", "") or None
         epic_col = mappings.get("epic", "") or None
@@ -453,7 +453,7 @@ def bulk_verify():
                 "user_submitted_waf": str(row.get(cat_col, "")).strip() if cat_col else "",
                 "file_color": str(row.get(color_col, "")).strip() if color_col else "",
                 "file_run_change": str(row.get(rc_col, "")).strip() if rc_col else "",
-                "file_subcategory": str(row.get(subcat_col, "")).strip() if subcat_col else "",
+                "file_tot": str(row.get(subcat_col, "")).strip() if subcat_col else "",
                 "file_confidence": str(row.get(conf_col, "")).strip() if conf_col else "",
                 "team": str(row.get(team_col, "default")).strip() if team_col else "default",
                 "epic": str(row.get(epic_col, "")).strip() if epic_col else "",
@@ -609,7 +609,7 @@ def bulk_verify_save():
         category = row.get("ai_suggested_waf", "") if use_ai else row.get("user_submitted_waf", "")
         # Team of Teams comes from the source file (Feature file via merge).
         # AI inference must NOT overwrite it — only fill in when the file had nothing.
-        subcategory = row.get("file_subcategory", "") or (row.get("ai_subcategory", "") if use_ai else "")
+        tot = row.get("file_tot", "") or (row.get("ai_tot", "") if use_ai else "")
         color = row.get("ai_color", "") if use_ai else row.get("file_color", "")
         run_change = row.get("ai_run_change", "") if use_ai else row.get("file_run_change", "")
         confidence = row.get("ai_confidence", "") if use_ai else row.get("file_confidence", "")
@@ -618,7 +618,7 @@ def bulk_verify_save():
         db.execute(
             """INSERT INTO classifications
                (timestamp, story_title, story_description, waf_category,
-                waf_subcategory, waf_color, run_change, confidence,
+                team_of_teams, waf_color, run_change, confidence,
                 was_mismatch, original_tag, approved, team, epic, parent_feature,
                 story_id, feature_id, epic_id, story_points, upload_id, original_color,
                 waf_reasoning, pi_number)
@@ -627,7 +627,7 @@ def bulk_verify_save():
              row.get("title", ""),
              row.get("description", ""),
              category,
-             subcategory,
+             tot,
              color,
              run_change,
              confidence,

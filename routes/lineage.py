@@ -57,7 +57,7 @@ def epic_summary():
 
     rows = db.execute(
         f"""SELECT id, timestamp, story_title, story_description, waf_category,
-                   waf_subcategory, waf_color, run_change, confidence,
+                   team_of_teams, waf_color, run_change, confidence,
                    was_mismatch, original_tag, approved, team, epic, parent_feature,
                    story_id, feature_id, epic_id, story_points, original_color, waf_reasoning, pi_number
             FROM classifications WHERE {where} ORDER BY epic, timestamp DESC""",

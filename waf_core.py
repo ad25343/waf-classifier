@@ -162,7 +162,7 @@ def parse_ground_truth(filepath, filename):
         "title": None,
         "description": None,
         "waf_category": None,
-        "waf_subcategory": None,
+        "team_of_teams": None,
         "waf_color": None,
     }
 
@@ -172,8 +172,8 @@ def parse_ground_truth(filepath, filename):
             col_map["title"] = col
         elif any(kw in cl for kw in ["desc", "detail", "acceptance", "body"]) and not col_map["description"]:
             col_map["description"] = col
-        elif any(kw in cl for kw in ["team of teams", "team_of_teams", "sub-category", "subcategory", "sub category", "sub_cat"]) and not col_map["waf_subcategory"]:
-            col_map["waf_subcategory"] = col
+        elif any(kw in cl for kw in ["team of teams", "team_of_teams", "sub-category", "subcategory", "sub category", "sub_cat"]) and not col_map["team_of_teams"]:
+            col_map["team_of_teams"] = col
         elif any(kw in cl for kw in ["category", "waf cat", "waf_cat", "waf category"]) and not col_map["waf_category"]:
             col_map["waf_category"] = col
         elif any(kw in cl for kw in ["color", "colour", "waf color"]) and not col_map["waf_color"]:
@@ -372,8 +372,8 @@ When classifying new stories, pattern-match against these examples for consisten
 
         categories_shown[cat] += 1
         section += f"EXAMPLE — Category: {cat}"
-        if ex.get("waf_subcategory"):
-            section += f" | Team of Teams: {ex['waf_subcategory']}"
+        if ex.get("team_of_teams"):
+            section += f" | Team of Teams: {ex['team_of_teams']}"
         if ex.get("waf_color"):
             section += f" | Color: {ex['waf_color']}"
         section += "\n"

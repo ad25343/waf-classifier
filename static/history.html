@@ -2062,7 +2062,7 @@ function showMappingStep(data) {
         // WAF Classification
         waf_category:   'e.g. WAF Category, Category',
         waf_color:      'e.g. WAF Color, Color',
-        subcategory:    'e.g. Team of Teams, team_of_teams',
+        team_of_teams:  'e.g. Team of Teams, team_of_teams',
         run_change:     'e.g. Run/Change, Run Change',
         confidence:     'e.g. Confidence, Conf',
         // Organisation
@@ -2424,10 +2424,10 @@ async function saveVerified() {
             user_submitted_waf: r.user_submitted_waf,
             file_color: r.file_color,
             file_run_change: r.file_run_change,
-            file_subcategory: r.file_subcategory || '',
+            file_tot: r.file_tot || '',
             file_confidence: r.file_confidence || '',
             ai_suggested_waf: r.ai_suggested_waf,
-            ai_subcategory: r.ai_subcategory,
+            ai_tot: r.ai_tot,
             ai_color: r.ai_color,
             ai_run_change: r.ai_run_change,
             ai_confidence: r.ai_confidence,
@@ -3067,7 +3067,6 @@ function onAnalyticsFilterChange() {
         loadQualityTab();
         return;
     }
-
     // Otherwise navigate to Summary
     document.querySelector('.tab[data-tab="summary"]').click();
     loadSummary();
@@ -3434,7 +3433,7 @@ function showStoryDetail(data) {
             ${field('Run / Change', esc(data.ai_run_change || data.run_change || ''))}
             ${field('Confidence', '<span class="badge ' + confClass + '">' + esc(conf || '—') + '</span>')}
             ${field('Match Status', matchHtml)}
-            ${field('Team of Teams', esc(data.ai_subcategory || data.waf_subcategory || ''))}
+            ${field('Team of Teams', esc(data.ai_tot || data.team_of_teams || ''))}
             ${field('Team', esc(data.team || ''))}
             ${field('Epic', esc(data.epic || ''))}
             ${field('Feature Name', esc(data.parent_feature || data.feature || ''))}
@@ -4381,6 +4380,7 @@ function closeRewriteModal() {
 document.querySelector('.tab[data-tab="quality"]')?.addEventListener('click', () => {
     loadQualityTab();
 });
+
 </script>
 </body>
 </html>

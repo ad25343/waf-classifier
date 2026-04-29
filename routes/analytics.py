@@ -251,7 +251,7 @@ def dashboard_save():
             title=data.get("title", ""),
             description=data.get("description", ""),
             category=data.get("waf_category", ""),
-            subcategory=data.get("waf_subcategory", ""),
+            team_of_teams=data.get("team_of_teams", ""),
             color=data.get("waf_color", ""),
             run_change=data.get("run_change", ""),
             confidence=data.get("confidence", ""),
@@ -467,7 +467,7 @@ def history_timeline():
 
     rows = db.execute(
         f"""SELECT id, timestamp, story_title, story_description, waf_category,
-                   waf_subcategory, waf_color, run_change, confidence,
+                   team_of_teams, waf_color, run_change, confidence,
                    was_mismatch, original_tag, approved, team
             FROM classifications
             WHERE {where_clause}
@@ -498,7 +498,7 @@ def history_timeline():
             "title": r["story_title"],
             "description": r["story_description"],
             "category": r["waf_category"],
-            "subcategory": r["waf_subcategory"],
+            "team_of_teams": r["team_of_teams"],
             "color": r["waf_color"],
             "run_change": r["run_change"],
             "confidence": r["confidence"],
@@ -549,7 +549,7 @@ def history_import():
         cat_col          = find_col(["waf category", "waf_category", "category"])
         color_col        = find_col(["waf color", "waf_color", "color"])
         rc_col           = find_col(["run/change", "run_change", "run change"])
-        subcat_col       = find_col(["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"])
+        tot_col          = find_col(["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"])
         conf_col         = find_col(["confidence", "conf"])
         team_col         = find_col(["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"])
         epic_col         = find_col(["epic name", "epic", "initiative", "program"])
@@ -594,12 +594,12 @@ def history_import():
             db.execute(
                 """INSERT INTO classifications
                    (timestamp, story_title, story_description, waf_category,
-                    waf_subcategory, waf_color, run_change, confidence,
+                    team_of_teams, waf_color, run_change, confidence,
                     was_mismatch, original_tag, approved, team, epic, parent_feature,
                     story_id, story_points, pi_number, epic_id, feature_id, upload_id)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (ts, title,
-                 _v(desc_col), _v(cat_col), _v(subcat_col), _v(color_col),
+                 _v(desc_col), _v(cat_col), _v(tot_col), _v(color_col),
                  _v(rc_col), _v(conf_col), _v(team_col, "default"),
                  _v(epic_col), _v(feature_col),
                  _v(story_id_col), _v(story_points_col),
@@ -730,7 +730,7 @@ def history_export():
 
     rows = db.execute(
         f"""SELECT timestamp, story_title, story_description, waf_category,
-                   waf_subcategory, waf_color, run_change, confidence,
+                   team_of_teams, waf_color, run_change, confidence,
                    was_mismatch, original_tag, approved, team
             FROM classifications WHERE {where_clause} ORDER BY timestamp DESC""",
         params
@@ -739,11 +739,11 @@ def history_export():
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Timestamp", "Story Title", "Description", "WAF Category",
-                     "Sub-Category", "WAF Color", "Run/Change", "Confidence",
+                     "Team of Teams", "WAF Color", "Run/Change", "Confidence",
                      "Mismatch", "Original Tag", "Approved", "Team"])
     for r in rows:
         writer.writerow([r["timestamp"], r["story_title"], r["story_description"],
-                         r["waf_category"], r["waf_subcategory"], r["waf_color"],
+                         r["waf_category"], r["team_of_teams"], r["waf_color"],
                          r["run_change"], r["confidence"],
                          "Yes" if r["was_mismatch"] else "No",
                          r["original_tag"], "Yes" if r["approved"] else "No",
@@ -789,7 +789,7 @@ def history_export_xlsx():
 
     rows = db.execute(
         f"""SELECT timestamp, story_title, story_description, waf_category,
-                   waf_subcategory, waf_color, run_change, confidence,
+                   team_of_teams, waf_color, run_change, confidence,
                    was_mismatch, original_tag, approved, team
             FROM classifications WHERE {where_clause} ORDER BY timestamp DESC""",
         params
@@ -907,7 +907,7 @@ def history_export_xlsx():
     ws_raw = wb.create_sheet("Raw Data")
 
     headers_r = ["Timestamp", "Story Title", "Description", "WAF Category",
-                 "Sub-Category", "WAF Color", "Run/Change", "Confidence",
+                 "Team of Teams", "WAF Color", "Run/Change", "Confidence",
                  "Mismatch", "Original Tag", "Approved", "Team"]
     ws_raw.append(headers_r)
     style_header(ws_raw, len(headers_r))
@@ -915,7 +915,7 @@ def history_export_xlsx():
     for i, r in enumerate(rows, 2):
         ws_raw.append([
             r["timestamp"], r["story_title"], r["story_description"],
-            r["waf_category"], r["waf_subcategory"], r["waf_color"],
+            r["waf_category"], r["team_of_teams"], r["waf_color"],
             r["run_change"], r["confidence"],
             "Yes" if r["was_mismatch"] else "No",
             r["original_tag"],

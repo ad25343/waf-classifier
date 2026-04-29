@@ -19,7 +19,7 @@ def teams_summary():
     query = """
         SELECT team, epic, waf_category, waf_color, run_change,
                was_mismatch, approved, confidence,
-               COALESCE(waf_subcategory, '') as team_of_teams
+               COALESCE(team_of_teams, '') as team_of_teams
         FROM classifications
         WHERE team != '' AND team != 'default'
     """

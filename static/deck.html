@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WAF Classifier — Capabilities</title>
+<style>
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d2e;
+    --card:      #21263a;
+    --border:    #2e3347;
+    --accent:    #6c63ff;
+    --accent2:   #00c9a7;
+    --warn:      #f59e0b;
+    --text:      #e8eaf6;
+    --muted:     #8891b3;
+    --llm:       #6c63ff;
+    --nollm:     #00c9a7;
+    --slide-w:   1100px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Progress bar ── */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .35s ease;
+    z-index: 100;
+  }
+
+  /* ── Slide container ── */
+  #deck {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+  }
+
+  .slide {
+    display: none;
+    max-width: var(--slide-w);
+    width: 100%;
+    animation: fadeIn .35s ease;
+  }
+  .slide.active { display: flex; flex-direction: column; gap: 24px; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Nav bar ── */
+  #nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  #nav button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background .2s, border-color .2s;
+  }
+  #nav button:hover { background: var(--accent); border-color: var(--accent); }
+  #nav button:disabled { opacity: .3; cursor: default; }
+  #nav button:disabled:hover { background: var(--card); border-color: var(--border); }
+  #slide-counter { font-size: 13px; color: var(--muted); min-width: 60px; text-align: center; }
+
+  /* ── Slide header ── */
+  .slide-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .slide-title {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--text);
+  }
+  .slide-title span { color: var(--accent); }
+  .slide-sub {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 720px;
+  }
+
+  /* ── Cards grid ── */
+  .cards {
+    display: grid;
+    gap: 14px;
+  }
+  .cards.cols-2 { grid-template-columns: 1fr 1fr; }
+  .cards.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cards.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color .2s;
+    position: relative;
+  }
+  .card:hover { border-color: var(--accent); }
+
+  .card-icon { font-size: 22px; }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .card-desc {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.55;
+    flex: 1;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    width: fit-content;
+  }
+  .badge.llm    { background: rgba(108,99,255,.18); color: var(--llm); border: 1px solid rgba(108,99,255,.35); }
+  .badge.nollm  { background: rgba(0,201,167,.12); color: var(--nollm); border: 1px solid rgba(0,201,167,.3); }
+
+  /* ── Title slide ── */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 0;
+  }
+  .hero-logo {
+    font-size: 52px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+  .hero-tagline {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 640px;
+    line-height: 1.6;
+  }
+  .hero-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .hero-pill {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    margin-top: 8px;
+  }
+  .hero-stat-val {
+    font-size: 40px;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .hero-stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  /* ── Overview table ── */
+  .overview-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+  .overview-icon { font-size: 22px; width: 32px; text-align: center; flex-shrink: 0; }
+  .overview-name { font-size: 14px; font-weight: 700; color: var(--text); min-width: 190px; flex-shrink: 0; }
+  .overview-desc { font-size: 13px; color: var(--muted); flex: 1; line-height: 1.4; }
+  .overview-count {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    min-width: 80px;
+    text-align: right;
+  }
+
+  /* ── Bar chart ── */
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .bar-label { font-size: 13px; font-weight: 600; color: var(--text); min-width: 160px; }
+  .bar-track {
+    flex: 1;
+    height: 10px;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .bar-val { font-size: 12px; color: var(--muted); min-width: 36px; text-align: right; }
+
+  /* ── Two-col layout ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon { font-size: 24px; }
+  .section-title { font-size: 22px; font-weight: 800; }
+
+  /* ── List items ── */
+  .item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .item-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .item-desc  { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+  /* ── Architecture slide ── */
+  .arch-box {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .arch-box-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .arch-box-sub   { font-size: 11px; color: var(--muted); }
+  .arch-arrow     { font-size: 20px; color: var(--muted); text-align: center; align-self: center; }
+
+  /* ── Summary slide ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .summary-card .num {
+    font-size: 34px;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .summary-card .lbl {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .summary-card .sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Keyboard hint ── */
+  #hint {
+    position: fixed;
+    bottom: 68px;
+    right: 20px;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 6px;
+    opacity: .7;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="hint">← → arrow keys to navigate</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 1 — TITLE
+═══════════════════════════════════════════════ -->
+<div id="deck">
+
+<div class="slide active" id="s1">
+  <div class="hero">
+    <div class="slide-label">Product Overview</div>
+    <div class="hero-logo">WAF Classifier</div>
+    <div class="hero-tagline">
+      An AI-powered platform for classifying, verifying, and analysing work items against the Work Allocation Framework — at the story, feature, and epic level.
+    </div>
+    <div class="hero-pills">
+      <div class="hero-pill">🤖 AI Classification</div>
+      <div class="hero-pill">📊 Analytics</div>
+      <div class="hero-pill">🔀 File Merge</div>
+      <div class="hero-pill">👥 Teams</div>
+      <div class="hero-pill">🏆 Story Quality</div>
+      <div class="hero-pill">🏗 Epic Lineage</div>
+      <div class="hero-pill">⚡ Disputes</div>
+      <div class="hero-pill">⚙️ Version Control</div>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-val">39</div>
+        <div class="hero-stat-label">Capabilities</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">7</div>
+        <div class="hero-stat-label">Use LLM</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">8</div>
+        <div class="hero-stat-label">Modules</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">4</div>
+        <div class="hero-stat-label">AI Gateways</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 2 — MODULE OVERVIEW
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s2">
+  <div>
+    <div class="slide-label">Platform</div>
+    <div class="slide-title">8 Modules — <span>One Platform</span></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <div class="overview-row">
+      <div class="overview-icon">🤖</div>
+      <div class="overview-name">Classification</div>
+      <div class="overview-desc">Single-story chat classification and async bulk file verification using AI</div>
+      <div class="overview-count">7 capabilities</div>
+    </div>
+    <div class="overview-row">
+      <div class="overview-icon">📊</div>
+      <div class="overview-name">Analytics & History</div>
+      <div class="overview-desc">Dashboards, sprint/monthly trends, full-text search, exports, and AI narratives</div>
+      <div class="overview-count">9 capabilities</div>
+    </div>
+    <div class="overview-row">
+      <div class="overview-icon">🔀</div>
+      <div class="overview-name">File Merge</div>
+      <div class="overview-desc">Join separate Epic, Feature, and Story JIRA exports into one clean file</div>
+      <div class="overview-count">3 capabilities</div>
+    </div>
+    <div class="overview-row">
+      <div class="overview-icon">👥</div>
+      <div class="overview-name">Teams</div>
+      <div class="overview-desc">Team-level WAF analytics, cross-team epic views, and Team of Teams rollups</div>
+      <div class="overview-count">4 capabilities</div>
+    </div>
+    <div class="overview-row">
+      <div class="overview-icon">🏆</div>
+      <div class="overview-name">Story Quality</div>
+      <div class="overview-desc">AI-powered Definition of Ready scoring, chat refinement, and rewrites</div>
+      <div class="overview-count">5 capabilities</div>
+    </div>
+    <div class="overview-row">
+      <div class="overview-icon">🏗</div>
+      <div class="overview-name">Epic Lineage</div>
+      <div class="overview-desc">Epic health scoring, hierarchy trees, and cross-team epic assignment</div>
+      <div class="overview-count">3 capabilities</div>
+    </div>
+    <div class="overview-row">
+      <div class="overview-icon">⚡</div>
+      <div class="overview-name">Disputes</div>
+      <div class="overview-desc">Raise, queue, and resolve disagreements with AI classifications</div>
+      <div class="overview-count">3 capabilities</div>
+    </div>
+    <div class="overview-row">
+      <div class="overview-icon">⚙️</div>
+      <div class="overview-name">Settings & Versions</div>
+      <div class="overview-desc">WAF/GT file management, named versions, baselines, and system config</div>
+      <div class="overview-count">5 capabilities</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 3 — CLASSIFICATION
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s3">
+  <div>
+    <div class="slide-label">Module 1</div>
+    <div class="slide-title">🤖 Classification</div>
+    <div class="slide-sub">Classify work items against the WAF — one at a time interactively, or thousands at once via async bulk processing.</div>
+  </div>
+  <div class="cards cols-2">
+    <div class="card">
+      <div class="card-icon">💬</div>
+      <div class="card-title">Single-Story Classification</div>
+      <div class="card-desc">Type a story title and description into a chat interface. The AI reads your WAF definitions and ground truth examples, returns a category, color, Run/Change flag, and confidence — with reasoning you can challenge in follow-up messages.</div>
+      <div class="badge llm">🤖 LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📦</div>
+      <div class="card-title">Bulk File Verification</div>
+      <div class="card-desc">Upload a CSV or Excel of stories. Auto-detects columns, maps them, then classifies every row using concurrent AI workers. Results stream back as a progress bar — review, approve, or dispute each row before saving.</div>
+      <div class="badge llm">🤖 LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🗂</div>
+      <div class="card-title">Column Mapping Preview</div>
+      <div class="card-desc">Before bulk verify runs, the tool parses your file and suggests which column maps to which field (title, WAF category, Team of Teams, story points, etc.). You correct the mapping before AI kicks off — no tokens spent.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">✅</div>
+      <div class="card-title">Approve to Ground Truth</div>
+      <div class="card-desc">One-click promotion of any verified story into your ground truth library. Future AI calls use it as a calibration example, improving consistency over time as your dataset grows.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 4 — ANALYTICS
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s4">
+  <div>
+    <div class="slide-label">Module 2</div>
+    <div class="slide-title">📊 Analytics & History</div>
+    <div class="slide-sub">Understand how your backlog is classified — across teams, time periods, and WAF categories — with flexible exports for stakeholders.</div>
+  </div>
+  <div class="cards cols-3">
+    <div class="card">
+      <div class="card-icon">🏠</div>
+      <div class="card-title">Dashboard Summary</div>
+      <div class="card-desc">At-a-glance totals: stories classified, approval rate, mismatch rate, top categories, color distribution, and daily trend — filterable by team, upload, or date range.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📅</div>
+      <div class="card-title">Sprint & Monthly Rollups</div>
+      <div class="card-desc">Buckets history into 2-week sprints or calendar months. Shows category shifts, color changes, and confidence trends with period-over-period deltas so you can track WAF alignment over time.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔍</div>
+      <div class="card-title">Story Drilldown</div>
+      <div class="card-desc">Full-text searchable table of every classified story. Filter by team, category, color, match/mismatch, date. Expand any row to see AI reasoning, original tag, and full classification detail.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📝</div>
+      <div class="card-title">AI Executive Narrative</div>
+      <div class="card-desc">Generates a concise, human-readable paragraph from your summary stats — describing WAF alignment, risk areas, and team performance. Ready to paste into a slide deck or status update.</div>
+      <div class="badge llm">🤖 LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📥</div>
+      <div class="card-title">CSV / Excel Export</div>
+      <div class="card-desc">Download filtered history as a flat CSV or formatted multi-sheet Excel workbook (Summary, Monthly, and Raw Data tabs) for offline analysis or stakeholder sharing.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">⬆️</div>
+      <div class="card-title">Bulk Import</div>
+      <div class="card-desc">Upload a pre-classified CSV/Excel to populate the history database without running AI — preserving timestamps and original tags from previous tools or manual tagging exercises.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 5 — MERGE
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s5">
+  <div>
+    <div class="slide-label">Module 3</div>
+    <div class="slide-title">🔀 File Merge</div>
+    <div class="slide-sub">Join separate JIRA exports — Epics, Features, and Stories — into one clean, enriched file ready for classification or reporting.</div>
+  </div>
+  <div class="cards cols-3">
+    <div class="card">
+      <div class="card-icon">🧩</div>
+      <div class="card-title">Epic → Feature → Story Join</div>
+      <div class="card-desc">Takes up to three JIRA export files and joins them by name (case-insensitive). Extracts WAF color and category, strips Run/Change suffixes from epic names, and assigns PI Name from the Epic file down to each story row.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚠️</div>
+      <div class="card-title">Issue Detection</div>
+      <div class="card-desc">Flags four problem types during merge: orphaned stories (no matching feature), orphaned features (no matching epic), stories missing WAF data, and unrecognised WAF colors. You choose which rows to include before downloading.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🚀</div>
+      <div class="card-title">Send to Classifier</div>
+      <div class="card-desc">One-click handoff from the merge result directly into the Bulk Verify flow — no intermediate download needed. The merged file arrives with column detection already run and fields pre-mapped.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Output Schema (18 columns)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">PI Name</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Epic Id</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Epic Name</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Epic Desc</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Block</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--accent);">WAF</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--accent);">WAF Color</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--accent);">WAF Category</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--accent);">Run/Change</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Feature Id</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Feature Name</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Feature Desc</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--accent2);">Team of Teams</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Story Id</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Story Name</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Story Desc</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Story Points</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);">Assigned Teams</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 6 — TEAMS
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s6">
+  <div>
+    <div class="slide-label">Module 4</div>
+    <div class="slide-title">👥 Teams</div>
+    <div class="slide-sub">Understand how every Scrum Team and Team of Teams (ART) is aligned to the WAF — and how their work is distributed across epics.</div>
+  </div>
+  <div class="cards cols-2">
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Team Summary</div>
+      <div class="card-desc">For every Scrum Team: total stories, unique epics touched, WAF category breakdown, dominant color, mismatch rate, and their Team of Teams (ART). Supports filtering by Team of Teams for ART-level views.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔎</div>
+      <div class="card-title">Team Drilldown</div>
+      <div class="card-desc">Drill into a single team to see their work organised as Epic → Feature → Story trees, with per-epic category consistency, dominant classifications, and health indicators.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🗺</div>
+      <div class="card-title">Teams by Epic</div>
+      <div class="card-desc">Flip the view — pick an epic and see every team contributing to it, their story counts, and category distribution. Immediately surfaces cross-team alignment (or divergence) on a single initiative.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📜</div>
+      <div class="card-title">Epics List</div>
+      <div class="card-desc">A master list of all epics with story counts, team assignments, and dominant WAF category — used as the navigation starting point for the By Epic tab and cross-team epic analysis.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;display:flex;gap:24px;align-items:center;">
+    <div style="font-size:13px;font-weight:700;color:var(--muted);">Hierarchy:</div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;">
+      <span style="background:rgba(108,99,255,.2);color:var(--accent);padding:5px 12px;border-radius:8px;">Team of Teams (ART)</span>
+      <span style="color:var(--muted);">→</span>
+      <span style="background:rgba(0,201,167,.15);color:var(--accent2);padding:5px 12px;border-radius:8px;">Scrum Teams</span>
+      <span style="color:var(--muted);">→</span>
+      <span style="background:rgba(255,255,255,.06);color:var(--text);padding:5px 12px;border-radius:8px;">Stories</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 7 — QUALITY
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s7">
+  <div>
+    <div class="slide-label">Module 5</div>
+    <div class="slide-title">🏆 Story Quality</div>
+    <div class="slide-sub">Score every story against a 9-criterion Definition of Ready rubric — then chat with AI to refine or fully rewrite stories that don't pass.</div>
+  </div>
+  <div class="cards cols-3">
+    <div class="card">
+      <div class="card-icon">🎯</div>
+      <div class="card-title">Batch DoR Scoring</div>
+      <div class="card-desc">Scores every story against 9 Definition of Ready criteria: Narrative Format, Source Data, Business Rules, Output Artifact, Acceptance Criteria, Data Quality Checks, Traceability, Story Points, Dependencies. Each gets pass/fail + reason.</div>
+      <div class="badge llm">🤖 LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">💬</div>
+      <div class="card-title">Story Improvement Chat</div>
+      <div class="card-desc">Open a chat against a specific story. The AI suggests targeted improvements for whichever criteria are failing — collaborative, iterative refinement without rewriting the whole story from scratch.</div>
+      <div class="badge llm">🤖 LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">✍️</div>
+      <div class="card-title">AI Story Rewrite</div>
+      <div class="card-desc">One click to have the AI produce a fully rewritten version of the story addressing all failing criteria, in the correct narrative format, ready to copy back into JIRA.</div>
+      <div class="badge llm">🤖 LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Quality Results & History</div>
+      <div class="card-desc">Browse scoring results by upload, team, or scoring run. See aggregate Ready / Needs Work / Not Ready counts, per-criterion pass rates, and score trends across multiple runs.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📤</div>
+      <div class="card-title">Quality Export</div>
+      <div class="card-desc">Download scoring results as CSV — one row per story with pass/fail columns for all 9 criteria, overall score percentage, and team/epic metadata for downstream reporting.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card" style="background:var(--bg);border-style:dashed;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">Score Bands</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;font-weight:700;color:#22c55e;">✅ Ready</span>
+          <span style="font-size:12px;color:var(--muted);">≥ 89%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;font-weight:700;color:var(--warn);">⚠️ Needs Work</span>
+          <span style="font-size:12px;color:var(--muted);">56–88%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;font-weight:700;color:#ef4444;">❌ Not Ready</span>
+          <span style="font-size:12px;color:var(--muted);">&lt; 56%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 8 — LINEAGE + DISPUTES
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s8">
+  <div>
+    <div class="slide-label">Modules 6 & 7</div>
+    <div class="slide-title">🏗 Epic Lineage  &  ⚡ Disputes</div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;">Epic Lineage</div>
+      <div class="card">
+        <div class="card-icon">❤️</div>
+        <div class="card-title">Epic Health Scoring</div>
+        <div class="card-desc">Each epic gets a 0–100 health score: color consistency (40%), category focus (30%), distinct color count (20%), mismatch rate (10%). Epics spanning 3+ colors are flagged as "mixed".</div>
+        <div class="badge nollm">✓ No LLM</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌳</div>
+        <div class="card-title">Hierarchy Tree</div>
+        <div class="card-desc">Full Epic → Feature → Story tree showing which teams deliver each part, story counts per node, and dominant classifications at every level of the hierarchy.</div>
+        <div class="badge nollm">✓ No LLM</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔗</div>
+        <div class="card-title">Bulk Epic Assignment</div>
+        <div class="card-desc">Assign or re-assign Epic and Feature fields across multiple stories at once — essential for cleaning up imported data where those fields were blank or mismatched.</div>
+        <div class="badge nollm">✓ No LLM</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;">Disputes</div>
+      <div class="card">
+        <div class="card-icon">🚩</div>
+        <div class="card-title">Raise a Dispute</div>
+        <div class="card-desc">Flag any AI classification you disagree with. Submit your suggested category and a comment. The original AI reasoning is preserved alongside your correction for reviewer context.</div>
+        <div class="badge nollm">✓ No LLM</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Dispute Queue</div>
+        <div class="card-desc">Filtered list of all disputes by status: Pending, Accepted, Dismissed, or Flagged for WAF Review. Shows who raised it, AI answer vs. suggested answer, and reviewer notes.</div>
+        <div class="badge nollm">✓ No LLM</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Resolve a Dispute</div>
+        <div class="card-desc">Three paths: <strong>Dismiss</strong> (AI was right), <strong>Accept</strong> (save correction, optionally promote to ground truth), or <strong>Flag for WAF Review</strong> (the WAF definition itself may need updating).</div>
+        <div class="badge nollm">✓ No LLM</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 9 — SETTINGS
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s9">
+  <div>
+    <div class="slide-label">Module 8</div>
+    <div class="slide-title">⚙️ Settings & Version Control</div>
+    <div class="slide-sub">Manage the AI's knowledge base — WAF definitions and ground truth — with full version history, baselines, and system configuration.</div>
+  </div>
+  <div class="cards cols-2">
+    <div class="card">
+      <div class="card-icon">📖</div>
+      <div class="card-title">WAF Definitions Management</div>
+      <div class="card-desc">Upload a new WAF definitions file (CSV, Excel, JSON, or plain text) at any time. The tool parses categories, colors, and descriptions automatically. Edit definitions inline from the Settings page without re-uploading.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎓</div>
+      <div class="card-title">Ground Truth Management</div>
+      <div class="card-desc">Upload, add, edit, or delete ground truth examples — the calibration examples sent to the AI in every prompt. Quality of ground truth directly drives classification consistency across teams.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏷</div>
+      <div class="card-title">Named Versions</div>
+      <div class="card-desc">Save the current WAF definitions or ground truth as a named, timestamped version (e.g. "Q3 Baseline"). Switch between versions freely — bulk verify jobs record which version was active when they ran, ensuring reproducibility.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📸</div>
+      <div class="card-title">Baseline Snapshots</div>
+      <div class="card-desc">Save a paired snapshot of both WAF + ground truth together as a named baseline. Restore in one click — ideal for audit trails, rolling back after an experiment, or matching a previous quarter's configuration.</div>
+      <div class="badge nollm">✓ No LLM</div>
+    </div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">System Config — No Code Needed</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div style="font-size:13px;color:var(--text);"><span style="color:var(--accent);font-weight:700;">Batch size</span> — stories per AI call</div>
+      <div style="font-size:13px;color:var(--text);"><span style="color:var(--accent);font-weight:700;">Workers</span> — concurrent AI threads</div>
+      <div style="font-size:13px;color:var(--text);"><span style="color:var(--accent);font-weight:700;">Rate limit</span> — calls per minute</div>
+      <div style="font-size:13px;color:var(--text);"><span style="color:var(--accent);font-weight:700;">Gateway</span> — Anthropic / Bedrock / PortKey / Apigee</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 10 — LLM USAGE
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s10">
+  <div>
+    <div class="slide-label">Architecture</div>
+    <div class="slide-title">Where the <span>AI</span> is used</div>
+    <div class="slide-sub">7 of 39 capabilities invoke the LLM. Everything else is deterministic — file parsing, database queries, and rule-based logic.</div>
+  </div>
+  <div class="cards cols-2">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">LLM Calls</div>
+      <div class="card" style="flex-direction:row;align-items:center;gap:14px;padding:12px 16px;">
+        <div style="font-size:20px;">💬</div>
+        <div style="flex:1;">
+          <div class="card-title" style="font-size:13px;">Single-story classification</div>
+          <div class="card-desc" style="font-size:11.5px;">WAF category, color, run/change, confidence</div>
+        </div>
+        <div class="badge llm">🤖</div>
+      </div>
+      <div class="card" style="flex-direction:row;align-items:center;gap:14px;padding:12px 16px;">
+        <div style="font-size:20px;">📦</div>
+        <div style="flex:1;">
+          <div class="card-title" style="font-size:13px;">Bulk file verification</div>
+          <div class="card-desc" style="font-size:11.5px;">Same, at scale with concurrent workers</div>
+        </div>
+        <div class="badge llm">🤖</div>
+      </div>
+      <div class="card" style="flex-direction:row;align-items:center;gap:14px;padding:12px 16px;">
+        <div style="font-size:20px;">📝</div>
+        <div style="flex:1;">
+          <div class="card-title" style="font-size:13px;">Executive narrative</div>
+          <div class="card-desc" style="font-size:11.5px;">Generates summary paragraph from stats</div>
+        </div>
+        <div class="badge llm">🤖</div>
+      </div>
+      <div class="card" style="flex-direction:row;align-items:center;gap:14px;padding:12px 16px;">
+        <div style="font-size:20px;">🎯</div>
+        <div style="flex:1;">
+          <div class="card-title" style="font-size:13px;">Definition of Ready scoring</div>
+          <div class="card-desc" style="font-size:11.5px;">9 criteria pass/fail per story</div>
+        </div>
+        <div class="badge llm">🤖</div>
+      </div>
+      <div class="card" style="flex-direction:row;align-items:center;gap:14px;padding:12px 16px;">
+        <div style="font-size:20px;">💬</div>
+        <div style="flex:1;">
+          <div class="card-title" style="font-size:13px;">Story improvement chat</div>
+          <div class="card-desc" style="font-size:11.5px;">Targeted fix suggestions per criterion</div>
+        </div>
+        <div class="badge llm">🤖</div>
+      </div>
+      <div class="card" style="flex-direction:row;align-items:center;gap:14px;padding:12px 16px;">
+        <div style="font-size:20px;">✍️</div>
+        <div style="flex:1;">
+          <div class="card-title" style="font-size:13px;">Story rewrite</div>
+          <div class="card-desc" style="font-size:11.5px;">Full rewrite addressing all failing criteria</div>
+        </div>
+        <div class="badge llm">🤖</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">LLM usage by module</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="bar-row"><div class="bar-label">Classification</div><div class="bar-track"><div class="bar-fill" style="width:86%"></div></div><div class="bar-val">6/7</div></div>
+        <div class="bar-row"><div class="bar-label">Analytics</div><div class="bar-track"><div class="bar-fill" style="width:11%"></div></div><div class="bar-val">1/9</div></div>
+        <div class="bar-row"><div class="bar-label">File Merge</div><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div><div class="bar-val">0/3</div></div>
+        <div class="bar-row"><div class="bar-label">Teams</div><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div><div class="bar-val">0/4</div></div>
+        <div class="bar-row"><div class="bar-label">Story Quality</div><div class="bar-track"><div class="bar-fill" style="width:60%"></div></div><div class="bar-val">3/5</div></div>
+        <div class="bar-row"><div class="bar-label">Epic Lineage</div><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div><div class="bar-val">0/3</div></div>
+        <div class="bar-row"><div class="bar-label">Disputes</div><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div><div class="bar-val">0/3</div></div>
+        <div class="bar-row"><div class="bar-label">Settings</div><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div><div class="bar-val">0/5</div></div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:auto;">
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px;">AI Gateway Support</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:rgba(108,99,255,.15);color:var(--accent);border:1px solid rgba(108,99,255,.3);padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;">Anthropic (direct)</span>
+          <span style="background:rgba(108,99,255,.15);color:var(--accent);border:1px solid rgba(108,99,255,.3);padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;">AWS Bedrock</span>
+          <span style="background:rgba(108,99,255,.15);color:var(--accent);border:1px solid rgba(108,99,255,.3);padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;">PortKey</span>
+          <span style="background:rgba(108,99,255,.15);color:var(--accent);border:1px solid rgba(108,99,255,.3);padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;">Apigee (OAuth2)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SLIDE 11 — SUMMARY
+═══════════════════════════════════════════════ -->
+<div class="slide" id="s11">
+  <div>
+    <div class="slide-label">Summary</div>
+    <div class="slide-title">Everything in <span>One View</span></div>
+  </div>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="num">39</div>
+      <div class="lbl">Total Capabilities</div>
+      <div class="sub">Across 8 modules</div>
+    </div>
+    <div class="summary-card">
+      <div class="num" style="color:var(--llm);">7</div>
+      <div class="lbl">Use LLM</div>
+      <div class="sub">Classify, Quality, Narrative</div>
+    </div>
+    <div class="summary-card">
+      <div class="num" style="color:var(--nollm);">32</div>
+      <div class="lbl">No LLM</div>
+      <div class="sub">Pure data & file logic</div>
+    </div>
+    <div class="summary-card">
+      <div class="num" style="color:var(--warn);">4</div>
+      <div class="lbl">AI Gateways</div>
+      <div class="sub">Configurable at runtime</div>
+    </div>
+  </div>
+  <div class="cards cols-4">
+    <div class="card" style="padding:14px;">
+      <div class="card-icon">🤖</div>
+      <div class="card-title">Classification</div>
+      <div class="card-desc">Single story, bulk file, concurrent workers</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Analytics</div>
+      <div class="card-desc">Sprints, monthly, FTS search, AI narrative</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div class="card-icon">🔀</div>
+      <div class="card-title">Merge</div>
+      <div class="card-desc">Join JIRA exports, flag issues, handoff to AI</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div class="card-icon">👥</div>
+      <div class="card-title">Teams</div>
+      <div class="card-desc">ART rollups, cross-team epic views</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div class="card-icon">🏆</div>
+      <div class="card-title">Quality</div>
+      <div class="card-desc">DoR scoring, chat refinement, rewrite</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div class="card-icon">🏗</div>
+      <div class="card-title">Epic Lineage</div>
+      <div class="card-desc">Health scores, hierarchy trees, assignment</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Disputes</div>
+      <div class="card-desc">Raise, queue, resolve, flag for WAF review</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div class="card-icon">⚙️</div>
+      <div class="card-title">Settings</div>
+      <div class="card-desc">WAF/GT versions, baselines, system config</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #deck -->
+
+<!-- ── Navigation ── -->
+<div id="nav">
+  <button id="btn-prev" onclick="move(-1)" disabled>← Prev</button>
+  <span id="slide-counter">1 / 11</span>
+  <button id="btn-next" onclick="move(1)">Next →</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let   cur    = 0;
+
+  function go(n) {
+    slides[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(n, total - 1));
+    slides[cur].classList.add('active');
+    document.getElementById('slide-counter').textContent = `${cur + 1} / ${total}`;
+    document.getElementById('btn-prev').disabled = cur === 0;
+    document.getElementById('btn-next').disabled = cur === total - 1;
+    document.getElementById('progress-bar').style.width = `${((cur + 1) / total) * 100}%`;
+  }
+
+  function move(d) { go(cur + d); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  move(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    move(-1);
+    if (e.key === 'Home') go(0);
+    if (e.key === 'End')  go(total - 1);
+  });
+
+  // Init progress bar
+  document.getElementById('progress-bar').style.width = `${(1 / total) * 100}%`;
+
+  // Hide hint after 4s
+  setTimeout(() => { document.getElementById('hint').style.opacity = '0'; }, 4000);
+</script>
+</body>
+</html>

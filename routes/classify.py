@@ -261,7 +261,7 @@ def approve_classification():
     run_change = data.get("run_change", "").strip()
     waf_color = data.get("waf_color", "").strip()
     waf_category = data.get("waf_category", "").strip()
-    waf_subcategory = data.get("waf_subcategory", "").strip()
+    team_of_teams = data.get("team_of_teams", "").strip()
 
     if not title or not waf_category:
         return jsonify({"error": "Title and WAF Category are required"}), 400
@@ -270,7 +270,7 @@ def approve_classification():
     sample_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sample-data")
     gt_file = os.path.join(sample_dir, "sample-ground-truth.csv")
 
-    row = [title, description, run_change, waf_color, waf_category, waf_subcategory]
+    row = [title, description, run_change, waf_color, waf_category, team_of_teams]
     file_exists = os.path.exists(gt_file)
 
     try:
@@ -289,7 +289,7 @@ def approve_classification():
         "title": title,
         "description": description,
         "waf_category": waf_category,
-        "waf_subcategory": waf_subcategory,
+        "team_of_teams": team_of_teams,
         "waf_color": waf_color,
     }
     ground_truth_store["examples"].append(example)
@@ -308,7 +308,7 @@ def approve_classification():
 
     # 3. Save to database as approved
     try:
-        save_classification(title, description, waf_category, waf_subcategory,
+        save_classification(title, description, waf_category, team_of_teams,
                             waf_color, run_change, "HIGH", approved=True)
     except Exception:
         pass  # DB save is best-effort, don't fail the request
