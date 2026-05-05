@@ -10,3 +10,7 @@ Feature,FEAT-P002,KTLO (Keep the Lights On),KTLO,Operations,PI-3,ATP-2008,2025-1
 Feature,FEAT-P003,Efficiency & Optimization,Efficiency & Optimization,Engineering,PI-4,ATP-2009,2025-12-01,EP-P002,API Gateway Modernization,PI-4,Planning,API Rate Limiting & Throttling,Platform ToT,API Platform,Tom Wright
 Feature,FEAT-P004,Efficiency & Optimization,Efficiency & Optimization,Engineering,PI-4,ATP-2010,2025-12-01,EP-P002,API Gateway Modernization,PI-4,Planning,Developer Portal & API Docs,,API Platform,Chen Li
 Feature,FEAT-X999,New Capability,,Engineering,PI-4,ATP-2099,2025-12-15,EP-MISSING,Mystery Initiative (Epic not in file),PI-4,Planning,Mystery Feature with Orphan Epic,Platform ToT,API Platform,TBD
+Feature,FEAT-A001,Audit & Compliance,Audit & Compliance,Compliance,PI-3,ATP-2101,2025-11-15,EP-A001,PCI-DSS Quarterly Audit,PI-3,In Progress,PCI Card-Holder Data Discovery Scan,Risk & Compliance ToT,Audit Systems,Priya Patel
+Feature,FEAT-A002,Lift and Shift,Lift and Shift,Infrastructure,PI-3,ATP-2102,2025-11-20,EP-A002,Data Center Rehosting,PI-3,Active,Bare-Metal to AWS Migration Wave 1,Platform ToT,Cloud Infrastructure,Marcus Lee
+Feature,FEAT-A003,BAU Maintenance,BAU Maintenance,Operations,PI-2,ATP-2103,2025-09-15,EP-A003,Legacy Patching Program,PI-2,In Progress,Quarterly OS Patch Rollout,Platform ToT,SRE,Jordan Smith
+Feature,FEAT-A004,Innovation Bet,Innovation Bet,Engineering,PI-4,ATP-2104,2025-12-10,EP-A004,AI-Powered Customer Insights,PI-4,Planning,Customer Sentiment ML Pipeline,Platform ToT,Data Platform,Aisha Rahman

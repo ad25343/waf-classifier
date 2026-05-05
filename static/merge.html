@@ -474,6 +474,21 @@
         .stat-card.visible { display: block; }
         .stat-card.warning { border-color: var(--warning); }
 
+        /* Clickable stat cards — filter the preview to that subset */
+        .stat-card.clickable {
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
+        }
+        .stat-card.clickable:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border-color: var(--accent);
+        }
+        .stat-card.clickable.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent) inset;
+        }
+
         .stat-label {
             font-size: 11px; font-weight: 600;
             text-transform: uppercase; letter-spacing: 0.5px;
@@ -484,6 +499,49 @@
             color: var(--text-primary);
         }
         .stat-card.warning .stat-value { color: var(--warning); }
+
+        /* Clickable legend pills */
+        #preview-diff-legend .status-pill { cursor: pointer; transition: opacity 0.1s ease; }
+        #preview-diff-legend .status-pill:hover { opacity: 0.8; }
+        #preview-diff-legend .status-pill.active {
+            outline: 2px solid var(--accent);
+            outline-offset: 1px;
+        }
+
+        /* Clickable preview rows */
+        #preview-tbody tr { cursor: pointer; }
+        #preview-tbody tr:hover { background: rgba(99,102,241,0.06); }
+        #preview-tbody tr.row-orphan:hover { background: rgba(251,191,36,0.10); }
+        #preview-tbody tr.row-orphan-epic:hover { background: rgba(239,68,68,0.10); }
+        /* Don't override checkbox cell hover behaviour */
+        #preview-tbody td:first-child { cursor: default; }
+
+        /* Row detail modal */
+        #row-detail-modal {
+            display: none; position: fixed; inset: 0; z-index: 999;
+            background: rgba(0,0,0,0.55); align-items: center; justify-content: center;
+        }
+        #row-detail-modal.open { display: flex; }
+        #row-detail-modal .modal-card {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: 10px; padding: 22px 24px;
+            width: min(720px, 92vw); max-height: 85vh; overflow-y: auto;
+        }
+        #row-detail-modal h3 { margin: 0 0 10px; font-size: 17px; }
+        #row-detail-modal .rd-grid {
+            display: grid; grid-template-columns: 160px 1fr;
+            gap: 8px 14px; font-size: 13px; margin: 14px 0;
+        }
+        #row-detail-modal .rd-key {
+            color: var(--text-muted); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.4px; font-size: 11px;
+            padding-top: 2px;
+        }
+        #row-detail-modal .rd-val { color: var(--text-primary); word-break: break-word; }
+        #row-detail-modal .rd-val.empty { color: var(--text-muted); font-style: italic; }
+        #row-detail-modal .modal-actions {
+            display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;
+        }
 
         /* ── Preview table ───────────────────────────────────── */
         .table-wrap {
@@ -1011,22 +1069,22 @@
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card" id="stat-stories">
+            <div class="stat-card clickable active" id="stat-stories" onclick="setPreviewFilter('all')" title="Show all rows">
                 <div class="stat-label">Total Stories</div>
                 <div class="stat-value" id="stat-stories-val">—</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="stat-stories-sub"></div>
             </div>
-            <div class="stat-card" id="stat-complete" style="border-left:3px solid #4ade80;">
+            <div class="stat-card clickable" id="stat-complete" style="border-left:3px solid #4ade80;" onclick="setPreviewFilter('complete')" title="Show only complete rows (sent to AI)">
                 <div class="stat-label">Complete <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(go to AI)</span></div>
                 <div class="stat-value" id="stat-complete-val" style="color:#4ade80;">—</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Story + Feature + Epic resolved</div>
             </div>
-            <div class="stat-card warning" id="stat-orphans" style="border-left:3px solid #fbbf24;">
+            <div class="stat-card warning clickable" id="stat-orphans" style="border-left:3px solid #fbbf24;" onclick="setPreviewFilter('orphans')" title="Show only orphan rows (missing feature or epic)">
                 <div class="stat-label">Orphans <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(excluded from AI)</span></div>
                 <div class="stat-value" id="stat-orphans-val">—</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5;" id="stat-orphans-sub"></div>
             </div>
-            <div class="stat-card" id="stat-missing-waf">
+            <div class="stat-card clickable" id="stat-missing-waf" onclick="setPreviewFilter('missing_waf')" title="Show only complete rows whose Epic has no WAF">
                 <div class="stat-label">Missing WAF <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(complete, but no Epic WAF)</span></div>
                 <div class="stat-value" id="stat-missing-waf-val">—</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Will still be sent to AI for first-time classify</div>
@@ -1070,6 +1128,19 @@
             <div class="modal-actions">
                 <button class="btn-secondary" onclick="closeSubmitModal()">Cancel</button>
                 <button class="btn-primary" onclick="sendToClassifier()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Row detail modal (opens when a preview row is clicked) ─ -->
+    <div id="row-detail-modal" onclick="if(event.target.id==='row-detail-modal')closeRowDetail()">
+        <div class="modal-card">
+            <h3 id="row-detail-title">Row detail</h3>
+            <div id="row-detail-status" style="margin-bottom:10px;"></div>
+            <div class="rd-grid" id="row-detail-grid"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="toggleRejectFromDetail()" id="row-detail-reject-btn">Reject this row</button>
+                <button class="btn-primary" onclick="closeRowDetail()">Close</button>
             </div>
         </div>
     </div>
@@ -1633,7 +1704,48 @@ const STATUS_PILL = {
     missing_epic:    { cls: 'missing-epic',    label: 'Missing Epic' },
 };
 
+// Active preview filter — one of: 'all' | 'complete' | 'orphans' | 'missing_waf' | 'missing_feature' | 'missing_epic'
+let _previewFilter = 'all';
+
+function _matchesFilter(row) {
+    if (_previewFilter === 'all') return true;
+    const status = row._status || (row._is_complete ? 'complete' : 'missing_feature');
+    if (_previewFilter === 'complete')        return status === 'complete';
+    if (_previewFilter === 'orphans')         return status !== 'complete';
+    if (_previewFilter === 'missing_feature') return status === 'missing_feature';
+    if (_previewFilter === 'missing_epic')    return status === 'missing_epic';
+    if (_previewFilter === 'missing_waf')     return !!row._flag_missing_waf;
+    return true;
+}
+
+// Click handler for stat cards. Clicking the active filter again toggles back to "all".
+function setPreviewFilter(name) {
+    if (_previewFilter === name && name !== 'all') {
+        _previewFilter = 'all';
+    } else {
+        _previewFilter = name;
+    }
+    // Sync stat-card active state
+    ['stat-stories','stat-complete','stat-orphans','stat-missing-waf'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
+    const cardMap = {
+        all: 'stat-stories', complete: 'stat-complete',
+        orphans: 'stat-orphans', missing_waf: 'stat-missing-waf',
+        missing_feature: 'stat-orphans', missing_epic: 'stat-orphans',
+    };
+    const activeCard = document.getElementById(cardMap[_previewFilter] || 'stat-stories');
+    if (activeCard) activeCard.classList.add('active');
+    // Re-render preview with the cached row set
+    if (window._previewRows) renderPreview(window._previewRows, window._previewCols);
+}
+
 function renderPreview(rows, allCols) {
+    // Cache so legend/stat clicks can re-render without round-tripping the server
+    window._previewRows = rows;
+    window._previewCols = allCols;
+
     const thead = document.getElementById('preview-thead');
     const tbody = document.getElementById('preview-tbody');
 
@@ -1645,8 +1757,9 @@ function renderPreview(rows, allCols) {
     thead.innerHTML = hHtml;
 
     let orphanCount = 0;
+    let visibleCount = 0;
     let bHtml = '';
-    rows.forEach(row => {
+    rows.forEach((row, rowIdx) => {
         const sid = esc(row['Story Id'] != null ? String(row['Story Id']) : '');
         const cbId = 'prev-cb-' + sid.replace(/[^a-z0-9]/gi, '_');
         const status = row._status || (row._is_complete ? 'complete' : 'missing_feature');
@@ -1654,12 +1767,16 @@ function renderPreview(rows, allCols) {
         const isMissingWaf = row._flag_missing_waf;
         if (isOrphan) orphanCount++;
 
+        // Filter: skip rows that don't match the active filter
+        if (!_matchesFilter(row)) return;
+        visibleCount++;
+
         let rowClass = '';
         if (status === 'missing_epic') rowClass = ' class="row-orphan-epic"';
         else if (isOrphan)             rowClass = ' class="row-orphan"';
 
-        bHtml += `<tr${rowClass}>`;
-        bHtml += `<td style="text-align:center;"><input type="checkbox" id="${cbId}" style="accent-color:var(--accent);cursor:pointer;" ${sid ? `onchange="_toggleReject('${sid}',this.checked)"` : 'disabled'}></td>`;
+        bHtml += `<tr${rowClass} onclick="openRowDetail(${rowIdx})" title="Click row for detail">`;
+        bHtml += `<td style="text-align:center;" onclick="event.stopPropagation();"><input type="checkbox" id="${cbId}" style="accent-color:var(--accent);cursor:pointer;" ${sid ? `onchange="_toggleReject('${sid}',this.checked)"` : 'disabled'}></td>`;
 
         // Status column
         const pill = STATUS_PILL[status] || STATUS_PILL.complete;
@@ -1681,7 +1798,8 @@ function renderPreview(rows, allCols) {
         bHtml += '</tr>';
     });
 
-    // Status legend (only if there are orphans in the preview)
+    // Status legend (only if there are orphans in the preview).
+    // Each pill is also a quick-filter shortcut.
     const legendId = 'preview-diff-legend';
     let existingLegend = document.getElementById(legendId);
     if (existingLegend) existingLegend.remove();
@@ -1689,18 +1807,99 @@ function renderPreview(rows, allCols) {
         const legendEl = document.createElement('div');
         legendEl.id = legendId;
         legendEl.style.cssText = 'margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;font-size:12px;align-items:center;';
+        const f = _previewFilter;
         legendEl.innerHTML =
-            '<span style="color:var(--text-muted);">Legend:</span>' +
-            '<span class="status-pill complete">Complete</span>' +
-            '<span class="status-pill missing-feature">Missing Feature</span>' +
-            '<span class="status-pill missing-epic">Missing Epic</span>' +
-            '<span class="status-pill missing-waf">No WAF</span>' +
-            '<span style="color:var(--text-muted);">Orphans float to the top &mdash; only Complete rows are sent to AI.</span>';
+            '<span style="color:var(--text-muted);">Filter:</span>' +
+            `<span class="status-pill complete${f==='complete'?' active':''}" onclick="setPreviewFilter('complete')" title="Show only complete rows">Complete</span>` +
+            `<span class="status-pill missing-feature${f==='missing_feature'?' active':''}" onclick="setPreviewFilter('missing_feature')" title="Show only Missing Feature orphans">Missing Feature</span>` +
+            `<span class="status-pill missing-epic${f==='missing_epic'?' active':''}" onclick="setPreviewFilter('missing_epic')" title="Show only Missing Epic orphans">Missing Epic</span>` +
+            `<span class="status-pill missing-waf${f==='missing_waf'?' active':''}" onclick="setPreviewFilter('missing_waf')" title="Show only complete rows whose epic has no WAF">No WAF</span>` +
+            `<span class="status-pill" style="background:var(--bg-secondary);color:var(--text-muted);${f==='all'?'outline:2px solid var(--accent);outline-offset:1px;':''}" onclick="setPreviewFilter('all')" title="Reset filter">All</span>` +
+            '<span style="color:var(--text-muted);margin-left:4px;">— click a pill to filter; orphans always excluded from AI.</span>';
         document.getElementById('preview-table-wrap').insertAdjacentElement('beforebegin', legendEl);
     }
 
-    tbody.innerHTML = bHtml || '<tr><td colspan="' + (PREVIEW_COLS.length + 2) + '" style="text-align:center;color:var(--text-muted);padding:24px;">No rows</td></tr>';
+    // Filtered-row hint (when the active filter is hiding rows)
+    let filterHint = document.getElementById('preview-filter-hint');
+    if (filterHint) filterHint.remove();
+    if (_previewFilter !== 'all' && rows.length > 0) {
+        filterHint = document.createElement('div');
+        filterHint.id = 'preview-filter-hint';
+        filterHint.style.cssText = 'margin-bottom:6px;font-size:12px;color:var(--text-muted);';
+        filterHint.innerHTML = `Showing <b>${visibleCount}</b> of ${rows.length} rows (filter: ${_previewFilter}). <a href="#" onclick="setPreviewFilter('all');return false;" style="color:var(--accent);">Show all</a>`;
+        document.getElementById('preview-table-wrap').insertAdjacentElement('beforebegin', filterHint);
+    }
+
+    tbody.innerHTML = bHtml || '<tr><td colspan="' + (PREVIEW_COLS.length + 2) + '" style="text-align:center;color:var(--text-muted);padding:24px;">No rows match the current filter</td></tr>';
 }
+
+// ── Row detail modal ───────────────────────────────────────────────
+let _activeRowIdx = null;
+function openRowDetail(idx) {
+    const row = (window._previewRows || [])[idx];
+    if (!row) return;
+    _activeRowIdx = idx;
+    const status = row._status || (row._is_complete ? 'complete' : 'missing_feature');
+    const pill = STATUS_PILL[status] || STATUS_PILL.complete;
+    const isMissingWaf = row._flag_missing_waf;
+
+    const sid = row['Story Id'] != null ? String(row['Story Id']) : '';
+    document.getElementById('row-detail-title').textContent =
+        sid ? `Story ${sid}` : 'Row detail';
+
+    let statusHtml = `<span class="status-pill ${pill.cls}">${pill.label}</span>`;
+    if (isMissingWaf) statusHtml += ' <span class="status-pill missing-waf">No WAF</span>';
+    document.getElementById('row-detail-status').innerHTML = statusHtml;
+
+    // Render every non-internal field
+    const grid = document.getElementById('row-detail-grid');
+    let g = '';
+    Object.keys(row).forEach(k => {
+        if (k.startsWith('_')) return;
+        const v = row[k];
+        const empty = (v == null || String(v).trim() === '');
+        g += `<div class="rd-key">${esc(k)}</div>` +
+             `<div class="rd-val${empty ? ' empty' : ''}">${empty ? '—' : esc(String(v))}</div>`;
+    });
+    grid.innerHTML = g;
+
+    // Reflect current reject state on the button
+    const btn = document.getElementById('row-detail-reject-btn');
+    const rejected = sid && _rejectedIds && _rejectedIds.has(sid);
+    btn.textContent = rejected ? 'Restore this row' : 'Reject this row';
+
+    document.getElementById('row-detail-modal').classList.add('open');
+}
+
+function closeRowDetail() {
+    document.getElementById('row-detail-modal').classList.remove('open');
+    _activeRowIdx = null;
+}
+
+function toggleRejectFromDetail() {
+    if (_activeRowIdx == null) return;
+    const row = (window._previewRows || [])[_activeRowIdx];
+    if (!row) return;
+    const sid = row['Story Id'] != null ? String(row['Story Id']) : '';
+    if (!sid) return;
+    const cbId = 'prev-cb-' + sid.replace(/[^a-z0-9]/gi, '_');
+    const cb = document.getElementById(cbId);
+    if (cb) {
+        cb.checked = !cb.checked;
+        _toggleReject(sid, cb.checked);
+    } else {
+        // Row may be filtered out; toggle directly via the helper.
+        const rejected = _rejectedIds && _rejectedIds.has(sid);
+        _toggleReject(sid, !rejected);
+    }
+    closeRowDetail();
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('row-detail-modal').classList.contains('open')) {
+        closeRowDetail();
+    }
+});
 
 // ── Start Over ───────────────────────────────────────────────────────
 function startOver() {

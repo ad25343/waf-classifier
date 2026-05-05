@@ -25,3 +25,8 @@ Story,Efficiency & Optimization,,STORY-P014,User Story,Build developer portal wi
 Story,Efficiency & Optimization,,STORY-P015,User Story,Integrate API changelog and versioning into portal,5,PI-4,Developer Portal & API Docs,Planning,API Platform,API Platform,TBD
 Story,,,STORY-X901,User Story,Story with no parent feature listed,3,PI-4,,Planning,API Platform,API Platform,TBD
 Story,,,STORY-X902,User Story,Story pointing to a feature that does not exist,5,PI-4,Phantom Feature Not In File,Planning,API Platform,API Platform,TBD
+Story,Audit & Compliance,,STORY-A001,User Story,Crawl payment-card data stores and tag PCI scope,5,PI-3,PCI Card-Holder Data Discovery Scan,In Progress,Audit Systems,Audit Systems,TBD
+Story,Audit & Compliance,,STORY-A002,User Story,Generate quarterly PCI compliance attestation report,3,PI-3,PCI Card-Holder Data Discovery Scan,Planning,Audit Systems,Audit Systems,TBD
+Story,Lift and Shift,,STORY-A003,User Story,Migrate batch jobs from on-prem to AWS Batch,8,PI-3,Bare-Metal to AWS Migration Wave 1,In Progress,Cloud Infrastructure,Cloud Infrastructure,TBD
+Story,BAU Maintenance,,STORY-A004,User Story,Apply Q4 critical kernel patches to fleet,3,PI-2,Quarterly OS Patch Rollout,Done,SRE,SRE,TBD
+Story,Innovation Bet,,STORY-A005,User Story,Train sentiment classifier on 12-month support tickets,8,PI-4,Customer Sentiment ML Pipeline,Planning,Data Platform,Data Platform,TBD

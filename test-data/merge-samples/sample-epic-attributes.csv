@@ -4,3 +4,7 @@ EP-C002,Epic,In Progress,GDPR Data Privacy Program,Regulatory Mandated,ATP-1002,
 EP-C003,Epic,Planning,Cloud Infrastructure Migration,New Capability,ATP-1003,Maria Lopez
 EP-P001,Epic,In Progress,Observability Platform Build-out,KTLO (Keep the Lights On),ATP-1004,Alex Kim
 EP-P002,Epic,Active,API Gateway Modernization,Efficiency & Optimization,ATP-1005,Tom Wright
+EP-A001,Epic,In Progress,PCI-DSS Quarterly Audit,Audit & Compliance,ATP-1006,Priya Patel
+EP-A002,Epic,Active,Data Center Rehosting,Lift and Shift,ATP-1007,Marcus Lee
+EP-A003,Epic,In Progress,Legacy Patching Program,BAU Maintenance,ATP-1008,Jordan Smith
+EP-A004,Epic,Planning,AI-Powered Customer Insights,Innovation Bet,ATP-1009,Aisha Rahman
