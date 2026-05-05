@@ -542,7 +542,17 @@ def history_import():
 
         df.columns = [c.strip().lower() for c in df.columns]
 
-        find_col = lambda kws: next((col for col in df.columns if any(kw in col for kw in kws)), None)
+        # Match keyword-first (priority order), not column-first.
+        # Otherwise a fallback keyword like "subcategory" can win over the
+        # primary "team of teams" if the subcategory column appears earlier
+        # in the file — which causes the Team of Teams filter to display the
+        # wrong data on the Teams view.
+        def find_col(kws):
+            for kw in kws:
+                for col in df.columns:
+                    if kw in col:
+                        return col
+            return None
 
         title_col        = find_col(["story title", "story name", "title", "summary", "story", "name"])
         desc_col         = find_col(["story description", "description", "desc", "detail", "body"])

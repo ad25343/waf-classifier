@@ -657,6 +657,164 @@
             color: var(--warning);
         }
         .rejected-banner.visible { display: block; }
+
+        /* ── Mapping cards (Step 2) ─────────────────────────── */
+        .mapping-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .mapping-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mapping-card.not-uploaded {
+            opacity: 0.6;
+            background: transparent;
+            border-style: dashed;
+        }
+        .mapping-card-head {
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 8px;
+        }
+        .mapping-card-title {
+            font-size: 14px; font-weight: 700; color: var(--text-primary);
+        }
+        .mapping-card-meta {
+            font-size: 11px; color: var(--text-muted);
+        }
+        .mapping-row {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+        .mapping-row label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .mapping-row .req-star {
+            color: var(--error); font-weight: 700;
+        }
+        .mapping-row select {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 8px;
+            font-size: 12px;
+            outline: none;
+            min-width: 0;   /* allow shrink in grid */
+        }
+        .mapping-row select:focus { border-color: var(--accent); }
+        .mapping-row select.missing { border-color: var(--error); }
+        .mapping-card details {
+            margin-top: 6px;
+            font-size: 11px;
+        }
+        .mapping-card details summary {
+            cursor: pointer;
+            color: var(--text-muted);
+            user-select: none;
+            padding: 4px 0;
+        }
+        .mapping-card details summary:hover { color: var(--text-secondary); }
+        .mapping-sample-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+            font-size: 11px;
+        }
+        .mapping-sample-table th, .mapping-sample-table td {
+            border: 1px solid var(--border);
+            padding: 4px 6px;
+            text-align: left;
+            white-space: nowrap;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mapping-sample-table th {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .mapping-sample-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-top: 6px;
+        }
+        .mapping-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .mapping-error {
+            display: none;
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: rgba(220,38,38,0.08);
+            border: 1px solid rgba(220,38,38,0.3);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--error);
+        }
+        .mapping-error.visible { display: block; }
+        .mapping-error ul { margin: 4px 0 0 18px; padding: 0; }
+
+        /* ── Status pills + orphan row tint ──────────────────── */
+        .status-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-pill.complete    { background: rgba(74,222,128,0.15);  color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+        .status-pill.missing-feature { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+        .status-pill.missing-epic    { background: rgba(234,88,12,0.15);  color: #fb923c; border: 1px solid rgba(234,88,12,0.3); }
+        .status-pill.missing-waf     { background: rgba(220,38,38,0.10); color: #f87171; border: 1px solid rgba(220,38,38,0.25); margin-left: 4px; }
+
+        tr.row-orphan { background: rgba(251,191,36,0.05); }
+        tr.row-orphan-epic { background: rgba(234,88,12,0.05); }
+        tr.row-orphan:hover, tr.row-orphan-epic:hover { background: rgba(251,191,36,0.10); }
+        [data-theme="light"] tr.row-orphan { background: rgba(217,119,6,0.06); }
+        [data-theme="light"] tr.row-orphan-epic { background: rgba(234,88,12,0.07); }
+
+        /* ── Submit confirmation modal ──────────────────────── */
+        .modal-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 9999;
+            align-items: center; justify-content: center;
+        }
+        .modal-backdrop.visible { display: flex; }
+        .modal-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            max-width: 460px; width: 92%;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+        }
+        .modal-card h3 { font-size: 16px; margin-bottom: 12px; }
+        .modal-card p  { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+        .modal-card .modal-actions {
+            display: flex; gap: 10px; justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
@@ -807,18 +965,32 @@
     <div class="process-row">
         <button class="btn-primary" id="btn-process" onclick="processFiles()" disabled>
             <span class="spinner" id="spinner"></span>
-            <span id="btn-process-label">Process Files</span>
+            <span id="btn-process-label">Continue &rarr;</span>
         </button>
         <span class="process-error" id="process-error"></span>
     </div>
 
-    <!-- ── Step 2: Column Detection ───────────────────────────── -->
-    <div id="section-detection" class="section-card">
-        <div class="step-heading" style="margin-bottom:20px;">
+    <!-- ── Step 2: Confirm Column Mappings ────────────────────── -->
+    <div id="section-mapping" class="section-card">
+        <div class="step-heading" style="margin-bottom:14px;">
             <div class="step-num">2</div>
-            <span class="step-label">Column Detection</span>
+            <span class="step-label">Confirm Column Mappings</span>
         </div>
-        <div class="detection-grid" id="detection-grid"></div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.5;">
+            We auto-detected the columns we think correspond to each WAF field. Review and adjust if needed &mdash;
+            wrong mappings produce wrong joins. Required fields are marked <span style="color:var(--error);font-weight:700;">*</span>.
+            <strong style="color:var(--text-primary);">Joins are by name</strong> (Epic Name, Feature Name) so the join keys must be name columns, not IDs.
+        </p>
+        <div class="mapping-grid" id="mapping-grid"></div>
+        <div class="mapping-error" id="mapping-error"></div>
+        <div class="mapping-actions">
+            <button class="btn-secondary" onclick="backToUpload()">&larr; Back</button>
+            <button class="btn-primary" id="btn-run-merge" onclick="runMerge()">
+                <span class="spinner" id="spinner-merge"></span>
+                <span id="btn-run-merge-label">Run Merge</span>
+            </button>
+            <span style="font-size:11px;color:var(--text-muted);">Mappings are validated before the merge runs</span>
+        </div>
     </div>
 
     <!-- ── Step 3: Data Quality ──────────────────────────────── -->
@@ -839,21 +1011,25 @@
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card" id="stat-epics">
-                <div class="stat-label">Epics Loaded</div>
-                <div class="stat-value" id="stat-epics-val">—</div>
-            </div>
-            <div class="stat-card" id="stat-features">
-                <div class="stat-label">Features Loaded</div>
-                <div class="stat-value" id="stat-features-val">—</div>
-            </div>
             <div class="stat-card" id="stat-stories">
-                <div class="stat-label">Stories Merged</div>
+                <div class="stat-label">Total Stories</div>
                 <div class="stat-value" id="stat-stories-val">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="stat-stories-sub"></div>
             </div>
-            <div class="stat-card warning" id="stat-unmatched">
-                <div class="stat-label" id="stat-unmatched-label">Unmatched</div>
-                <div class="stat-value" id="stat-unmatched-val">—</div>
+            <div class="stat-card" id="stat-complete" style="border-left:3px solid #4ade80;">
+                <div class="stat-label">Complete <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(go to AI)</span></div>
+                <div class="stat-value" id="stat-complete-val" style="color:#4ade80;">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Story + Feature + Epic resolved</div>
+            </div>
+            <div class="stat-card warning" id="stat-orphans" style="border-left:3px solid #fbbf24;">
+                <div class="stat-label">Orphans <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(excluded from AI)</span></div>
+                <div class="stat-value" id="stat-orphans-val">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5;" id="stat-orphans-sub"></div>
+            </div>
+            <div class="stat-card" id="stat-missing-waf">
+                <div class="stat-label">Missing WAF <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(complete, but no Epic WAF)</span></div>
+                <div class="stat-value" id="stat-missing-waf-val">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Will still be sent to AI for first-time classify</div>
             </div>
         </div>
 
@@ -869,11 +1045,14 @@
         </div>
 
         <div class="action-row">
-            <button class="btn-primary" id="btn-download" onclick="downloadMerged()">
-                &#11015; Download Merged CSV
+            <button class="btn-primary" id="btn-classify" onclick="confirmSendToClassifier()" title="Send only complete records to AI for analysis">
+                &#9654; <span id="btn-classify-label">Submit Complete for Analysis</span>
             </button>
-            <button class="btn-secondary" id="btn-classify" onclick="sendToClassifier()">
-                &#9654; Submit for Analysis
+            <button class="btn-secondary" id="btn-download" onclick="downloadMerged('all')" title="Download all rows (complete + orphans, with Status column)">
+                &#11015; Download All
+            </button>
+            <button class="btn-secondary" id="btn-download-orphans" onclick="downloadMerged('orphans')" title="Download only orphan rows for triage" style="display:none;">
+                &#11015; <span id="btn-download-orphans-label">Download Orphans</span>
             </button>
             <span id="rejected-count-badge" style="display:none;font-size:12px;font-weight:600;color:var(--warning);padding:4px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:6px;"></span>
             <button class="btn-secondary" onclick="startOver()" style="margin-left:auto;" title="Clear results and upload new files">
@@ -881,6 +1060,18 @@
             </button>
         </div>
         <div id="classify-status" style="margin-top:10px;font-size:13px;color:var(--text-muted);display:none;"></div>
+    </div>
+
+    <!-- ── Submit for Analysis confirmation modal ────────────── -->
+    <div class="modal-backdrop" id="submit-modal">
+        <div class="modal-card">
+            <h3>&#9654; Submit for Analysis</h3>
+            <p id="submit-modal-body">...</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeSubmitModal()">Cancel</button>
+                <button class="btn-primary" onclick="sendToClassifier()">Submit</button>
+            </div>
+        </div>
     </div>
 
 </div><!-- .main -->
@@ -1178,8 +1369,12 @@ function renderValidation(issues) {
     if (firstWithIssues) firstWithIssues.classList.add('open');
 }
 
-// ── Process ───────────────────────────────────────────────────────────
+// ── Process: two-phase flow ───────────────────────────────────────────
+// Phase 1: processFiles() → /api/merge/preview → showMappingStep
+// Phase 2: runMerge()     → /api/merge/process → render results
 let _currentToken = null;
+let _previewData  = null;   // server response from /preview
+let _lastStats    = null;   // remembered for download/submit modal copy
 
 async function processFiles() {
     const btn    = document.getElementById('btn-process');
@@ -1189,35 +1384,26 @@ async function processFiles() {
 
     btn.disabled = true;
     spinner.classList.add('visible');
-    label.textContent = 'Processing…';
+    label.textContent = 'Reading files…';
     errEl.classList.remove('visible');
     errEl.textContent = '';
 
     const fd = new FormData();
-    fd.append('epic_file',    _files.epic);
-    fd.append('feature_file', _files.feature);
-    fd.append('story_file',   _files.story);
+    if (_files.epic)    fd.append('epic_file',    _files.epic);
+    if (_files.feature) fd.append('feature_file', _files.feature);
+    fd.append('story_file', _files.story);
 
     try {
-        const res  = await fetch('/api/merge/process', { method: 'POST', body: fd });
+        const res  = await fetch('/api/merge/preview', { method: 'POST', body: fd });
         const data = await res.json();
-
-        if (!res.ok) {
-            throw new Error(data.error || 'Server error ' + res.status);
-        }
+        if (!res.ok) throw new Error(data.error || ('Server error ' + res.status));
 
         _currentToken = data.token;
-        renderDetection(data.column_map);
-        renderStats(data.stats, (data.issues || {}).missing_files);
-        renderPreview(data.preview, data.columns);
-        renderValidation(data.issues);
+        _previewData  = data;
+        showMappingStep(data);
 
-        document.getElementById('section-detection').classList.add('visible');
-        document.getElementById('section-validation').classList.add('visible');
-        document.getElementById('section-results').classList.add('visible');
-
-        // Scroll to validation section
-        document.getElementById('section-detection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('section-mapping').classList.add('visible');
+        document.getElementById('section-mapping').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     } catch (err) {
         errEl.textContent = 'Error: ' + err.message;
@@ -1225,91 +1411,201 @@ async function processFiles() {
     } finally {
         btn.disabled = false;
         spinner.classList.remove('visible');
-        label.textContent = 'Process Files';
+        label.innerHTML = 'Continue &rarr;';
     }
 }
 
-// ── Column detection render ───────────────────────────────────────────
-function renderDetection(colMap) {
-    const grid = document.getElementById('detection-grid');
-    if (!colMap) {
-        grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Column map unavailable.</div>';
+function backToUpload() {
+    document.getElementById('section-mapping').classList.remove('visible');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Mapping cards render (Step 2) ─────────────────────────────────────
+function showMappingStep(data) {
+    const grid = document.getElementById('mapping-grid');
+    grid.innerHTML = '';
+    document.getElementById('mapping-error').classList.remove('visible');
+
+    const FILE_LABELS = { epic: 'Epic File', feature: 'Feature File', story: 'Story File' };
+    const required = data.required || {};
+
+    ['epic', 'feature', 'story'].forEach(fileKey => {
+        const f = (data.files || {})[fileKey] || {};
+        const card = document.createElement('div');
+        card.className = 'mapping-card';
+        card.id = 'mapping-card-' + fileKey;
+
+        if (!f.uploaded) {
+            card.classList.add('not-uploaded');
+            card.innerHTML =
+                '<div class="mapping-card-head">' +
+                    '<span class="mapping-card-title">' + esc(FILE_LABELS[fileKey]) + '</span>' +
+                    '<span class="mapping-card-meta">not uploaded</span>' +
+                '</div>' +
+                '<div style="font-size:12px;color:var(--text-muted);font-style:italic;">Related fields will be blank in the merged output.</div>';
+            grid.appendChild(card);
+            return;
+        }
+
+        const reqSet = new Set(required[fileKey] || []);
+
+        // Card head
+        let html =
+            '<div class="mapping-card-head">' +
+                '<span class="mapping-card-title">' + esc(FILE_LABELS[fileKey]) + '</span>' +
+                '<span class="mapping-card-meta">' + (f.row_count || 0) + ' rows &middot; ' + (f.columns || []).length + ' cols</span>' +
+            '</div>';
+
+        // Field rows
+        html += '<div>';
+        (f.target_fields || []).forEach(tf => {
+            const isReq    = reqSet.has(tf.key);
+            const selected = (f.suggested_mappings || {})[tf.key] || '';
+            const opts = ['<option value="">(none)</option>'].concat(
+                (f.columns || []).map(col =>
+                    '<option value="' + esc(col) + '"' + (col === selected ? ' selected' : '') + '>' + esc(col) + '</option>'
+                )
+            ).join('');
+            html +=
+                '<div class="mapping-row">' +
+                    '<label>' + esc(tf.label) + (isReq ? ' <span class="req-star">*</span>' : '') + '</label>' +
+                    '<select id="map-' + esc(fileKey) + '-' + esc(tf.key) + '" data-file="' + esc(fileKey) + '" data-key="' + esc(tf.key) + '" data-required="' + (isReq ? '1' : '0') + '">' + opts + '</select>' +
+                '</div>';
+        });
+        html += '</div>';
+
+        // Sample preview
+        if ((f.sample_rows || []).length > 0) {
+            html += '<details>' +
+                '<summary>Sample preview &mdash; first ' + f.sample_rows.length + ' row' + (f.sample_rows.length === 1 ? '' : 's') + '</summary>' +
+                '<div class="mapping-sample-wrap"><table class="mapping-sample-table">' +
+                    '<thead><tr>' + (f.columns || []).map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead>' +
+                    '<tbody>' + f.sample_rows.map(r =>
+                        '<tr>' + (f.columns || []).map(c => '<td title="' + esc(r[c] || '') + '">' + esc((r[c] || '').slice(0, 60)) + '</td>').join('') + '</tr>'
+                    ).join('') + '</tbody>' +
+                '</table></div>' +
+            '</details>';
+        }
+
+        card.innerHTML = html;
+        grid.appendChild(card);
+    });
+}
+
+// ── Run Merge: phase 2 ────────────────────────────────────────────────
+async function runMerge() {
+    if (!_currentToken) return;
+    const btn     = document.getElementById('btn-run-merge');
+    const spinner = document.getElementById('spinner-merge');
+    const label   = document.getElementById('btn-run-merge-label');
+    const errEl   = document.getElementById('mapping-error');
+
+    // Collect mappings + validate required fields client-side
+    const mappings = { epic: {}, feature: {}, story: {} };
+    const missing = [];
+    document.querySelectorAll('#mapping-grid select').forEach(sel => {
+        const fileKey = sel.dataset.file;
+        const fldKey  = sel.dataset.key;
+        const val     = sel.value || '';
+        sel.classList.remove('missing');
+        if (val) mappings[fileKey][fldKey] = val;
+        if (sel.dataset.required === '1' && !val) {
+            sel.classList.add('missing');
+            const labelText = sel.parentElement.querySelector('label')?.textContent.replace('*', '').trim() || fldKey;
+            missing.push(fileKey + ': ' + labelText);
+        }
+    });
+    if (missing.length > 0) {
+        errEl.innerHTML = '<strong>Required mappings missing:</strong><ul>' +
+            missing.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>';
+        errEl.classList.add('visible');
         return;
     }
+    errEl.classList.remove('visible');
 
-    const epicFields = [
-        { key: 'id_col',         label: 'Epic Id' },
-        { key: 'name_col',       label: 'Epic Name' },
-        { key: 'desc_col',       label: 'Epic Desc' },
-        { key: 'block_col',      label: 'Block' },
-        { key: 'waf_col',        label: 'WAF' },
-        { key: 'run_change_col', label: 'Run/Change' },
-    ];
-    const featFields = [
-        { key: 'epic_name_col', label: 'Epic Name (join key)' },
-        { key: 'id_col',        label: 'Feature Id' },
-        { key: 'name_col',      label: 'Feature Name' },
-        { key: 'desc_col',      label: 'Feature Desc' },
-        { key: 'tot_col',       label: 'Team of Teams' },
-        { key: 'pi_col',        label: 'PI Name' },
-    ];
-    const storyFields = [
-        { key: 'feature_name_col', label: 'Feature Name (join key)' },
-        { key: 'id_col',           label: 'Story Id' },
-        { key: 'name_col',         label: 'Story Name' },
-        { key: 'desc_col',         label: 'Story Desc' },
-        { key: 'points_col',       label: 'Story Points' },
-        { key: 'team_col',         label: 'Assigned Teams' },
-    ];
+    btn.disabled = true;
+    spinner.classList.add('visible');
+    label.textContent = 'Merging…';
 
-    function groupHtml(title, fields, map) {
-        if (map == null) {
-            return `<div class="detection-group"><h4>${esc(title)}</h4>
-                <div style="font-size:12px;color:var(--text-muted);font-style:italic;padding:6px 0;">Not uploaded &mdash; fields will be blank</div>
-            </div>`;
-        }
-        let rows = '';
-        fields.forEach(f => {
-            const val = map[f.key];
-            rows += val
-                ? `<div class="detection-row">
-                    <span class="detection-label">${esc(f.label)}</span>
-                    <span class="detection-arrow">&#8594;</span>
-                    <span class="detection-value" title="${esc(val)}">${esc(val)}</span>
-                   </div>`
-                : `<div class="detection-row">
-                    <span class="detection-label">${esc(f.label)}</span>
-                    <span class="detection-arrow">&#8594;</span>
-                    <span class="detection-missing">&#9888; Not found</span>
-                   </div>`;
+    try {
+        const res = await fetch('/api/merge/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: _currentToken, mappings: mappings })
         });
-        return `<div class="detection-group"><h4>${esc(title)}</h4>${rows}</div>`;
-    }
+        const data = await res.json();
+        if (!res.ok) {
+            if (data.errors && Array.isArray(data.errors)) {
+                errEl.innerHTML = '<strong>' + esc(data.error || 'Validation failed') + '</strong><ul>' +
+                    data.errors.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul>';
+            } else {
+                errEl.textContent = 'Error: ' + (data.error || ('Server error ' + res.status));
+            }
+            errEl.classList.add('visible');
+            return;
+        }
 
-    grid.innerHTML =
-        groupHtml('Epic File',    epicFields,  colMap.epic    ?? null) +
-        groupHtml('Feature File', featFields,  colMap.feature ?? null) +
-        groupHtml('Story File',   storyFields, colMap.story   ?? null);
+        _lastStats = data.stats;
+        renderStats(data.stats);
+        renderPreview(data.preview, data.columns);
+        renderValidation(data.issues);
+
+        document.getElementById('section-validation').classList.add('visible');
+        document.getElementById('section-results').classList.add('visible');
+        document.getElementById('section-validation').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+        errEl.textContent = 'Error: ' + err.message;
+        errEl.classList.add('visible');
+    } finally {
+        btn.disabled = false;
+        spinner.classList.remove('visible');
+        label.textContent = 'Run Merge';
+    }
 }
 
 // ── Stats render ─────────────────────────────────────────────────────
-function renderStats(stats, missingFiles) {
+function renderStats(stats) {
     const show = id => document.getElementById(id).classList.add('visible');
-    show('stat-epics'); show('stat-features'); show('stat-stories'); show('stat-unmatched');
+    show('stat-stories'); show('stat-complete'); show('stat-orphans'); show('stat-missing-waf');
 
-    const epicLabel    = missingFiles && missingFiles.includes('epic')    ? 'Epics (not uploaded)'    : 'Epics Loaded';
-    const featureLabel = missingFiles && missingFiles.includes('feature') ? 'Features (not uploaded)' : 'Features Loaded';
-    document.getElementById('stat-epics').querySelector('.stat-label').textContent    = epicLabel;
-    document.getElementById('stat-features').querySelector('.stat-label').textContent = featureLabel;
+    const total      = stats.stories || 0;
+    const complete   = stats.complete || 0;
+    const orphans    = stats.orphans  || 0;
+    const missingFt  = stats.missing_feature || 0;
+    const missingEp  = stats.missing_epic || 0;
+    const missingWaf = stats.missing_waf || 0;
 
-    document.getElementById('stat-epics-val').textContent    = stats.epics    != null ? stats.epics    : '—';
-    document.getElementById('stat-features-val').textContent = stats.features != null ? stats.features : '—';
-    document.getElementById('stat-stories-val').textContent  = stats.stories  != null ? stats.stories  : '—';
+    document.getElementById('stat-stories-val').textContent  = total;
+    document.getElementById('stat-stories-sub').textContent  =
+        (stats.epics || 0) + ' epic' + (stats.epics === 1 ? '' : 's') + ' &middot; ' + (stats.features || 0) + ' feature' + (stats.features === 1 ? '' : 's');
+    document.getElementById('stat-stories-sub').innerHTML    =
+        (stats.epics || 0) + ' epic' + (stats.epics === 1 ? '' : 's') + ' &middot; ' + (stats.features || 0) + ' feature' + (stats.features === 1 ? '' : 's');
 
-    const unmatched = (stats.unmatched_features || 0) + (stats.unmatched_epics || 0);
-    document.getElementById('stat-unmatched-val').textContent = unmatched;
-    document.getElementById('stat-unmatched-label').textContent = unmatched > 0 ? 'Unmatched Stories' : 'All Matched';
-    if (unmatched === 0) document.getElementById('stat-unmatched').classList.remove('warning');
+    document.getElementById('stat-complete-val').textContent = complete;
+    document.getElementById('stat-orphans-val').textContent  = orphans;
+
+    const subParts = [];
+    if (missingFt) subParts.push(missingFt + ' missing feature');
+    if (missingEp) subParts.push(missingEp + ' missing epic');
+    document.getElementById('stat-orphans-sub').innerHTML = subParts.length ? subParts.join('<br>') : 'No orphans';
+
+    const orphansCard = document.getElementById('stat-orphans');
+    if (orphans === 0) orphansCard.classList.remove('warning'); else orphansCard.classList.add('warning');
+
+    document.getElementById('stat-missing-waf-val').textContent = missingWaf;
+
+    // Toggle the "Download Orphans" button visibility
+    const orphansBtn   = document.getElementById('btn-download-orphans');
+    const orphansLabel = document.getElementById('btn-download-orphans-label');
+    if (orphans > 0) {
+        orphansBtn.style.display = '';
+        orphansLabel.textContent = 'Download Orphans (' + orphans + ')';
+    } else {
+        orphansBtn.style.display = 'none';
+    }
+
+    // Update "Submit Complete" button label with the count
+    document.getElementById('btn-classify-label').textContent = 'Submit ' + complete + ' Complete for Analysis';
 }
 
 // ── Preview render ───────────────────────────────────────────────────
@@ -1331,32 +1627,53 @@ const WAF_COLOR_CSS = {
     TEAL:   { bg: 'rgba(13,148,136,0.2)',   fg: '#2dd4bf' },
 };
 
+const STATUS_PILL = {
+    complete:        { cls: 'complete',        label: 'Complete' },
+    missing_feature: { cls: 'missing-feature', label: 'Missing Feature' },
+    missing_epic:    { cls: 'missing-epic',    label: 'Missing Epic' },
+};
+
 function renderPreview(rows, allCols) {
     const thead = document.getElementById('preview-thead');
     const tbody = document.getElementById('preview-tbody');
 
-    let hHtml = '<tr><th style="width:48px;text-align:center;" title="Reject row from output">Reject</th>';
+    let hHtml = '<tr>' +
+        '<th style="width:48px;text-align:center;" title="Reject row from output">Reject</th>' +
+        '<th style="width:140px;">Status</th>';
     PREVIEW_COLS.forEach(c => { hHtml += `<th>${esc(c)}</th>`; });
     hHtml += '</tr>';
     thead.innerHTML = hHtml;
 
-    let diffCount = 0;
+    let orphanCount = 0;
     let bHtml = '';
     rows.forEach(row => {
         const sid = esc(row['Story Id'] != null ? String(row['Story Id']) : '');
         const cbId = 'prev-cb-' + sid.replace(/[^a-z0-9]/gi, '_');
-        const isMissingWaf = row['_diff_missing_waf'];
-        if (isMissingWaf) diffCount++;
-        const rowClass = isMissingWaf ? ' class="diff-missing"' : '';
+        const status = row._status || (row._is_complete ? 'complete' : 'missing_feature');
+        const isOrphan = !row._is_complete;
+        const isMissingWaf = row._flag_missing_waf;
+        if (isOrphan) orphanCount++;
+
+        let rowClass = '';
+        if (status === 'missing_epic') rowClass = ' class="row-orphan-epic"';
+        else if (isOrphan)             rowClass = ' class="row-orphan"';
+
         bHtml += `<tr${rowClass}>`;
         bHtml += `<td style="text-align:center;"><input type="checkbox" id="${cbId}" style="accent-color:var(--accent);cursor:pointer;" ${sid ? `onchange="_toggleReject('${sid}',this.checked)"` : 'disabled'}></td>`;
+
+        // Status column
+        const pill = STATUS_PILL[status] || STATUS_PILL.complete;
+        let statusHtml = '<span class="status-pill ' + pill.cls + '">' + pill.label + '</span>';
+        if (isMissingWaf) statusHtml += '<span class="status-pill missing-waf" title="Story is complete but its Epic has no WAF set">No WAF</span>';
+        bHtml += '<td>' + statusHtml + '</td>';
+
         PREVIEW_COLS.forEach(col => {
             const val = row[col] != null ? String(row[col]) : '';
             if (col === 'WAF Color' && val) {
                 const style = WAF_COLOR_CSS[val] || { bg: 'rgba(107,114,128,0.2)', fg: '#9ca3af' };
                 bHtml += `<td><span class="waf-color-badge" style="background:${esc(style.bg)};color:${esc(style.fg)};border-color:${esc(style.fg)}33;">${esc(val)}</span></td>`;
-            } else if (col === 'WAF Category' && isMissingWaf) {
-                bHtml += `<td class="diff-cell-missing" title="No WAF category assigned">— missing</td>`;
+            } else if (col === 'WAF Category' && isMissingWaf && !val) {
+                bHtml += `<td class="diff-cell-missing" title="Epic has no WAF category">— missing</td>`;
             } else {
                 bHtml += `<td title="${esc(val)}">${esc(val)}</td>`;
             }
@@ -1364,28 +1681,31 @@ function renderPreview(rows, allCols) {
         bHtml += '</tr>';
     });
 
-    // Show diff legend if any issues found
+    // Status legend (only if there are orphans in the preview)
     const legendId = 'preview-diff-legend';
     let existingLegend = document.getElementById(legendId);
     if (existingLegend) existingLegend.remove();
-    if (diffCount > 0) {
+    if (orphanCount > 0) {
         const legendEl = document.createElement('div');
         legendEl.id = legendId;
-        legendEl.style.cssText = 'margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;';
-        legendEl.innerHTML = `
-            <span style="color:var(--text-muted);">Diff highlights (first 50 rows):</span>
-            <span style="background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:4px;padding:2px 8px;color:#f87171;">— Missing WAF</span>
-            <span style="color:var(--text-muted);">${diffCount} row${diffCount !== 1 ? 's' : ''} flagged</span>`;
+        legendEl.style.cssText = 'margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;font-size:12px;align-items:center;';
+        legendEl.innerHTML =
+            '<span style="color:var(--text-muted);">Legend:</span>' +
+            '<span class="status-pill complete">Complete</span>' +
+            '<span class="status-pill missing-feature">Missing Feature</span>' +
+            '<span class="status-pill missing-epic">Missing Epic</span>' +
+            '<span class="status-pill missing-waf">No WAF</span>' +
+            '<span style="color:var(--text-muted);">Orphans float to the top &mdash; only Complete rows are sent to AI.</span>';
         document.getElementById('preview-table-wrap').insertAdjacentElement('beforebegin', legendEl);
     }
 
-    tbody.innerHTML = bHtml || '<tr><td colspan="' + (PREVIEW_COLS.length + 1) + '" style="text-align:center;color:var(--text-muted);padding:24px;">No rows</td></tr>';
+    tbody.innerHTML = bHtml || '<tr><td colspan="' + (PREVIEW_COLS.length + 2) + '" style="text-align:center;color:var(--text-muted);padding:24px;">No rows</td></tr>';
 }
 
 // ── Start Over ───────────────────────────────────────────────────────
 function startOver() {
-    // Hide result sections
-    document.getElementById('section-detection').classList.remove('visible');
+    // Hide step sections
+    document.getElementById('section-mapping').classList.remove('visible');
     document.getElementById('section-validation').classList.remove('visible');
     document.getElementById('section-results').classList.remove('visible');
     // Reset file inputs and badges
@@ -1397,6 +1717,8 @@ function startOver() {
     });
     // Reset state
     _currentToken = null;
+    _previewData  = null;
+    _lastStats    = null;
     _rejectedIds = new Set();
     _updateRejectedState();
     document.getElementById('btn-process').disabled = true;
@@ -1406,21 +1728,27 @@ function startOver() {
 }
 
 // ── Download ─────────────────────────────────────────────────────────
-async function downloadMerged() {
+async function downloadMerged(mode) {
     if (!_currentToken) return;
     const rawName = (document.getElementById('job-name-input').value || '').trim();
     const jobName = rawName || ('merged-' + _currentToken);
+    const body = {
+        rejected_ids: Array.from(_rejectedIds),
+        job_name:     jobName,
+        only_orphans: mode === 'orphans',
+        // mode === 'all' means everything (default false on the others)
+    };
     try {
         const res = await fetch('/api/merge/download/' + encodeURIComponent(_currentToken), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rejected_ids: Array.from(_rejectedIds), job_name: jobName })
+            body: JSON.stringify(body)
         });
         if (!res.ok) { alert('Download failed: ' + res.status); return; }
         const blob = await res.blob();
         const cd = res.headers.get('Content-Disposition') || '';
         const fnMatch = cd.match(/filename[^;=\n]*=["']?([^"';\n]+)["']?/);
-        const filename = fnMatch ? fnMatch[1].trim() : 'merged.csv';
+        const filename = fnMatch ? fnMatch[1].trim() : (mode === 'orphans' ? 'orphans.csv' : 'merged.csv');
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = filename; a.click();
@@ -1430,17 +1758,51 @@ async function downloadMerged() {
     }
 }
 
+// ── Submit for Analysis: confirmation modal + send ───────────────────
+function confirmSendToClassifier() {
+    if (!_currentToken || !_lastStats) return;
+    const complete   = _lastStats.complete || 0;
+    const orphans    = _lastStats.orphans  || 0;
+    const missingWaf = _lastStats.missing_waf || 0;
+    const rejected   = _rejectedIds.size;
+    let netComplete  = complete;
+    // Best-effort: subtract rejections that are within the complete bucket.
+    // We don't track rejections by status here, so display both totals.
+
+    let body = '<strong>' + complete + ' complete</strong> story' + (complete === 1 ? '' : 'ies') + ' will be sent to the AI for analysis.';
+    if (orphans > 0) {
+        body += ' <strong style="color:var(--warning);">' + orphans + ' orphan</strong>' + (orphans === 1 ? '' : 's') +
+                ' will be excluded (you can still download them via "Download Orphans" for triage).';
+    }
+    if (missingWaf > 0) {
+        body += ' <span style="color:var(--text-muted);">' + missingWaf + ' of those have no WAF set on their epic &mdash; the AI will classify them from scratch.</span>';
+    }
+    if (rejected > 0) {
+        body += '<br><br><span style="color:var(--warning);">' + rejected + ' manually-rejected row' + (rejected === 1 ? '' : 's') +
+                ' will also be excluded.</span>';
+    }
+    document.getElementById('submit-modal-body').innerHTML = body;
+    document.getElementById('submit-modal').classList.add('visible');
+}
+
+function closeSubmitModal() {
+    document.getElementById('submit-modal').classList.remove('visible');
+}
+
 async function sendToClassifier() {
     if (!_currentToken) return;
+    closeSubmitModal();
     const btn = document.getElementById('btn-classify');
+    const lbl = document.getElementById('btn-classify-label');
     const status = document.getElementById('classify-status');
     const rawName = (document.getElementById('job-name-input').value || '').trim();
     const jobName = rawName || ('merged-' + _currentToken);
+    const originalLbl = lbl.textContent;
     btn.disabled = true;
-    btn.textContent = 'Sending…';
+    lbl.textContent = 'Sending…';
     status.style.display = 'block';
     status.style.color = 'var(--text-muted)';
-    status.textContent = 'Preparing file for AI classification…';
+    status.textContent = 'Preparing complete records for AI classification…';
     try {
         const fd = new FormData();
         fd.append('job_name', jobName);
@@ -1449,20 +1811,22 @@ async function sendToClassifier() {
         const data = await res.json();
         if (data.success && data.preview_id) {
             sessionStorage.setItem('waf_pending_preview', JSON.stringify(data));
-            const excluded = _rejectedIds.size > 0 ? ' (' + _rejectedIds.size + ' rejected rows excluded)' : '';
-            status.textContent = 'Ready! Redirecting to classifier (' + data.total_rows + ' rows' + excluded + ')…';
-            setTimeout(() => { window.location.href=(window.APP_ROOT||'')+'/history'; }, 600);
+            const orphans = (_lastStats && _lastStats.orphans) || 0;
+            const orphansNote = orphans > 0 ? ' (' + orphans + ' orphan' + (orphans === 1 ? '' : 's') + ' excluded)' : '';
+            const rejNote = _rejectedIds.size > 0 ? ' + ' + _rejectedIds.size + ' manually rejected' : '';
+            status.textContent = 'Ready! Redirecting to classifier &mdash; ' + data.total_rows + ' rows' + orphansNote + rejNote + '…';
+            setTimeout(() => { window.location.href=(window.APP_ROOT||'')+'/history'; }, 700);
         } else {
             status.style.color = 'var(--error)';
             status.textContent = data.error || 'Failed to prepare file.';
             btn.disabled = false;
-            btn.textContent = '▶ Submit for Analysis';
+            lbl.textContent = originalLbl;
         }
     } catch (e) {
         status.style.color = 'var(--error)';
         status.textContent = 'Network error — try Download and re-upload manually.';
         btn.disabled = false;
-        btn.textContent = '▶ Submit for Analysis';
+        lbl.textContent = originalLbl;
     }
 }
 </script>
