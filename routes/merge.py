@@ -269,11 +269,12 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
                 "epic_name": safe_str(row.get(fm.get("epic_name_col"), "")) if fm.get("epic_name_col") else "",
             }
 
-    merged_rows        = []
-    unmatched_features = 0
-    unmatched_epics    = 0
-    no_feature_ref     = 0
-    missing_waf_count  = 0
+    merged_rows               = []
+    unmatched_features        = 0
+    unmatched_epics           = 0
+    no_feature_ref            = 0
+    missing_waf_count         = 0
+    missing_run_change_count  = 0
 
     for _, row in df_story.iterrows():
         story_id      = safe_str(row.get(sm.get("id_col"), ""))            if sm.get("id_col")            else ""
@@ -333,6 +334,12 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
         flag_missing_waf = is_complete and has_epic and feat_found and epic_found and not waf_category
         if flag_missing_waf:
             missing_waf_count += 1
+        # missing_run_change is also informational — does NOT block analysis.
+        # Only flagged on otherwise-complete rows whose epic resolved but had
+        # no Run/Change tag (column blank AND no '(Run)/(Change)' suffix).
+        flag_missing_rc = is_complete and has_epic and feat_found and epic_found and not run_change
+        if flag_missing_rc:
+            missing_run_change_count += 1
 
         merged_rows.append({
             # ── Output columns ──────────────────────────────────────────────
@@ -361,6 +368,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             "_status":          status,
             "_is_complete":     is_complete,
             "_flag_missing_waf": flag_missing_waf,
+            "_flag_missing_run_change": flag_missing_rc,
             "_story_id":        story_id,
             "_story_name":      story_name,
             "_feat_name_ref":   feat_name_ref,
@@ -382,6 +390,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
         "missing_feature":    sum(1 for r in merged_rows if r["_status"] == "missing_feature"),
         "missing_epic":       sum(1 for r in merged_rows if r["_status"] == "missing_epic"),
         "missing_waf":        missing_waf_count,
+        "missing_run_change": missing_run_change_count,
         "unmatched_features": unmatched_features,
         "unmatched_epics":    unmatched_epics,
         "no_feature_ref":     no_feature_ref,
@@ -611,12 +620,18 @@ def merge_process():
         row["_status"]      = r["_status"]
         row["_is_complete"] = r["_is_complete"]
         row["_flag_missing_waf"] = r["_flag_missing_waf"]
+        row["_flag_missing_run_change"] = r.get("_flag_missing_run_change", False)
         return row
 
-    # Sort preview so orphans float to the top — easier triage
+    # Sort preview so orphans float to the top — then missing-WAF, then
+    # missing-Run/Change, then everything else. Easier triage at a glance.
     sorted_rows = sorted(
         merged_rows,
-        key=lambda r: (0 if not r["_is_complete"] else 1, 0 if r["_flag_missing_waf"] else 1)
+        key=lambda r: (
+            0 if not r["_is_complete"] else 1,
+            0 if r["_flag_missing_waf"] else 1,
+            0 if r.get("_flag_missing_run_change") else 1,
+        )
     )
 
     return jsonify({

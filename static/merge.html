@@ -457,9 +457,12 @@
         /* ── Stats row ───────────────────────────────────────── */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 16px;
             margin-bottom: 24px;
+        }
+        @media (max-width: 1100px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
         }
         @media (max-width: 700px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1089,6 +1092,11 @@
                 <div class="stat-value" id="stat-missing-waf-val">—</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Will still be sent to AI for first-time classify</div>
             </div>
+            <div class="stat-card clickable" id="stat-missing-rc" onclick="setPreviewFilter('missing_run_change')" title="Show only complete rows whose Epic has no Run/Change tag">
+                <div class="stat-label">Missing R/C <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(complete, but no Run/Change)</span></div>
+                <div class="stat-value" id="stat-missing-rc-val">—</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Epic has no Run/Change column or '(Run)/(Change)' suffix</div>
+            </div>
         </div>
 
         <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text-secondary);">
@@ -1637,7 +1645,8 @@ async function runMerge() {
 // ── Stats render ─────────────────────────────────────────────────────
 function renderStats(stats) {
     const show = id => document.getElementById(id).classList.add('visible');
-    show('stat-stories'); show('stat-complete'); show('stat-orphans'); show('stat-missing-waf');
+    show('stat-stories'); show('stat-complete'); show('stat-orphans');
+    show('stat-missing-waf'); show('stat-missing-rc');
 
     const total      = stats.stories || 0;
     const complete   = stats.complete || 0;
@@ -1645,6 +1654,7 @@ function renderStats(stats) {
     const missingFt  = stats.missing_feature || 0;
     const missingEp  = stats.missing_epic || 0;
     const missingWaf = stats.missing_waf || 0;
+    const missingRc  = stats.missing_run_change || 0;
 
     document.getElementById('stat-stories-val').textContent  = total;
     document.getElementById('stat-stories-sub').textContent  =
@@ -1664,6 +1674,11 @@ function renderStats(stats) {
     if (orphans === 0) orphansCard.classList.remove('warning'); else orphansCard.classList.add('warning');
 
     document.getElementById('stat-missing-waf-val').textContent = missingWaf;
+    document.getElementById('stat-missing-rc-val').textContent  = missingRc;
+    // Tint the Missing R/C card amber if any are missing
+    const rcCard = document.getElementById('stat-missing-rc');
+    if (missingRc > 0) rcCard.classList.add('warning');
+    else               rcCard.classList.remove('warning');
 
     // Toggle the "Download Orphans" button visibility
     const orphansBtn   = document.getElementById('btn-download-orphans');
@@ -1704,17 +1719,19 @@ const STATUS_PILL = {
     missing_epic:    { cls: 'missing-epic',    label: 'Missing Epic' },
 };
 
-// Active preview filter — one of: 'all' | 'complete' | 'orphans' | 'missing_waf' | 'missing_feature' | 'missing_epic'
+// Active preview filter — one of: 'all' | 'complete' | 'orphans' |
+//   'missing_waf' | 'missing_run_change' | 'missing_feature' | 'missing_epic'
 let _previewFilter = 'all';
 
 function _matchesFilter(row) {
     if (_previewFilter === 'all') return true;
     const status = row._status || (row._is_complete ? 'complete' : 'missing_feature');
-    if (_previewFilter === 'complete')        return status === 'complete';
-    if (_previewFilter === 'orphans')         return status !== 'complete';
-    if (_previewFilter === 'missing_feature') return status === 'missing_feature';
-    if (_previewFilter === 'missing_epic')    return status === 'missing_epic';
-    if (_previewFilter === 'missing_waf')     return !!row._flag_missing_waf;
+    if (_previewFilter === 'complete')           return status === 'complete';
+    if (_previewFilter === 'orphans')            return status !== 'complete';
+    if (_previewFilter === 'missing_feature')    return status === 'missing_feature';
+    if (_previewFilter === 'missing_epic')       return status === 'missing_epic';
+    if (_previewFilter === 'missing_waf')        return !!row._flag_missing_waf;
+    if (_previewFilter === 'missing_run_change') return !!row._flag_missing_run_change;
     return true;
 }
 
@@ -1726,13 +1743,14 @@ function setPreviewFilter(name) {
         _previewFilter = name;
     }
     // Sync stat-card active state
-    ['stat-stories','stat-complete','stat-orphans','stat-missing-waf'].forEach(id => {
+    ['stat-stories','stat-complete','stat-orphans','stat-missing-waf','stat-missing-rc'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('active');
     });
     const cardMap = {
         all: 'stat-stories', complete: 'stat-complete',
         orphans: 'stat-orphans', missing_waf: 'stat-missing-waf',
+        missing_run_change: 'stat-missing-rc',
         missing_feature: 'stat-orphans', missing_epic: 'stat-orphans',
     };
     const activeCard = document.getElementById(cardMap[_previewFilter] || 'stat-stories');
@@ -1757,6 +1775,7 @@ function renderPreview(rows, allCols) {
     thead.innerHTML = hHtml;
 
     let orphanCount = 0;
+    let missingRcCount = 0;
     let visibleCount = 0;
     let bHtml = '';
     rows.forEach((row, rowIdx) => {
@@ -1765,7 +1784,9 @@ function renderPreview(rows, allCols) {
         const status = row._status || (row._is_complete ? 'complete' : 'missing_feature');
         const isOrphan = !row._is_complete;
         const isMissingWaf = row._flag_missing_waf;
+        const isMissingRc  = row._flag_missing_run_change;
         if (isOrphan) orphanCount++;
+        if (isMissingRc) missingRcCount++;
 
         // Filter: skip rows that don't match the active filter
         if (!_matchesFilter(row)) return;
@@ -1782,6 +1803,7 @@ function renderPreview(rows, allCols) {
         const pill = STATUS_PILL[status] || STATUS_PILL.complete;
         let statusHtml = '<span class="status-pill ' + pill.cls + '">' + pill.label + '</span>';
         if (isMissingWaf) statusHtml += '<span class="status-pill missing-waf" title="Story is complete but its Epic has no WAF set">No WAF</span>';
+        if (isMissingRc)  statusHtml += '<span class="status-pill missing-waf" title="Story is complete but its Epic has no Run/Change tag">No R/C</span>';
         bHtml += '<td>' + statusHtml + '</td>';
 
         PREVIEW_COLS.forEach(col => {
@@ -1791,6 +1813,8 @@ function renderPreview(rows, allCols) {
                 bHtml += `<td><span class="waf-color-badge" style="background:${esc(style.bg)};color:${esc(style.fg)};border-color:${esc(style.fg)}33;">${esc(val)}</span></td>`;
             } else if (col === 'WAF Category' && isMissingWaf && !val) {
                 bHtml += `<td class="diff-cell-missing" title="Epic has no WAF category">— missing</td>`;
+            } else if (col === 'Run/Change' && isMissingRc && !val) {
+                bHtml += `<td class="diff-cell-missing" title="Epic has no Run/Change tag">— missing</td>`;
             } else {
                 bHtml += `<td title="${esc(val)}">${esc(val)}</td>`;
             }
@@ -1803,7 +1827,7 @@ function renderPreview(rows, allCols) {
     const legendId = 'preview-diff-legend';
     let existingLegend = document.getElementById(legendId);
     if (existingLegend) existingLegend.remove();
-    if (orphanCount > 0) {
+    if (orphanCount > 0 || missingRcCount > 0) {
         const legendEl = document.createElement('div');
         legendEl.id = legendId;
         legendEl.style.cssText = 'margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;font-size:12px;align-items:center;';
@@ -1814,6 +1838,7 @@ function renderPreview(rows, allCols) {
             `<span class="status-pill missing-feature${f==='missing_feature'?' active':''}" onclick="setPreviewFilter('missing_feature')" title="Show only Missing Feature orphans">Missing Feature</span>` +
             `<span class="status-pill missing-epic${f==='missing_epic'?' active':''}" onclick="setPreviewFilter('missing_epic')" title="Show only Missing Epic orphans">Missing Epic</span>` +
             `<span class="status-pill missing-waf${f==='missing_waf'?' active':''}" onclick="setPreviewFilter('missing_waf')" title="Show only complete rows whose epic has no WAF">No WAF</span>` +
+            `<span class="status-pill missing-waf${f==='missing_run_change'?' active':''}" onclick="setPreviewFilter('missing_run_change')" title="Show only complete rows whose epic has no Run/Change tag">No R/C</span>` +
             `<span class="status-pill" style="background:var(--bg-secondary);color:var(--text-muted);${f==='all'?'outline:2px solid var(--accent);outline-offset:1px;':''}" onclick="setPreviewFilter('all')" title="Reset filter">All</span>` +
             '<span style="color:var(--text-muted);margin-left:4px;">— click a pill to filter; orphans always excluded from AI.</span>';
         document.getElementById('preview-table-wrap').insertAdjacentElement('beforebegin', legendEl);
@@ -1842,6 +1867,7 @@ function openRowDetail(idx) {
     const status = row._status || (row._is_complete ? 'complete' : 'missing_feature');
     const pill = STATUS_PILL[status] || STATUS_PILL.complete;
     const isMissingWaf = row._flag_missing_waf;
+    const isMissingRc  = row._flag_missing_run_change;
 
     const sid = row['Story Id'] != null ? String(row['Story Id']) : '';
     document.getElementById('row-detail-title').textContent =
@@ -1849,6 +1875,7 @@ function openRowDetail(idx) {
 
     let statusHtml = `<span class="status-pill ${pill.cls}">${pill.label}</span>`;
     if (isMissingWaf) statusHtml += ' <span class="status-pill missing-waf">No WAF</span>';
+    if (isMissingRc)  statusHtml += ' <span class="status-pill missing-waf">No R/C</span>';
     document.getElementById('row-detail-status').innerHTML = statusHtml;
 
     // Render every non-internal field
