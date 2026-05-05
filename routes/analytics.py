@@ -559,7 +559,9 @@ def history_import():
         cat_col          = find_col(["waf category", "waf_category", "category"])
         color_col        = find_col(["waf color", "waf_color", "color"])
         rc_col           = find_col(["run/change", "run_change", "run change"])
-        tot_col          = find_col(["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"])
+        # Team of Teams: strict match only. No subcategory fallbacks — guessing
+        # corrupts the Teams view filter when an unrelated column gets picked up.
+        tot_col          = find_col(["team of teams", "team_of_teams"])
         conf_col         = find_col(["confidence", "conf"])
         team_col         = find_col(["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"])
         epic_col         = find_col(["epic name", "epic", "initiative", "program"])

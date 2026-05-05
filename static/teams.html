@@ -704,28 +704,36 @@
     <!-- ========== BY TEAM TAB ========== -->
     <div class="tab-content active" id="tab-by-team">
 
-        <!-- Team of Teams filter (shown only when ToT data exists) -->
-        <div id="tot-filter-wrap" style="display:none;margin-bottom:16px;">
-            <div style="display:flex;align-items:center;gap:12px;">
-                <label for="tot-selector" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);white-space:nowrap;">Team of Teams</label>
-                <select id="tot-selector" onchange="selectTot(this.value || null)"
-                    style="flex:1;max-width:360px;background:var(--bg-secondary);border:1px solid var(--border);
-                           border-radius:8px;padding:7px 12px;color:var(--text-primary);font-size:13px;
-                           cursor:pointer;outline:none;appearance:none;
-                           background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%23888%22 d=%22M6 8L1 3h10z%22/></svg>');
-                           background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;">
-                </select>
+        <!-- Step 1: Team of Teams pills (shown when ToT data exists, hidden once a ToT is picked) -->
+        <div id="tot-filter-wrap" style="display:none;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Team of Teams</div>
             </div>
+            <div class="list-search">
+                <input type="text" id="tot-search" placeholder="Search teams of teams..." oninput="filterPills('tot-search', '#tot-selector')">
+                <button class="clear-btn" onclick="clearSearch('tot-search', '#tot-selector')">&times;</button>
+            </div>
+            <div class="selector-row" id="tot-selector"></div>
         </div>
 
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Teams</div>
+        <!-- Step 2: Teams pills (shown when no ToT data, OR after drilling into a ToT) -->
+        <div id="team-filter-wrap" style="display:none;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <button id="tot-back-btn"
+                    onclick="clearTotSelection()"
+                    style="display:none;background:none;border:1px solid var(--border);color:var(--text-muted);
+                           padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;
+                           text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">
+                    ← All Teams of Teams
+                </button>
+                <div id="team-filter-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Teams</div>
+            </div>
+            <div class="list-search">
+                <input type="text" id="team-search" placeholder="Search teams..." oninput="filterPills('team-search', '#team-selector')">
+                <button class="clear-btn" onclick="clearSearch('team-search', '#team-selector')">&times;</button>
+            </div>
+            <div class="selector-row" id="team-selector"></div>
         </div>
-        <div class="list-search">
-            <input type="text" id="team-search" placeholder="Search teams..." oninput="filterPills('team-search', '#team-selector')">
-            <button class="clear-btn" onclick="clearSearch('team-search', '#team-selector')">&times;</button>
-        </div>
-        <div class="selector-row" id="team-selector"></div>
 
         <!-- Insights: KPI + charts, hidden by default -->
         <div id="team-insights-wrap" style="display:none;">
@@ -933,54 +941,118 @@ async function loadTeamsData() {
         document.getElementById('epic-detail-area').innerHTML = '<div class="empty-state"><div class="icon">&#128209;</div><h3>Select an epic above</h3><p>Choose an epic to see which teams contribute to it</p></div>';
         document.getElementById('epic-insights-wrap').style.display = 'none';
 
-        // Show all teams by default — no empty state
-        selectAllTeams();
+        if (_hasTotData()) {
+            // ToT data is available: drill-down starts at Step 1 (ToT pills).
+            // Don't pre-select a team — let the user pick a Team of Teams first.
+            document.getElementById('team-detail-area').innerHTML =
+                `<div class="empty-state"><div class="icon">&#128101;</div>
+                <h3>Pick a Team of Teams above</h3>
+                <p>Choose "All Teams of Teams" to see every team, or drill into a specific Team of Teams.</p></div>`;
+            document.getElementById('team-insights-wrap').style.display = 'none';
+        } else {
+            // No ToT data → skip Step 1 entirely, show all teams.
+            selectAllTeams();
+        }
     } catch (err) {
         console.error('Failed to load data:', err);
     }
 }
 
-// ── By Team: Team of Teams filter ──────────────────────────
-let _activeTot = null;   // null = all
+// ── By Team: Team-of-Teams drill-down ──────────────────────
+// Two states, one filter visible at a time:
+//   _activeTot === null   → show ToT pills (Step 1). Team pills hidden.
+//   _activeTot !== null   → ToT pills hidden, show Team pills filtered to
+//                            that ToT (Step 2) plus a "← back" button.
+// If the upload has no ToT data, skip Step 1 entirely and show Step 2.
+let _activeTot = null;
+
+function _hasTotData() {
+    return !!(summaryData?.team_of_teams?.length);
+}
 
 function renderTotPills() {
-    const totList = summaryData?.team_of_teams || [];
-    const wrap = document.getElementById('tot-filter-wrap');
-    const sel  = document.getElementById('tot-selector');
-    if (!totList.length) { wrap.style.display = 'none'; return; }
-    wrap.style.display = 'block';
-    const opts = [`<option value="">All Teams of Teams (${summaryData.teams.length} teams)</option>`]
-        .concat(totList.map(t =>
-            `<option value="${escapeAttr(t.name)}">${escapeHtml(t.name)} (${t.team_count} team${t.team_count !== 1 ? 's' : ''})</option>`
-        ));
-    sel.innerHTML = opts.join('');
-    sel.value = _activeTot || '';
+    const totList    = summaryData?.team_of_teams || [];
+    const totWrap    = document.getElementById('tot-filter-wrap');
+    const teamWrap   = document.getElementById('team-filter-wrap');
+    const totRow     = document.getElementById('tot-selector');
+    const backBtn    = document.getElementById('tot-back-btn');
+
+    // No ToT data → skip Step 1, show team pills directly with no back button.
+    if (!totList.length) {
+        totWrap.style.display = 'none';
+        teamWrap.style.display = 'block';
+        if (backBtn) backBtn.style.display = 'none';
+        return;
+    }
+
+    // ToT data present.
+    if (_activeTot === null) {
+        // Step 1: ToT pills visible, team pills hidden.
+        totWrap.style.display = 'block';
+        teamWrap.style.display = 'none';
+        const totalTeams   = summaryData.teams.length;
+        const totalStories = window._allTeamStories?.length || 0;
+        const allPill = `<button class="selector-pill active" id="pill-tot-all"
+            onclick="selectTot('__all__')">All Teams of Teams<span class="pill-count">(${totalTeams} team${totalTeams !== 1 ? 's' : ''})</span></button>`;
+        const totPills = totList.map(t =>
+            `<button class="selector-pill" id="pill-tot-${escapeAttr(t.name)}"
+                onclick="selectTot('${escapeAttr(t.name)}')">${escapeHtml(t.name)}<span class="pill-count">(${t.team_count} team${t.team_count !== 1 ? 's' : ''})</span></button>`
+        ).join('');
+        totRow.innerHTML = allPill + totPills;
+    } else {
+        // Step 2: ToT pills hidden, team pills visible (with back button).
+        totWrap.style.display = 'none';
+        teamWrap.style.display = 'block';
+        if (backBtn) backBtn.style.display = 'inline-block';
+        const label = document.getElementById('team-filter-label');
+        if (label) {
+            label.textContent = _activeTot === '__all__'
+                ? 'Teams (all teams of teams)'
+                : `Teams in ${_activeTot}`;
+        }
+    }
 }
 
 function selectTot(tot) {
+    // '__all__' is a sentinel meaning "all teams across every ToT"
     _activeTot = tot || null;
-    // Keep dropdown in sync (in case called programmatically)
-    const sel = document.getElementById('tot-selector');
-    if (sel) sel.value = _activeTot || '';
-    // Re-render team pills filtered by ToT
+    if (_activeTot === '') _activeTot = null;
+    renderTotPills();
     renderTeamPills();
-    // Reset to all teams view with the new filter applied
     selectAllTeams();
 }
 
+function clearTotSelection() {
+    _activeTot = null;
+    renderTotPills();
+    // Clear current team selection and team-detail view back to empty state
+    selectedTeam = null;
+    document.getElementById('team-detail-area').innerHTML =
+        `<div class="empty-state"><div class="icon">&#128101;</div>
+        <h3>Select a Team of Teams above</h3>
+        <p>Pick a Team of Teams to drill into its teams.</p></div>`;
+    document.getElementById('team-insights-wrap').style.display = 'none';
+}
+
 // ── By Team: Pills ─────────────────────────────────────────
+// '__all__' is a sentinel meaning "no ToT filter, show every team"
+function _totFilterValue() {
+    return (_activeTot && _activeTot !== '__all__') ? _activeTot : null;
+}
+
 function renderTeamPills() {
     const row = document.getElementById('team-selector');
     if (!summaryData || !summaryData.teams.length) {
         row.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">No teams found</span>';
         return;
     }
+    const totFilter = _totFilterValue();
     // Filter teams by active ToT
-    const visibleTeams = _activeTot
-        ? summaryData.teams.filter(t => t.team_of_teams === _activeTot)
+    const visibleTeams = totFilter
+        ? summaryData.teams.filter(t => t.team_of_teams === totFilter)
         : summaryData.teams;
 
-    const visibleStoryCount = _activeTot
+    const visibleStoryCount = totFilter
         ? visibleTeams.reduce((s, t) => s + t.total_stories, 0)
         : window._allTeamStories.length;
 
@@ -998,10 +1070,11 @@ function selectAllTeams() {
     if (allPill) allPill.classList.add('active');
 
     // KPIs from summary aggregate — respect active ToT filter
+    const totFilter = _totFilterValue();
     const allTeams = summaryData?.teams || [];
-    const teams = _activeTot ? allTeams.filter(t => t.team_of_teams === _activeTot) : allTeams;
+    const teams = totFilter ? allTeams.filter(t => t.team_of_teams === totFilter) : allTeams;
     const visibleTeamNames = new Set(teams.map(t => t.name));
-    const allStories = _activeTot
+    const allStories = totFilter
         ? window._allTeamStories.filter(s => visibleTeamNames.has(s.team))
         : window._allTeamStories;
     const totalStories = allStories.length;
@@ -1027,9 +1100,10 @@ function selectAllTeams() {
     insBtn.classList.add('open');
     insBtn.innerHTML = '&#128200; Hide Insights';
 
-    // Render the team list on the left, all stories on the right
+    // Render the team list on the left, all stories on the right.
+    // Respect the active ToT filter so the tree shows only relevant teams.
     const area = document.getElementById('team-detail-area');
-    const teams_ = summaryData?.teams || [];
+    const teams_ = teams;  // already filtered by ToT above
     const leftHtml = `<div class="tree-panel-label">Teams</div>` +
         teams_.map(t => `<div class="tree-nav-item">
             <div class="nav-epic" onclick="selectTeam('${escapeAttr(t.name)}')" style="cursor:pointer;">

@@ -303,7 +303,10 @@ def bulk_verify_preview():
             # ── WAF Classification ────────────────────────────────
             {"key": "waf_category",   "label": "WAF Category",       "required": False, "keywords": ["waf category", "waf_category", "category"]},
             {"key": "waf_color",      "label": "WAF Color",          "required": False, "keywords": ["waf color", "waf_color", "color"]},
-            {"key": "team_of_teams",  "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"]},
+            # Team of Teams must be matched explicitly. Do NOT add fallback
+            # keywords (subcategory etc.) — guessing can land unrelated data
+            # into this column and corrupt the Teams view filter.
+            {"key": "team_of_teams",  "label": "Team of Teams",      "required": False, "keywords": ["team of teams", "team_of_teams"]},
             {"key": "run_change",     "label": "Run / Change",       "required": False, "keywords": ["run/change", "run_change", "run change"]},
             {"key": "confidence",     "label": "Confidence",         "required": False, "keywords": ["confidence", "conf"]},
             # ── Organisation ──────────────────────────────────────
@@ -420,7 +423,8 @@ def bulk_verify():
         cat_col          = find_col(["waf category", "waf_category", "category"])
         color_col        = find_col(["waf color", "waf_color", "color"])
         rc_col           = find_col(["run/change", "run_change", "run change"])
-        subcat_col       = find_col(["team of teams", "team_of_teams", "sub-category", "sub_category", "subcategory", "waf sub"])
+        # Strict match — see comment on team_of_teams in the target_fields list above.
+        subcat_col       = find_col(["team of teams", "team_of_teams"])
         conf_col         = find_col(["confidence", "conf"])
         team_col         = find_col(["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"])
         epic_col         = find_col(["epic name", "epic", "initiative", "program"])
