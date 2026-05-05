@@ -18,7 +18,7 @@ COLUMNS = [
     # Organisation
     "Team",
     # WAF Classification
-    "WAF Category", "WAF Color", "Sub-Category", "Confidence", "Run/Change",
+    "WAF Category", "WAF Color", "Confidence", "Run/Change",
     # Metadata
     "Timestamp",
     # Alternate ID (fallback)
@@ -216,7 +216,6 @@ def build_compliance_dataset() -> list[dict]:
             waf_category = true_cat
 
         waf_color = WAF_COLOR_MAP[waf_category]
-        sub_category = true_cat.split(" ")[0]
 
         run_change = "Run" if true_cat in ["KTLO (Keep the Lights On)", "Technical Maintenance", "Regulatory (Operational)"] else "Change"
 
@@ -234,7 +233,6 @@ def build_compliance_dataset() -> list[dict]:
             "Feature ID": feat_id,
             "WAF Category": waf_category,
             "WAF Color": waf_color,
-            "Sub-Category": sub_category,
             "Confidence": confidence,
             "Run/Change": run_change,
             "Timestamp": ts,
@@ -404,7 +402,6 @@ def build_platform_dataset() -> list[dict]:
             waf_category = true_cat
 
         waf_color = WAF_COLOR_MAP[waf_category]
-        sub_category = true_cat.split(" ")[0]
 
         run_change = "Run" if true_cat in ["KTLO (Keep the Lights On)", "Technical Maintenance"] else "Change"
 
@@ -422,7 +419,6 @@ def build_platform_dataset() -> list[dict]:
             "Feature ID": feat_id,
             "WAF Category": waf_category,
             "WAF Color": waf_color,
-            "Sub-Category": sub_category,
             "Confidence": confidence,
             "Run/Change": run_change,
             "Timestamp": ts,
@@ -626,7 +622,6 @@ def build_product_dataset() -> list[dict]:
             waf_category = true_cat
 
         waf_color = WAF_COLOR_MAP[waf_category]
-        sub_category = true_cat.split(" ")[0]
 
         run_change = "Change" if true_cat in ["Enterprise Strategic Priority", "Other Block Priority"] else "Run"
 
@@ -644,7 +639,6 @@ def build_product_dataset() -> list[dict]:
             "Feature ID": feat_id,
             "WAF Category": waf_category,
             "WAF Color": waf_color,
-            "Sub-Category": sub_category,
             "Confidence": confidence,
             "Run/Change": run_change,
             "Timestamp": ts,

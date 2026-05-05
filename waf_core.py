@@ -230,7 +230,10 @@ def parse_ground_truth(filepath, filename):
             col_map["title"] = col
         elif any(kw in cl for kw in ["desc", "detail", "acceptance", "body"]) and not col_map["description"]:
             col_map["description"] = col
-        elif any(kw in cl for kw in ["team of teams", "team_of_teams", "sub-category", "subcategory", "sub category", "sub_cat"]) and not col_map["team_of_teams"]:
+        # Team of Teams: strict match only. Do NOT add subcategory fallbacks —
+        # they were leftovers from when this column was named waf_subcategory,
+        # and they cause unrelated columns to silently land in team_of_teams.
+        elif any(kw in cl for kw in ["team of teams", "team_of_teams"]) and not col_map["team_of_teams"]:
             col_map["team_of_teams"] = col
         elif any(kw in cl for kw in ["category", "waf cat", "waf_cat", "waf category"]) and not col_map["waf_category"]:
             col_map["waf_category"] = col
