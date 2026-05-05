@@ -1396,8 +1396,29 @@ function filterTeamByKpi(type) {
 // ── Story detail modal ────────────────────────────────────
 const _SD_COLORS = { GRAY:'#6b7280', BLACK:'#1f2937', RED:'#dc2626', ORANGE:'#ea580c', YELLOW:'#ca8a04', GREEN:'#16a34a', BLUE:'#2563eb', PURPLE:'#9333ea', TEAL:'#0d9488' };
 
+// Cache of the currently-shown story so the Flag button knows what to dispute.
+let _currentStoryDetail = null;
+
+function flagCurrentStory() {
+    const d = _currentStoryDetail;
+    if (!d || typeof window.openDisputeModal !== 'function') return;
+    window.openDisputeModal({
+        story_title:       d.title || d.story_title || d.story_id || '(untitled)',
+        story_description: d.description || d.story_description || '',
+        ai_category:       d.category || d.waf_category || d.ai_suggested_waf || '',
+        ai_color:          d.color || d.waf_color || d.ai_color || '',
+        ai_confidence:     d.confidence || d.ai_confidence || '',
+        ai_reasoning:      d.waf_reasoning || d.ai_reason || '',
+        team:              d._team || d.team || '',
+        epic:              d.epic || '',
+        story_id:          d.story_id || '',
+        pi_number:         d.pi_number || '',
+    });
+}
+
 function showStoryDetail(data) {
     if (!data) return;
+    _currentStoryDetail = data;
     function _e(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function fld(label, value, full) {
         return `<div style="${full ? 'grid-column:1/-1;' : ''}">
@@ -1909,9 +1930,15 @@ checkStatus();
 <div id="story-detail-overlay" onclick="if(event.target===this)closeStoryDetail()"
      style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;">
     <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;max-width:720px;width:92%;max-height:85vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,0.5);">
-        <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;">
             <span style="font-size:16px;font-weight:700;color:var(--text-primary);">Story Details</span>
-            <button onclick="closeStoryDetail()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px 8px;">&times;</button>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button onclick="flagCurrentStory()" title="Flag this AI classification for review"
+                    style="background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.4);color:#f43f5e;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;">
+                    &#128681; Flag classification
+                </button>
+                <button onclick="closeStoryDetail()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px 8px;">&times;</button>
+            </div>
         </div>
         <div id="story-detail-body" style="padding:24px;"></div>
     </div>
