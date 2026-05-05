@@ -1368,6 +1368,7 @@ function showStoryDetail(data) {
             ${data.story_id   ? fld('Story ID',   `<code style="font-size:12px;background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;">${_e(data.story_id)}</code>`)   : ''}
             ${data.feature_id ? fld('Feature ID', `<code style="font-size:12px;background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;">${_e(data.feature_id)}</code>`) : ''}
             ${data.epic_id    ? fld('Epic ID',    `<code style="font-size:12px;background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;">${_e(data.epic_id)}</code>`)    : ''}
+            ${(data.waf_reasoning || data.ai_reason) ? fld('Why the AI chose this', `<div style="font-size:13px;line-height:1.5;color:var(--text-secondary);background:var(--bg-tertiary);padding:10px 12px;border-radius:6px;border-left:3px solid var(--accent);">${_e(data.waf_reasoning || data.ai_reason)}</div>`, true) : ''}
         </div>`;
     document.getElementById('story-detail-overlay').style.display = 'flex';
 }

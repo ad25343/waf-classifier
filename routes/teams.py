@@ -148,7 +148,7 @@ def teams_detail():
     db = get_db()
     query = """SELECT id, story_title, story_description, waf_category, waf_color,
                   run_change, confidence, was_mismatch, epic, parent_feature,
-                  timestamp, story_id, feature_id, epic_id, pi_number
+                  timestamp, story_id, feature_id, epic_id, pi_number, waf_reasoning
            FROM classifications
            WHERE team = ?"""
     params = [team]
@@ -191,6 +191,7 @@ def teams_detail():
             "feature_id": r["feature_id"] or "",
             "epic_id": r["epic_id"] or "",
             "pi_number": r["pi_number"] or "",
+            "waf_reasoning": r["waf_reasoning"] or "",
         }
 
         ft["stories"].append(story)
@@ -249,7 +250,7 @@ def teams_by_epic():
     db = get_db()
     query = """SELECT id, story_title, story_description, waf_category, waf_color,
                   run_change, confidence, was_mismatch, team, parent_feature,
-                  timestamp
+                  timestamp, waf_reasoning
            FROM classifications
            WHERE epic = ?"""
     params = [epic]
@@ -283,6 +284,7 @@ def teams_by_epic():
             "was_mismatch": bool(r["was_mismatch"]),
             "parent_feature": r["parent_feature"] or "",
             "timestamp": r["timestamp"],
+            "waf_reasoning": r["waf_reasoning"] or "",
         }
 
         tm["stories"].append(story)

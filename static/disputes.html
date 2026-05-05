@@ -807,6 +807,7 @@ function openModal(id, action) {
                     ${catColor ? `<span style="font-size:11px;color:var(--text-muted);">(${esc(catColor)})</span>` : ''}
                 </div>
             </div>
+            ${dispute.ai_reasoning ? `<div style="margin-top:10px;"><div class="detail-label">Why the AI chose this</div><div class="detail-value" style="font-size:12px;line-height:1.45;color:var(--text-secondary);background:var(--bg-tertiary);padding:8px 10px;border-radius:6px;border-left:3px solid var(--accent);">${esc(dispute.ai_reasoning)}</div></div>` : ''}
             ${dispute.user_comment ? `<div style="margin-top:10px;"><div class="detail-label">User Comment</div><div class="detail-value" style="font-size:12px;">${esc(dispute.user_comment)}</div></div>` : ''}
             ${dispute.suggested_category ? `<div style="margin-top:10px;"><div class="detail-label">User Suggested</div><div class="detail-value">${esc(dispute.suggested_category)}</div></div>` : ''}
         </div>`;
