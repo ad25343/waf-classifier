@@ -102,3 +102,8 @@ def merge_page():
 @pages_bp.route("/disputes")
 def disputes_page():
     return _serve("disputes.html")
+
+
+@pages_bp.route("/aliases")
+def aliases_page():
+    return _serve("aliases.html")

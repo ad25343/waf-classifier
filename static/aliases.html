@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Classifier | Category Aliases</title>
+    <style>
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
+            --bg-primary: #111318; --bg-secondary: #1a1c25; --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1; --text-secondary: #9ca0b0; --text-muted: #6c7086;
+            --accent: #e8944a; --accent-hover: #d4832f;
+            --success: #4ade80; --warning: #fbbf24; --error: #f87171;
+            --teal: #2dd4bf; --purple: #c084fc; --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5; --bg-secondary: #ffffff; --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e; --text-secondary: #4a4a6a; --text-muted: #8888a0;
+            --accent: #d4722a; --accent-hover: #c0611e;
+            --success: #16a34a; --warning: #d97706; --error: #dc2626;
+            --teal: #0d9488; --purple: #9333ea; --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary); color: var(--text-primary); min-height: 100vh;
+        }
+        .header {
+            background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            padding: 16px 24px; display: flex; align-items: center; justify-content: flex-start;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+        .logo {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), #d4722a);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: white;
+        }
+
+        .top-nav {
+            justify-content: flex-end; display: flex; gap: 4px; padding: 8px 24px;
+            background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+        }
+        .top-nav-link {
+            padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+            color: var(--text-secondary); text-decoration: none; white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .top-nav-link:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .top-nav-link.active { background: var(--accent); color: #fff; }
+        .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
+        .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
+        .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown-menu {
+            display: none; position: absolute; top: calc(100% + 6px); left: 0;
+            min-width: 160px; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 10px; padding: 6px; z-index: 9999;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
+        .nav-dropdown-item {
+            display: block; padding: 8px 12px; border-radius: 7px;
+            font-size: 13px; font-weight: 500; color: var(--text-secondary);
+            text-decoration: none; white-space: nowrap;
+        }
+        .nav-dropdown-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-dropdown-item.active { color: var(--accent); background: rgba(232,148,74,0.10); }
+
+        .theme-toggle {
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 6px 10px; cursor: pointer;
+            font-size: 16px; line-height: 1; color: var(--text-primary);
+        }
+
+        .content { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+        .page-title { margin-bottom: 6px; font-size: 24px; font-weight: 700; }
+        .page-subtitle { color: var(--text-secondary); font-size: 14px; line-height: 1.5; margin-bottom: 24px; }
+
+        .card {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
+        }
+        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+        .form-row label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+        .form-row input, .form-row select {
+            width: 100%; padding: 9px 11px; background: var(--bg-tertiary);
+            border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text-primary); font-size: 13px; outline: none;
+        }
+        .form-row input:focus, .form-row select:focus { border-color: var(--accent); }
+
+        .btn {
+            background: var(--accent); color: #fff; border: none;
+            padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .btn:hover { background: var(--accent-hover); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-danger {
+            background: transparent; color: var(--error);
+            border: 1px solid var(--border); padding: 5px 10px; font-size: 12px;
+        }
+        .btn-danger:hover { background: rgba(220,38,38,0.1); border-color: var(--error); }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        tr:hover td { background: var(--bg-tertiary); }
+        td code { font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; background: var(--bg-tertiary); padding: 2px 8px; border-radius: 4px; }
+
+        .source-badge {
+            font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        .source-seed { background: rgba(45,212,191,0.15); color: var(--teal); }
+        .source-user { background: rgba(232,148,74,0.15); color: var(--accent); }
+
+        .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+        .filter-bar input {
+            padding: 7px 11px; background: var(--bg-tertiary); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text-primary); font-size: 13px; outline: none; width: 280px;
+        }
+        .filter-bar input:focus { border-color: var(--accent); }
+
+        .empty-state { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            padding: 12px 18px; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            display: none; z-index: 10000;
+        }
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error   { border-left: 3px solid var(--error); }
+
+        .helptext { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-top: 10px; }
+        .helptext code { font-family: 'SF Mono', Menlo, monospace; background: var(--bg-tertiary); padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/" class="header-left">
+        <div class="logo">W</div>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Category Aliases — extend the matcher without code changes</p>
+        </div>
+    </a>
+</div>
+
+<nav class="top-nav">
+    <a href="/" class="top-nav-link">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <div class="nav-dropdown">
+        <span class="top-nav-link nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/history"  class="nav-dropdown-item">Analyze Stories</a>
+            <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
+            <a href="/teams"    class="nav-dropdown-item">Teams</a>
+            <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
+        </div>
+    </div>
+    <div class="nav-dropdown">
+        <span class="top-nav-link active nav-dropdown-btn">Tools <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/merge"          class="nav-dropdown-item">File Merger</a>
+            <a href="/waf-reference"  class="nav-dropdown-item">WAF Reference</a>
+            <a href="/aliases"        class="nav-dropdown-item active">Category Aliases</a>
+        </div>
+    </div>
+    <a href="/settings" class="top-nav-link">Settings</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" style="margin-left:8px;">
+        <span class="theme-icon"></span>
+    </button>
+</nav>
+
+<div class="content">
+    <h1 class="page-title">Category Aliases</h1>
+    <p class="page-subtitle">
+        Map shorthand variants (<code>reg ops</code>, <code>tdp</code>, <code>tech debt</code>) to a canonical WAF
+        category so the matcher folds them together. Use this when you see a "Mismatch" that's really just label drift.
+        Aliases apply immediately — no restart needed.
+    </p>
+
+    <!-- ── Add new alias ───────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title">Add a new alias</div>
+        <div class="form-row">
+            <div>
+                <label for="new-alias">Shorthand / Variant</label>
+                <input id="new-alias" type="text" placeholder="e.g. regulatory operations" autocomplete="off">
+            </div>
+            <div>
+                <label for="new-canonical">Canonical WAF Category</label>
+                <select id="new-canonical">
+                    <option value="">Select…</option>
+                </select>
+            </div>
+            <button class="btn" id="add-btn" onclick="addAlias()">Add Alias</button>
+        </div>
+        <div class="helptext">
+            The matcher already handles case, whitespace, punctuation and simple plural/singular drift
+            (so <code>Operational</code> ≈ <code>Operations</code>). Add an alias here only when the variant
+            differs more than that — e.g. an abbreviation or team-specific shorthand.
+        </div>
+    </div>
+
+    <!-- ── Existing aliases ────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>All aliases <span id="alias-count" style="color:var(--text-muted);font-weight:400;font-size:13px;"></span></span>
+        </div>
+        <div class="filter-bar">
+            <input id="filter-input" type="text" placeholder="Filter by alias or category…" oninput="renderTable()">
+            <span id="filter-summary" style="font-size:12px;color:var(--text-muted);"></span>
+        </div>
+        <div id="table-host">
+            <div class="empty-state">Loading…</div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allAliases = [];
+let categories = [];
+
+// ── Theme toggle (matches other pages) ───────────────────────
+function getTheme() { return localStorage.getItem('theme') || 'dark'; }
+function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = t === 'light' ? '☀' : '☾';
+}
+function toggleTheme() { setTheme(getTheme() === 'dark' ? 'light' : 'dark'); }
+setTheme(getTheme());
+
+// ── Dropdown nav (click to open) ─────────────────────────────
+document.addEventListener('click', e => {
+    const btn = e.target.closest('.nav-dropdown-btn');
+    document.querySelectorAll('.nav-dropdown.open').forEach(d => {
+        if (!btn || !d.contains(btn)) d.classList.remove('open');
+    });
+    if (btn) btn.parentElement.classList.toggle('open');
+});
+
+// ── Toast helper ─────────────────────────────────────────────
+function toast(msg, kind) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + (kind || 'success');
+    el.style.display = 'block';
+    clearTimeout(window._toastT);
+    window._toastT = setTimeout(() => { el.style.display = 'none'; }, 2800);
+}
+
+function esc(s) {
+    return s == null ? '' : String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// ── Load + render ────────────────────────────────────────────
+async function load() {
+    try {
+        const res = await fetch('/api/aliases');
+        const data = await res.json();
+        allAliases = data.aliases || [];
+        categories = data.categories || [];
+        const sel = document.getElementById('new-canonical');
+        sel.innerHTML = '<option value="">Select…</option>' +
+            categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+        renderTable();
+    } catch (err) {
+        console.error(err);
+        document.getElementById('table-host').innerHTML = '<div class="empty-state">Failed to load aliases.</div>';
+    }
+}
+
+function renderTable() {
+    const host = document.getElementById('table-host');
+    const q = (document.getElementById('filter-input').value || '').toLowerCase();
+    const filtered = allAliases.filter(a =>
+        !q || (a.alias || '').toLowerCase().includes(q) || (a.canonical || '').toLowerCase().includes(q)
+    );
+
+    document.getElementById('alias-count').textContent = `(${allAliases.length} total)`;
+    document.getElementById('filter-summary').textContent =
+        q ? `${filtered.length} matching` : '';
+
+    if (!filtered.length) {
+        host.innerHTML = `<div class="empty-state">${q ? 'No aliases match that filter.' : 'No aliases yet — add one above.'}</div>`;
+        return;
+    }
+
+    host.innerHTML = `
+        <table>
+            <thead><tr>
+                <th style="width:30%">Alias</th>
+                <th style="width:38%">Canonical Category</th>
+                <th style="width:12%">Source</th>
+                <th style="width:14%">Added</th>
+                <th style="width:6%"></th>
+            </tr></thead>
+            <tbody>
+                ${filtered.map(a => {
+                    const date = a.created_at ? new Date(a.created_at).toLocaleDateString() : '—';
+                    const sourceClass = a.source === 'seed' ? 'source-seed' : 'source-user';
+                    return `<tr>
+                        <td><code>${esc(a.alias)}</code></td>
+                        <td>${esc(a.canonical)}</td>
+                        <td><span class="source-badge ${sourceClass}">${esc(a.source || 'user')}</span></td>
+                        <td style="color:var(--text-muted);font-size:12px;">${date}</td>
+                        <td><button class="btn btn-danger" onclick="deleteAlias(${a.id}, '${esc(a.alias).replace(/'/g,"\\'")}')">Delete</button></td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>`;
+}
+
+async function addAlias() {
+    const alias = document.getElementById('new-alias').value.trim();
+    const canonical = document.getElementById('new-canonical').value;
+    if (!alias) { toast('Enter an alias first.', 'error'); return; }
+    if (!canonical) { toast('Pick a canonical category.', 'error'); return; }
+
+    const btn = document.getElementById('add-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/aliases', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ alias, canonical }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            toast(data.error || 'Failed to add alias', 'error');
+        } else {
+            toast(`Alias "${alias}" → ${canonical} added.`);
+            document.getElementById('new-alias').value = '';
+            document.getElementById('new-canonical').value = '';
+            await load();
+        }
+    } catch (err) {
+        toast('Network error.', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function deleteAlias(id, label) {
+    if (!confirm(`Delete alias "${label}"?`)) return;
+    try {
+        const res = await fetch('/api/aliases/' + id, { method: 'DELETE' });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            toast(data.error || 'Failed to delete', 'error');
+            return;
+        }
+        toast(`Deleted "${label}".`);
+        await load();
+    } catch (err) {
+        toast('Network error.', 'error');
+    }
+}
+
+document.getElementById('new-alias').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addAlias();
+});
+
+load();
+</script>
+
+</body>
+</html>

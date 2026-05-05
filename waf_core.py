@@ -4,6 +4,7 @@ Extracted from app.py.
 """
 
 import os
+import re
 import json
 import time as _time
 
@@ -23,7 +24,7 @@ from state import (
     WAF_ALIASES,
     _rate_limit_store,
 )
-from database import get_setting
+from database import get_setting, get_all_aliases_dict
 
 # Conditional import for Bedrock client
 try:
@@ -32,8 +33,54 @@ except ImportError:
     _AnthropicBedrock = None
 
 
+# ── Alias cache (invalidated on add/delete via routes/aliases.py) ─────
+_ALIAS_CACHE = {"data": None}
+
+def invalidate_alias_cache():
+    """Drop the alias cache so the next lookup re-reads from the DB."""
+    _ALIAS_CACHE["data"] = None
+
+def _all_aliases():
+    """DB aliases merged over the WAF_ALIASES seed dict.
+    Cached at module level; call invalidate_alias_cache() after writes."""
+    if _ALIAS_CACHE["data"] is None:
+        merged = dict(WAF_ALIASES)
+        merged.update(get_all_aliases_dict())
+        _ALIAS_CACHE["data"] = merged
+    return _ALIAS_CACHE["data"]
+
+
+_PUNCT_RE = re.compile(r"[()\[\]\-_:.,/]")
+_WS_RE    = re.compile(r"\s+")
+
+def _strip_punct(s):
+    """Lower + replace punctuation with spaces + collapse whitespace.
+    Used for fuzzy compare so 'Reg. Operational' ≈ 'Regulatory (Operational)'.
+    Also strips a final 's' on each word so plural/singular drift folds together
+    ('Regulatory Operations' ≈ 'Regulatory Operational' both → 'regulatory operation').
+    NOTE: 'Operational' loses its 'al' suffix here too — handled by the suffix
+    rule below."""
+    if s is None:
+        return ""
+    t = _WS_RE.sub(" ", _PUNCT_RE.sub(" ", str(s).lower())).strip()
+    # Fold simple morphology: drop trailing 's' and 'al' on each token so
+    # Operations/Operational/Operation all collapse to 'operation'.
+    out = []
+    for tok in t.split(" "):
+        if not tok:
+            continue
+        if len(tok) > 4 and tok.endswith("al"):
+            tok = tok[:-2]
+        if len(tok) > 3 and tok.endswith("s"):
+            tok = tok[:-1]
+        out.append(tok)
+    return " ".join(out)
+
+
 def normalize_waf_category(raw_category, known_categories=None):
-    """Normalize a WAF category using exact match, substring, and alias lookup.
+    """Normalize a WAF category using exact match, punctuation/morphology
+    fold, substring containment, alias lookup (DB + dict), and a smart
+    KTLO heuristic.
 
     Returns (normalized_category, was_normalized, original_value).
     If ambiguous (multiple substring matches), keeps original and lets AI resolve.
@@ -43,6 +90,7 @@ def normalize_waf_category(raw_category, known_categories=None):
 
     raw = str(raw_category).strip()
     raw_lower = raw.lower()
+    raw_stripped = _strip_punct(raw)
 
     cats = known_categories or waf_store.get("categories") or DEFAULT_WAF_CATEGORIES
     cats = [str(c) for c in cats if c and str(c).strip().lower() != "nan"]
@@ -52,22 +100,32 @@ def normalize_waf_category(raw_category, known_categories=None):
         if raw_lower == cat.lower().strip():
             return (cat, False, raw)
 
-    # 2. Substring containment
+    # 2. Punctuation- and morphology-stripped exact match
+    #    Catches: "Reg. Operational" vs "Regulatory (Operational)",
+    #             "Regulatory (Operations)" vs "Regulatory (Operational)"
+    for cat in cats:
+        if raw_stripped and raw_stripped == _strip_punct(cat):
+            return (cat, True, raw)
+
+    # 3. Substring containment (using stripped forms for robustness)
     substring_matches = []
     for cat in cats:
-        cat_lower = cat.lower().strip()
-        if raw_lower in cat_lower or cat_lower in raw_lower:
+        cs = _strip_punct(cat)
+        if raw_stripped and cs and (raw_stripped in cs or cs in raw_stripped):
             substring_matches.append(cat)
-
     if len(substring_matches) == 1:
         return (substring_matches[0], True, raw)
-    # Ambiguous — don't normalize
+    # Ambiguous — don't normalize via substring
 
-    # 3. Alias lookup
-    if raw_lower in WAF_ALIASES:
-        return (WAF_ALIASES[raw_lower], True, raw)
+    # 4. Alias lookup (DB + dict). Try exact key, then stripped form.
+    aliases = _all_aliases()
+    if raw_lower in aliases:
+        return (aliases[raw_lower], True, raw)
+    for k, v in aliases.items():
+        if _strip_punct(k) == raw_stripped:
+            return (v, True, raw)
 
-    # 4. Smart KTLO detection — any string containing "ktlo" or
+    # 5. Smart KTLO detection — any string containing "ktlo" or
     #    both "keep"+"lights"+"on" normalizes to the canonical form
     if "ktlo" in raw_lower or ("keep" in raw_lower and "lights" in raw_lower and "on" in raw_lower):
         canonical = next((c for c in cats if c.lower().startswith("ktlo")), "KTLO (Keep the Lights On)")

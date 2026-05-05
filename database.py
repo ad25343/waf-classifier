@@ -353,8 +353,47 @@ def init_db():
             "INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)",
             (k, v, datetime.now().isoformat())
         )
+
+    # WAF Category Aliases — user-managed shorthand → canonical mapping
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS waf_aliases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            alias TEXT NOT NULL UNIQUE COLLATE NOCASE,
+            canonical TEXT NOT NULL,
+            source TEXT DEFAULT 'user',
+            created_at TEXT NOT NULL,
+            created_by TEXT DEFAULT ''
+        )
+    """)
+    # Seed from the in-code WAF_ALIASES dict on first launch only
+    if conn.execute("SELECT COUNT(*) FROM waf_aliases").fetchone()[0] == 0:
+        from state import WAF_ALIASES as _SEED
+        _now = datetime.now().isoformat()
+        for _alias, _canonical in _SEED.items():
+            conn.execute(
+                "INSERT OR IGNORE INTO waf_aliases (alias, canonical, source, created_at) "
+                "VALUES (?, ?, 'seed', ?)",
+                (_alias, _canonical, _now)
+            )
     conn.commit()
     conn.close()
+
+
+# ── Alias helpers ──────────────────────────────────────────────────────
+
+def get_all_aliases_dict():
+    """Return {alias_lower: canonical} dict from waf_aliases table.
+    Falls back to {} on any error so normalize_waf_category never crashes.
+    Uses a fresh sqlite3 connection so it works outside Flask request context."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            rows = conn.execute("SELECT alias, canonical FROM waf_aliases").fetchall()
+            return {(r[0] or "").strip().lower(): r[1] for r in rows if r[0]}
+        finally:
+            conn.close()
+    except Exception:
+        return {}
 
 
 # ── Settings Cache ────────────────────────────────────────────────────

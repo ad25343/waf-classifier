@@ -533,6 +533,7 @@
         <div class="nav-dropdown-menu">
             <a href="/merge"          class="nav-dropdown-item">File Merger</a>
             <a href="/waf-reference"  class="nav-dropdown-item">WAF Reference</a>
+            <a href="/aliases"        class="nav-dropdown-item">Category Aliases</a>
         </div>
     </div>
     <a href="/settings" class="top-nav-link">Settings</a>
@@ -2331,7 +2332,9 @@ function renderVerifyTable() {
 
         let statusBadge;
         if (r.is_match === true) {
-            statusBadge = '<span class="badge high">Match</span>';
+            statusBadge = r.was_normalized
+                ? '<span class="badge medium" title="Match after normalization (case / punctuation / plural drift). Add an alias if these should be treated as the same category.">Match (normalized)</span>'
+                : '<span class="badge high">Match</span>';
         } else if (r.is_match === false) {
             statusBadge = '<span class="badge mismatch">Mismatch</span>';
         } else {

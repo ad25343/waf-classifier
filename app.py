@@ -88,6 +88,9 @@ app.register_blueprint(quality_bp)
 from routes.disputes import disputes_bp
 app.register_blueprint(disputes_bp)
 
+from routes.aliases import aliases_bp
+app.register_blueprint(aliases_bp)
+
 
 # ── Startup ──────────────────────────────────────────────────────
 def auto_load_sample_data():
