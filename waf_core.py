@@ -95,19 +95,33 @@ def normalize_waf_category(raw_category, known_categories=None):
     cats = known_categories or waf_store.get("categories") or DEFAULT_WAF_CATEGORIES
     cats = [str(c) for c in cats if c and str(c).strip().lower() != "nan"]
 
-    # 1. Exact match (case-insensitive)
+    # 1. Alias lookup FIRST — explicit user-defined mappings always win.
+    #
+    # Putting alias lookup ahead of exact-match means an alias whose LHS
+    # happens to match a canonical category (e.g. "Regulatory Mandated
+    # Change" → "Regulatory (Operational)") still fires. Users who add an
+    # alias have made an intentional choice; honoring it is the whole point
+    # of the alias system.
+    aliases = _all_aliases()
+    if raw_lower in aliases:
+        return (aliases[raw_lower], True, raw)
+    for k, v in aliases.items():
+        if _strip_punct(k) == raw_stripped:
+            return (v, True, raw)
+
+    # 2. Exact match (case-insensitive) against the canonical category list.
     for cat in cats:
         if raw_lower == cat.lower().strip():
             return (cat, False, raw)
 
-    # 2. Punctuation- and morphology-stripped exact match
+    # 3. Punctuation- and morphology-stripped exact match
     #    Catches: "Reg. Operational" vs "Regulatory (Operational)",
     #             "Regulatory (Operations)" vs "Regulatory (Operational)"
     for cat in cats:
         if raw_stripped and raw_stripped == _strip_punct(cat):
             return (cat, True, raw)
 
-    # 3. Substring containment (using stripped forms for robustness)
+    # 4. Substring containment (using stripped forms for robustness)
     substring_matches = []
     for cat in cats:
         cs = _strip_punct(cat)
@@ -116,14 +130,6 @@ def normalize_waf_category(raw_category, known_categories=None):
     if len(substring_matches) == 1:
         return (substring_matches[0], True, raw)
     # Ambiguous — don't normalize via substring
-
-    # 4. Alias lookup (DB + dict). Try exact key, then stripped form.
-    aliases = _all_aliases()
-    if raw_lower in aliases:
-        return (aliases[raw_lower], True, raw)
-    for k, v in aliases.items():
-        if _strip_punct(k) == raw_stripped:
-            return (v, True, raw)
 
     # 5. Smart KTLO detection — any string containing "ktlo" or
     #    both "keep"+"lights"+"on" normalizes to the canonical form
