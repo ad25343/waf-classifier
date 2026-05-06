@@ -675,7 +675,7 @@
                             <th class="sortable" onclick="sortDrillDown('epic')">Epic <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortDrillDown('original_tag')">User Submitted WAF <span class="sort-arrow"></span></th>
                             <th class="sortable" onclick="sortDrillDown('category')">AI Suggested WAF <span class="sort-arrow"></span></th>
-                            <th class="sortable" onclick="sortDrillDown('color')">Color <span class="sort-arrow"></span></th>
+                            <th class="sortable" onclick="sortDrillDown('color')">Color (User → AI) <span class="sort-arrow"></span></th>
                             <th class="sortable" style="text-align:center;" onclick="sortDrillDown('run_change')">Run/Change <span class="sort-arrow"></span></th>
                             <th class="sortable" style="text-align:center;" onclick="sortDrillDown('confidence')">Confidence <span class="sort-arrow"></span></th>
                             <th class="sortable" style="text-align:center;" onclick="sortDrillDown('status')">Status <span class="sort-arrow"></span></th>
@@ -740,7 +740,7 @@
                                 <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('epic')">Epic <span id="recent-sort-epic"></span></th>
                                 <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('original_tag')">User WAF <span id="recent-sort-original_tag"></span></th>
                                 <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('category')">AI WAF <span id="recent-sort-category"></span></th>
-                                <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('color')">Color <span id="recent-sort-color"></span></th>
+                                <th class="sortable" style="cursor:pointer;user-select:none;" onclick="sortRecent('color')">Color (User → AI) <span id="recent-sort-color"></span></th>
                                 <th class="sortable" style="text-align:center;cursor:pointer;user-select:none;" onclick="sortRecent('status')">Status <span id="recent-sort-status"></span></th>
                             </tr>
                             <tr class="col-filter-row" id="recent-col-filters">
@@ -1890,7 +1890,7 @@ function renderDrillDownTable() {
             '<td style="color:var(--text-muted);font-size:12px;" title="' + esc(s.epic||'') + '">' + epic + '</td>' +
             '<td' + (isMismatch ? ' style="color:var(--error);text-decoration:line-through;opacity:0.85;"' : '') + '>' + ogTag + '</td>' +
             '<td' + (isMismatch ? ' style="color:var(--success);font-weight:600;"' : '') + '>' + esc(s.category || '—') + '</td>' +
-            '<td><span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—') + ' ' + colorCheckTag(s.category, s.color) + '</td>' +
+            '<td>' + (window.renderColorPair ? window.renderColorPair(s.original_color || '', s.color || '') : ('<span class="color-dot" style="background:' + dot + '"></span> ' + esc(s.color || '—'))) + ' ' + colorCheckTag(s.category, s.color) + '</td>' +
             '<td style="text-align:center;">' + esc(s.run_change || '—') + '</td>' +
             '<td style="text-align:center;"><span class="badge ' + confClass + '">' + esc(s.confidence || '—') + '</span></td>' +
             '<td style="text-align:center;">' + statusBadge + '</td>' +
@@ -2995,24 +2995,27 @@ async function loadRecentTable() {
             const rawTitle    = s.title    || '';
             const rawEpic     = s.epic     || '—';
             const rawColor    = s.color    || '';
+            const rawUserColor = s.original_color || '';
             const rawCategory = s.category || '';
             const rawOrigTag  = s.original_tag || '—';
             const title   = esc(rawTitle.length   > 55 ? rawTitle.substring(0,55)   + '…' : rawTitle);
             const epic    = esc(rawEpic.length    > 22 ? rawEpic.substring(0,22)    + '…' : rawEpic);
             const origTag = esc(rawOrigTag.length > 26 ? rawOrigTag.substring(0,26) + '…' : rawOrigTag);
-            const dotColor = WAF_COLORS_MAP[rawColor] || '#9ca3af';
             const isMismatch  = s.mismatch !== undefined ? s.mismatch : s.was_mismatch;
             const statusBadge = isMismatch
                 ? '<span class="badge mismatch">Mismatch</span>'
                 : '<span class="badge high">Match</span>';
             const rowCls = isMismatch ? 'lin-mismatch-row' : '';
             const piChip = s.pi_number ? `<span title="PI Number" style="font-size:10px;color:var(--teal);background:rgba(13,148,136,0.1);border:1px solid rgba(13,148,136,0.25);padding:1px 4px;border-radius:3px;margin-left:4px;">${esc(String(s.pi_number))}</span>` : '';
+            const colorPair = window.renderColorPair
+                ? window.renderColorPair(rawUserColor, rawColor)
+                : esc(rawColor || '—');
             return `<tr class="${rowCls}" style="cursor:pointer;" onclick="showStoryDetail(window._recentStories[${idx}])">
                 <td style="color:var(--text-primary);" title="${esc(rawTitle)}">${title}${piChip}</td>
                 <td style="color:var(--text-muted);font-size:12px;" title="${esc(rawEpic)}">${epic}</td>
                 <td style="font-size:12px;" title="${esc(rawOrigTag)}">${origTag}</td>
                 <td style="font-size:12px;">${esc(rawCategory||'—')}</td>
-                <td><span class="color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle;background:${dotColor}"></span>${esc(rawColor||'—')} ${colorCheckTag(rawCategory, rawColor)}</td>
+                <td>${colorPair} ${colorCheckTag(rawCategory, rawColor)}</td>
                 <td style="text-align:center;">${statusBadge}</td>
             </tr>`;
         }).join('');
@@ -3461,18 +3464,24 @@ function showStoryDetail(data) {
                 return fileCatHtml + colorBit;
             })())}
             ${field('AI Suggested WAF', esc(data.ai_suggested_waf || data.waf_category || data.category || ''))}
-            ${field('WAF Color', (() => {
-                const aiCat = data.ai_suggested_waf || data.waf_category || data.category || '';
-                const exp = expectedColor(aiCat);
-                const colorDot = '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + dotColor + ';vertical-align:middle;margin-right:6px;' + (wafColor === 'BLACK' ? 'border:1px solid #4b5563;' : '') + '"></span>';
-                if (exp && wafColor && exp !== wafColor) {
+            ${field('WAF Color (User → AI)', (() => {
+                const userColor = (data.original_color || '').toUpperCase();
+                const aiColor   = (data.ai_color || data.waf_color || data.color || '').toUpperCase();
+                const aiCat     = data.ai_suggested_waf || data.waf_category || data.category || '';
+                const exp       = expectedColor(aiCat);
+                const pair = window.renderColorPair
+                    ? window.renderColorPair(userColor, aiColor)
+                    : ('<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + dotColor + ';vertical-align:middle;margin-right:6px;' + (wafColor === 'BLACK' ? 'border:1px solid #4b5563;' : '') + '"></span>' + esc(aiColor || '—'));
+                let aiCheck = '';
+                if (exp && aiColor && exp !== aiColor) {
                     const expDot = WAF_COLORS_MAP[exp] || '#e8944a';
-                    return colorDot + esc(wafColor) +
-                        ' <span style="font-size:11px;color:var(--warning);margin-left:4px;" title="Color mismatch">⚠ Expected: ' +
+                    aiCheck = ' <span style="font-size:11px;color:var(--warning);margin-left:4px;" title="AI color mismatch with category">⚠ Expected: ' +
                         '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + expDot + ';vertical-align:middle;margin:0 3px;"></span>' +
                         esc(exp) + ' for ' + esc(aiCat) + '</span>';
+                } else if (exp && aiColor) {
+                    aiCheck = ' <span style="font-size:11px;color:var(--success);">✓</span>';
                 }
-                return colorDot + esc(wafColor || '—') + (exp && wafColor ? ' <span style="font-size:11px;color:var(--success);">✓</span>' : '');
+                return pair + aiCheck;
             })())}
             ${field('Story Points', data.story_points ? `<span style="font-weight:700;font-size:16px;color:var(--accent);">${esc(String(data.story_points))}</span>` : '<span style="color:var(--text-muted)">—</span>')}
             ${data.pi_number ? field('PI Number', `<span style="font-size:13px;font-weight:600;color:var(--text-primary);">${esc(String(data.pi_number))}</span>`) : ''}

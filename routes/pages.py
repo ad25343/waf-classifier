@@ -42,10 +42,12 @@ window.APP_ROOT = "{prefix}";
 """
 
 
-# Shared helper script tag — loaded on every page so any view can call
-# window.openDisputeModal(...). The src is APP_ROOT-aware via the Flask
-# /static mount; the APP_ROOT fetch shim above will rewrite the request.
+# Shared helper script tags — loaded on every page so any view can call
+# the shared helpers (openDisputeModal, renderColorPair) without duplicating
+# the implementation. The src is APP_ROOT-aware via the Flask /static mount;
+# the APP_ROOT fetch shim above will rewrite the request.
 _DISPUTE_MODAL_TAG = '<script src="{prefix}/static/dispute-modal.js"></script>'
+_COLOR_PAIR_TAG    = '<script src="{prefix}/static/color-pair.js"></script>'
 
 
 def _serve(filename):
@@ -53,9 +55,14 @@ def _serve(filename):
     with open(os.path.join(_STATIC, filename), "r", encoding="utf-8") as fh:
         html = fh.read()
     script = _APP_ROOT_SCRIPT.format(prefix=APPLICATION_ROOT)
-    dispute_tag = _DISPUTE_MODAL_TAG.format(prefix=APPLICATION_ROOT)
+    dispute_tag    = _DISPUTE_MODAL_TAG.format(prefix=APPLICATION_ROOT)
+    color_pair_tag = _COLOR_PAIR_TAG.format(prefix=APPLICATION_ROOT)
     # Inject right after <head> so APP_ROOT is defined before any page script
-    html = html.replace("<head>", "<head>\n" + script + "\n" + dispute_tag, 1)
+    html = html.replace(
+        "<head>",
+        "<head>\n" + script + "\n" + dispute_tag + "\n" + color_pair_tag,
+        1,
+    )
     return Response(html, mimetype="text/html")
 
 

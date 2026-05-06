@@ -1447,7 +1447,13 @@ function showStoryDetail(data) {
             ${desc ? fld('Description', _e(desc), true) : ''}
             ${fld('User Submitted WAF', _e(origWAF) || '<span style="color:var(--text-muted)">Not tagged</span>')}
             ${fld('AI Suggested WAF', _e(aiWAF))}
-            ${fld('WAF Color', dotHtml + _e(color || '—'))}
+            ${fld('WAF Color (User → AI)', (() => {
+                const userColor = (data.original_color || '').toUpperCase();
+                const aiColor   = (data.ai_color || data.waf_color || color || '').toUpperCase();
+                return window.renderColorPair
+                    ? window.renderColorPair(userColor, aiColor)
+                    : (dotHtml + _e(aiColor || '—'));
+            })())}
             ${fld('Status', statusHtml)}
             ${conf ? fld('Confidence', `<span class="badge badge-${conf.toLowerCase()}">${_e(conf)}</span>`) : ''}
             ${data.story_points ? fld('Story Points', `<span style="font-weight:700;font-size:16px;color:var(--accent);">${_e(String(data.story_points))}</span>`) : ''}
