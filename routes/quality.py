@@ -24,95 +24,151 @@ _quality_job_counter: int = 0
 BATCH_SIZE = 5  # stories per AI call
 
 
-# ── Rubric definition ─────────────────────────────────────────────────────────
+# ── Rubric loader ─────────────────────────────────────────────────────────────
+#
+# Rubrics are now JSON files in /rubrics/, sourced from the Story Excellence
+# Playbook (docs/playbook/story-excellence-v2.docx). Each rubric carries:
+#   id, level (epic|feature|story|defect), phase (ready|done),
+#   source_doc, source_version, source_section, scoring_mode,
+#   thresholds, criteria[]
+#
+# Each criterion carries id/name/description/why/fix/good_example plus:
+#   scored_by      = 'ai' | 'system'
+#   system_check   = key into SYSTEM_CHECKS for system-scored criteria
+#   required       = bool — failing a required criterion blocks 'ready'
+#   weight         = float — relative weight for the overall score
+#
+# Backward compatibility: the old `domain` query parameter still works and
+# maps to the new rubric ids via _DOMAIN_ALIASES below.
 
-RUBRICS = {
-    "data_reporting": {
-        "id": "data_reporting",
-        "name": "Data & Reporting",
-        "full_name": "Data, Reporting & Analytics — Definition of Ready",
-        "source": "GSE-MF Story Excellence Playbook v1.0",
-        "description": (
-            "9-criterion checklist ensuring every data and reporting story is independently "
-            "deliverable before it enters a sprint. A developer should be able to pick it up "
-            "on Monday and deliver by Friday with no open questions."
-        ),
-        "criteria": [
-            {
-                "id": "narrative",
-                "name": "Narrative Format",
-                "description": "Story uses 'As a [role] / I need [capability] / So that [outcome]' format",
-                "why": "Anchors the work to a stakeholder need and a measurable business outcome.",
-                "good_example": "As a Senior Risk Analyst / I need a portfolio delinquency rate dashboard filtered by property type and loan vintage / So that I can produce the weekly risk committee slide pack without manual data pulls",
-                "fix": "Rewrite the opening as: As a [stakeholder role] / I need [specific capability] / So that [business outcome]",
-            },
-            {
-                "id": "source_data",
-                "name": "Source Data Identified",
-                "description": "Specific source table, feed, API, or system is named with owner and refresh frequency",
-                "why": "Prevents mid-sprint clarification cycles when a developer can't find the data.",
-                "good_example": "Table: dw.loan_performance_monthly, System: EDW, Refresh: Nightly 02:00 EST. Known issue: NULL vintage_year = treat as Pre-2015 bucket",
-                "fix": "Add the source table/feed name, owning system, refresh schedule, and any known data quality issues",
-            },
-            {
-                "id": "business_rules",
-                "name": "Business Rules Documented",
-                "description": "Transformation logic, GSE/MF-specific definitions, calculations, and edge cases are written out explicitly — not just referenced",
-                "why": "Vague references to 'standard logic' cause rework when assumptions differ.",
-                "good_example": "Delinquency rate = loans 30+ DPD / total active loans. reporting_date = last business day of prior month. Property types: MF, SR, HC. Exclude Paid Off and REO.",
-                "fix": "Write out the exact calculation, key definitions used by the team, and how edge cases (nulls, exclusions, rounding) are handled",
-            },
-            {
-                "id": "output_artifact",
-                "name": "Output Artifact Defined",
-                "description": "The deliverable (dashboard, report, table, flat file, API) is clearly specified with schema or mockup",
-                "why": "Without a specified artifact, the developer and PO may have different expectations at demo.",
-                "good_example": "Dashboard: portfolio delinquency rate filtered by property type and loan vintage. Columns: loan_id, reporting_date, delinquency_rate, property_type. Mockup: [Confluence link]",
-                "fix": "Specify the exact deliverable type and include a column list, schema sketch, or mockup link",
-            },
-            {
-                "id": "acceptance_criteria",
-                "name": "Acceptance Criteria",
-                "description": "Binary, independently testable acceptance criteria are present (AC1, AC2... format)",
-                "why": "Subjective AC generates PO rejection at demo — binary AC makes the definition of done concrete.",
-                "good_example": "AC1: MF delinquency rate for March 2026 matches EDW query within 0.01%. AC2: Filtering by property type returns only loans in that type. AC3: Dashboard loads in under 3 seconds.",
-                "fix": "Add AC1, AC2... statements that are binary (pass/fail), specific, and independently testable by a tester without ambiguity",
-            },
-            {
-                "id": "data_quality",
-                "name": "Data Quality Checks",
-                "description": "Row count reconciliation, null checks, and referential integrity requirements are specified",
-                "why": "Data quality failures discovered late in the sprint cause last-minute rework and pipeline rollbacks.",
-                "good_example": "Row count reconciles to dw.loan_performance_monthly within 0.01%. No nulls in loan_id or reporting_date. Ref integrity: loan_id must exist in dw.loans.",
-                "fix": "Add: row count tolerance, which key columns must be non-null, and any foreign key / referential integrity checks required",
-            },
-            {
-                "id": "traceability",
-                "name": "Traceability Tag",
-                "description": "Data lineage documented as Source → Transformation Layer → Output Artifact → Business Consumer",
-                "why": "Enables impact analysis when upstream sources change and supports audit/regulatory requirements.",
-                "good_example": "EDW.dw.loan_performance → Analytics Mart → Delinquency Dashboard → Risk Committee (weekly pack)",
-                "fix": "Add a single traceability line: [Source System] → [Transformation Layer] → [Output Artifact] → [Business Consumer]",
-            },
-            {
-                "id": "story_points",
-                "name": "Story Pointed",
-                "description": "Story has been estimated in story points by the team during refinement or planning",
-                "why": "Unpointed stories cannot be planned into a sprint — they are invisible to capacity planning.",
-                "good_example": "Story Points: 3",
-                "fix": "Estimate the story in story points at the next refinement or planning session",
-            },
-            {
-                "id": "dependencies",
-                "name": "Dependencies Flagged",
-                "description": "Upstream data readiness requirements and downstream consumer dependencies are noted",
-                "why": "Undocumented dependencies create blocking surprises mid-sprint.",
-                "good_example": "Upstream: dw.loan_performance available by T+1 (confirmed with EDW team). Downstream: Risk committee slide pack produced weekly by Analyst team.",
-                "fix": "Add upstream dependencies (data feeds, other stories, external teams) and downstream consumers (reports, dashboards, teams) that depend on this work",
-            },
-        ],
-    }
+RUBRICS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "rubrics")
+
+_DOMAIN_ALIASES = {
+    "data_reporting": "story-dor",   # old default — story-level DoR
+    "story":          "story-dor",
+    "feature":        "feature-dor",
+    "epic":           "epic-dor",
+    "defect":         "defect-dor",
 }
+
+_rubric_cache: dict = {}
+
+
+def load_rubric(rubric_id: str) -> dict:
+    """Load a rubric JSON file from /rubrics/. Cached on first read."""
+    rid = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
+    if rid in _rubric_cache:
+        return _rubric_cache[rid]
+    path = os.path.join(RUBRICS_DIR, f"{rid}.json")
+    if not os.path.exists(path):
+        # Fall back to story-dor if requested rubric is unknown
+        path = os.path.join(RUBRICS_DIR, "story-dor.json")
+    with open(path, "r", encoding="utf-8") as fh:
+        rubric = json.load(fh)
+    _rubric_cache[rid] = rubric
+    return rubric
+
+
+def list_rubrics() -> list:
+    """Enumerate available rubrics (id, level, phase, name)."""
+    out = []
+    if not os.path.isdir(RUBRICS_DIR):
+        return out
+    for fn in sorted(os.listdir(RUBRICS_DIR)):
+        if not fn.endswith(".json"):
+            continue
+        try:
+            with open(os.path.join(RUBRICS_DIR, fn), "r", encoding="utf-8") as fh:
+                r = json.load(fh)
+            out.append({
+                "id":    r.get("id"),
+                "level": r.get("level"),
+                "phase": r.get("phase"),
+                "name":  r.get("name"),
+            })
+        except Exception:
+            continue
+    return out
+
+
+# ── System-check registry ─────────────────────────────────────────────────────
+# Criteria with scored_by="system" don't need an AI call — they're checked
+# locally using the registered function. Returns (pass: bool, optional fix str).
+
+def _check_has_story_points(story: dict) -> tuple:
+    val = story.get("story_points")
+    if val is None:
+        return False, None
+    s = str(val).strip().lower()
+    if s and s not in ("nan", "none", "null", "0", "0.0"):
+        return True, None
+    return False, None
+
+
+SYSTEM_CHECKS = {
+    "has_story_points": _check_has_story_points,
+}
+
+
+# ── Scoring-mode prompt fragments ─────────────────────────────────────────────
+# The same rubric can be applied at three strictness levels.
+
+_MODE_INSTRUCTIONS = {
+    "lenient":  "Be practical. If you can reasonably infer a criterion is met from the context provided, mark PASS. Only FAIL if the information is clearly absent.",
+    "balanced": "Pass if the criterion is clearly met OR unambiguously inferable from concrete details in the story. Fail if you would have to assume to mark it pass.",
+    "strict":   "Pass ONLY if the criterion is explicitly addressed in the story with concrete details. Inference is not enough — require specifics (names, numbers, source identifiers).",
+}
+
+
+def _compute_score_band(criteria_results: dict, rubric: dict) -> tuple:
+    """Compute (overall_score, band) per the rubric's thresholds.
+
+    band ∈ {'ready', 'needs_work', 'not_ready'}. The 'ready' threshold can
+    require all `required: true` criteria to pass via `all_required_pass`.
+    """
+    weighted_sum = 0.0
+    total_weight = 0.0
+    all_required_pass = True
+    passed_count = 0
+    total_count = len(rubric.get("criteria", []))
+
+    for c in rubric.get("criteria", []):
+        weight = float(c.get("weight", 1.0))
+        passed = bool(criteria_results.get(c["id"], {}).get("pass", False))
+        weighted_sum += weight * (1.0 if passed else 0.0)
+        total_weight += weight
+        if c.get("required") and not passed:
+            all_required_pass = False
+        if passed:
+            passed_count += 1
+
+    overall = round(weighted_sum / total_weight * 100.0, 1) if total_weight else 0.0
+    th = rubric.get("thresholds", {})
+    ready_th = th.get("ready", {"min_score": 89, "all_required_pass": True})
+    needs_th = th.get("needs_work", {"min_score": 56})
+
+    if (overall >= ready_th.get("min_score", 89)
+        and (not ready_th.get("all_required_pass") or all_required_pass)):
+        band = "ready"
+    elif overall >= needs_th.get("min_score", 56):
+        band = "needs_work"
+    else:
+        band = "not_ready"
+    return overall, band, passed_count, total_count
+
+
+# ── Legacy stub kept for any callers that still import RUBRICS ────────────────
+# The old hard-coded RUBRICS dict is gone. If something still references it,
+# it gets a thin compatibility shim that loads from the JSON files.
+class _RubricsCompat(dict):
+    def __getitem__(self, key):
+        return load_rubric(key)
+    def get(self, key, default=None):
+        try:
+            return load_rubric(key)
+        except Exception:
+            return default
+RUBRICS = _RubricsCompat()
 
 
 # ── AI helpers ────────────────────────────────────────────────────────────────
@@ -125,10 +181,18 @@ def _get_client():
     return Anthropic()
 
 
-def _score_batch(stories: list, domain: str) -> list:
-    """Score a batch of stories. Returns list of {id, criteria} dicts."""
-    rubric = RUBRICS.get(domain, RUBRICS["data_reporting"])
-    ai_criteria = [c for c in rubric["criteria"] if c["id"] != "story_points"]
+def _score_batch(stories: list, rubric: dict) -> list:
+    """Score a batch of stories against a rubric. Returns list of {id, criteria} dicts.
+
+    Only AI-scored criteria are sent to the model. System-scored criteria
+    (e.g. has_story_points) are checked separately by the caller.
+    """
+    ai_criteria = [c for c in rubric.get("criteria", []) if c.get("scored_by", "ai") != "system"]
+    if not ai_criteria:
+        return []
+
+    mode = rubric.get("scoring_mode", "balanced")
+    mode_text = _MODE_INSTRUCTIONS.get(mode, _MODE_INSTRUCTIONS["balanced"])
 
     criteria_list = "\n".join(
         f'{i + 1}. {c["id"]}: {c["description"]}'
@@ -139,9 +203,21 @@ def _score_batch(stories: list, domain: str) -> list:
         for s in stories
     )
 
-    prompt = f"""You are a story quality reviewer for a Data, Reporting and Analytics team.
+    level = rubric.get("level", "story").capitalize()
+    persona = (
+        "epic-level reviewer for the portfolio review board" if rubric.get("level") == "epic"
+        else "feature-level reviewer for program refinement" if rubric.get("level") == "feature"
+        else "defect triage reviewer" if rubric.get("level") == "defect"
+        else "story quality reviewer"
+    )
 
-Score each story against these Definition of Ready criteria. Be practical — if you can reasonably infer a criterion is met from the context provided, mark PASS. Only FAIL if the information is clearly absent.
+    example_id = stories[0]["id"] if stories else "STORY_ID_HERE"
+    example_first = ai_criteria[0]["id"] if ai_criteria else "criterion_id"
+    example_second = ai_criteria[1]["id"] if len(ai_criteria) > 1 else example_first
+
+    prompt = f"""You are a {persona}. You are reviewing {level} items against the Story Excellence Playbook v2 — Definition of Ready.
+
+{mode_text}
 
 CRITERIA:
 {criteria_list}
@@ -151,15 +227,15 @@ For each criterion that FAILS, provide a short prescriptive fix (one sentence �
 Return ONLY a JSON array — no markdown fences, no explanation:
 [
   {{
-    "id": "STORY_ID_HERE",
+    "id": "{example_id}",
     "criteria": {{
-      "narrative": {{"pass": true}},
-      "source_data": {{"pass": false, "fix": "Add the source table name and owning system (e.g. dw.loan_performance, EDW)"}}
+      "{example_first}": {{"pass": true}},
+      "{example_second}": {{"pass": false, "fix": "Concrete one-sentence fix"}}
     }}
   }}
 ]
 
-STORIES TO SCORE:
+ITEMS TO SCORE:
 {stories_text}"""
 
     client = _get_client()
@@ -177,7 +253,12 @@ STORIES TO SCORE:
 
 # ── Background job ─────────────────────────────────────────────────────────────
 
-def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_number: int, upload_id: int, teams: list, upload_filename: str):
+def _run_scoring_job(job_id: str, classification_ids: list, rubric_id: str, job_number: int, upload_id: int, teams: list, upload_filename: str):
+    """Background job that scores stories against a rubric.
+
+    `rubric_id` is the new parameter name; legacy callers may pass the old
+    `domain` value (e.g. 'data_reporting') and load_rubric() resolves it.
+    """
     job = _quality_jobs[job_id]
     db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), DB_PATH) if not os.path.isabs(DB_PATH) else DB_PATH
     run_id = job_id
@@ -198,9 +279,10 @@ def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_num
         job["total"] = total
         job["status"] = "running"
 
-        rubric = RUBRICS.get(domain, RUBRICS["data_reporting"])
+        rubric = load_rubric(rubric_id)
+        # Resolve to canonical id (e.g. 'data_reporting' → 'story-dor')
+        canonical_id = rubric.get("id", rubric_id)
         all_criteria_ids = [c["id"] for c in rubric["criteria"]]
-        total_criteria = len(all_criteria_ids)
         all_results = []
 
         for i in range(0, total, BATCH_SIZE):
@@ -215,7 +297,7 @@ def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_num
             ]
 
             try:
-                ai_results = _score_batch(batch, domain)
+                ai_results = _score_batch(batch, rubric)
                 ai_map = {r["id"]: r["criteria"] for r in ai_results}
             except Exception:
                 ai_map = {}
@@ -224,21 +306,35 @@ def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_num
                 sid = str(r["id"])
                 criteria = ai_map.get(sid, {})
 
-                # story_points: scored without AI
-                has_points = bool(r["story_points"] and str(r["story_points"]).strip())
-                criteria["story_points"] = {
-                    "pass": has_points,
-                    **({"fix": "Estimate in story points at the next refinement or planning session"} if not has_points else {}),
+                # System-scored criteria — checked locally, no AI call
+                story_dict = {
+                    "id":             r["id"],
+                    "title":          r["story_title"] or "",
+                    "description":    r["story_description"] or "",
+                    "story_points":   r["story_points"],
+                    "team":           r["team"] or "",
+                    "story_id":       r["story_id"] or "",
                 }
+                for c in rubric["criteria"]:
+                    if c.get("scored_by") == "system":
+                        check_fn = SYSTEM_CHECKS.get(c.get("system_check") or "")
+                        if check_fn:
+                            passed, fix_override = check_fn(story_dict)
+                            criteria[c["id"]] = {"pass": passed}
+                            if not passed:
+                                criteria[c["id"]]["fix"] = fix_override or c.get("fix") or "Address the criterion."
+                        else:
+                            # Unknown system check — fail safe with the rubric's fix text
+                            criteria[c["id"]] = {"pass": False, "fix": c.get("fix") or "Address the criterion."}
 
-                # If AI returned no data, mark all AI criteria as unscored
+                # If AI returned no data, mark remaining AI criteria as unscored
                 if not ai_map.get(sid):
                     for c in rubric["criteria"]:
-                        if c["id"] != "story_points" and c["id"] not in criteria:
+                        if c.get("scored_by") != "system" and c["id"] not in criteria:
                             criteria[c["id"]] = {"pass": False, "fix": "Could not score — description may be empty"}
 
-                passed = sum(1 for cid in all_criteria_ids if criteria.get(cid, {}).get("pass", False))
-                overall_score = round(passed / total_criteria * 100, 1) if total_criteria else 0
+                # Weighted score + band per rubric thresholds
+                overall_score, band, passed_count, total_count = _compute_score_band(criteria, rubric)
 
                 result = {
                     "classification_id": r["id"],
@@ -246,10 +342,15 @@ def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_num
                     "team": r["team"] or "",
                     "story_id": r["story_id"] or "",
                     "upload_id": r["upload_id"],
-                    "domain": domain,
+                    "domain": canonical_id,
+                    "rubric_id": canonical_id,
+                    "rubric_level": rubric.get("level", "story"),
+                    "rubric_phase": rubric.get("phase", "ready"),
+                    "scoring_mode": rubric.get("scoring_mode", "balanced"),
+                    "band": band,
                     "overall_score": overall_score,
-                    "passed_count": passed,
-                    "total_count": total_criteria,
+                    "passed_count": passed_count,
+                    "total_count": total_count,
                     "criteria": criteria,
                     "description_empty": not bool((r["story_description"] or "").strip()),
                     "scored_at": scored_at,
@@ -258,7 +359,8 @@ def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_num
                 }
                 all_results.append(result)
 
-                # Always INSERT a new row per run (preserves run history)
+                # Always INSERT a new row per run (preserves run history).
+                # `domain` column stores the canonical rubric_id for backward compat.
                 conn.execute(
                     """INSERT INTO story_quality_scores
                        (scored_at, classification_id, upload_id, domain, overall_score,
@@ -266,8 +368,8 @@ def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_num
                         story_id, run_id, job_number)
                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (
-                        scored_at, r["id"], r["upload_id"], domain,
-                        overall_score, passed, total_criteria, json.dumps(criteria),
+                        scored_at, r["id"], r["upload_id"], canonical_id,
+                        overall_score, passed_count, total_count, json.dumps(criteria),
                         result["story_title"] or "", result["team"] or "",
                         result["story_id"] or "", run_id, job_number,
                     ),
@@ -277,18 +379,19 @@ def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_num
             job["progress"] = min(i + BATCH_SIZE, total)
             job["results"] = all_results
 
-        # Save run summary
+        # Save run summary. Bands come from per-row `band` rather than score
+        # cutoffs, so they correctly reflect the rubric's required-pass rules.
         total_scored = len(all_results)
         avg = round(sum(r["overall_score"] for r in all_results) / total_scored, 1) if total_scored else 0
-        ready = sum(1 for r in all_results if r["overall_score"] >= 89)
-        needs_work = sum(1 for r in all_results if 56 <= r["overall_score"] < 89)
-        not_ready = sum(1 for r in all_results if r["overall_score"] < 56)
+        ready      = sum(1 for r in all_results if r.get("band") == "ready")
+        needs_work = sum(1 for r in all_results if r.get("band") == "needs_work")
+        not_ready  = sum(1 for r in all_results if r.get("band") == "not_ready")
         conn.execute(
             """INSERT OR REPLACE INTO quality_runs
                (run_id, job_number, scored_at, upload_id, upload_filename, domain,
                 teams_json, story_count, avg_score, ready_count, needs_work_count, not_ready_count)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (run_id, job_number, scored_at, upload_id, upload_filename, domain,
+            (run_id, job_number, scored_at, upload_id, upload_filename, canonical_id,
              json.dumps(teams), total_scored, avg, ready, needs_work, not_ready),
         )
         conn.commit()
@@ -310,9 +413,23 @@ def _run_scoring_job(job_id: str, classification_ids: list, domain: str, job_num
 
 @quality_bp.route("/api/quality/rubric", methods=["GET"])
 def get_rubric():
-    domain = request.args.get("domain", "data_reporting")
-    rubric = RUBRICS.get(domain, RUBRICS["data_reporting"])
-    return jsonify({"rubric": rubric, "domains": [{"id": k, "name": v["name"]} for k, v in RUBRICS.items()]})
+    """Return a rubric definition.
+
+    Query params:
+      rubric_id  preferred — e.g. story-dor, feature-dor, epic-dor, defect-dor
+      domain     legacy alias — old code used domain=data_reporting; resolves to story-dor
+
+    Response also includes `available` — the list of all rubrics on disk.
+    """
+    rubric_id = request.args.get("rubric_id") or request.args.get("domain") or "story-dor"
+    rubric = load_rubric(rubric_id)
+    available = list_rubrics()
+    return jsonify({
+        "rubric":    rubric,
+        "available": available,
+        # Legacy 'domains' field kept so existing UI code keeps working.
+        "domains":   [{"id": r["id"], "name": r["name"]} for r in available],
+    })
 
 
 @quality_bp.route("/api/quality/uploads", methods=["GET"])
@@ -400,7 +517,8 @@ def start_scoring():
     data = request.json or {}
     upload_id = data.get("upload_id")
     teams = data.get("teams", [])
-    domain = data.get("domain", "data_reporting")
+    # Accept the new `rubric_id` field; fall back to the legacy `domain`.
+    rubric_id = data.get("rubric_id") or data.get("domain") or "story-dor"
 
     if not upload_id:
         return jsonify({"error": "upload_id required"}), 400
@@ -430,7 +548,8 @@ def start_scoring():
         "total": len(classification_ids),
         "results": [],
         "error": None,
-        "domain": domain,
+        "rubric_id": rubric_id,
+        "domain": rubric_id,  # legacy alias for older clients
         "upload_id": upload_id,
         "teams": teams,
     }
@@ -443,11 +562,11 @@ def start_scoring():
 
     threading.Thread(
         target=_run_scoring_job,
-        args=(job_id, classification_ids, domain, job_number, upload_id, teams, upload_filename),
+        args=(job_id, classification_ids, rubric_id, job_number, upload_id, teams, upload_filename),
         daemon=True,
     ).start()
 
-    return jsonify({"job_id": job_id, "job_number": job_number, "total": len(classification_ids)})
+    return jsonify({"job_id": job_id, "job_number": job_number, "total": len(classification_ids), "rubric_id": rubric_id})
 
 
 @quality_bp.route("/api/quality/job/<job_id>", methods=["GET"])
@@ -469,7 +588,8 @@ def quality_job_status(job_id):
 def quality_results():
     upload_id = request.args.get("upload_id", type=int)
     teams_raw = request.args.get("teams", "")
-    domain = request.args.get("domain", "data_reporting")
+    rubric_id = request.args.get("rubric_id") or request.args.get("domain") or "story-dor"
+    rubric_id = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
     run_id = request.args.get("run_id")
 
     if not upload_id and not run_id:
@@ -483,7 +603,7 @@ def quality_results():
         params = [run_id]
     else:
         where = "s.upload_id=? AND s.domain=?"
-        params = [upload_id, domain]
+        params = [upload_id, rubric_id]
         if teams:
             placeholders = ",".join("?" * len(teams))
             where += f" AND s.team IN ({placeholders})"
@@ -556,7 +676,7 @@ def delete_quality_run(run_id):
 def quality_chat():
     data = request.json or {}
     classification_id = data.get("classification_id")
-    domain = data.get("domain", "data_reporting")
+    rubric_id = data.get("rubric_id") or data.get("domain") or "story-dor"
     messages = data.get("messages", [])   # [{role, content}, ...]
 
     if not classification_id or not messages:
@@ -570,23 +690,24 @@ def quality_chat():
     if not row:
         return jsonify({"error": "Story not found"}), 404
 
-    rubric = RUBRICS.get(domain, RUBRICS["data_reporting"])
+    rubric = load_rubric(rubric_id)
     criteria_names = [c["name"] for c in rubric["criteria"]]
+    level = rubric.get("level", "story")
 
-    system = f"""You are helping a scrum team refine a JIRA story for a Data, Reporting and Analytics team.
+    system = f"""You are helping a scrum team refine a JIRA {level} against the Story Excellence Playbook v2.
 
-ORIGINAL STORY:
+ORIGINAL ITEM:
 Title: {row["story_title"] or "(untitled)"}
 Description:
 {row["story_description"] or "(no description provided)"}
 
-DEFINITION OF READY CRITERIA:
+DEFINITION OF READY CRITERIA ({rubric.get('name', '')}):
 {", ".join(criteria_names)}
 
-You are in a collaborative editing session. When the user asks for changes, output the FULL updated story description (not just the changed section) so they can copy it directly into JIRA.
-Only use information present in or clearly inferable from the original story.
+You are in a collaborative editing session. When the user asks for changes, output the FULL updated description (not just the changed section) so they can copy it directly into JIRA.
+Only use information present in or clearly inferable from the original.
 Use [REQUIRED: ...] placeholders where the team must supply missing information.
-Keep responses focused — lead with the updated story, add a brief explanation only if needed."""
+Keep responses focused — lead with the updated content, add a brief explanation only if needed."""
 
     try:
         client = _get_client()
@@ -606,7 +727,7 @@ Keep responses focused — lead with the updated story, add a brief explanation 
 def rewrite_story():
     data = request.json or {}
     classification_id = data.get("classification_id")
-    domain = data.get("domain", "data_reporting")
+    rubric_id = data.get("rubric_id") or data.get("domain") or "story-dor"
 
     if not classification_id:
         return jsonify({"error": "classification_id required"}), 400
@@ -619,7 +740,7 @@ def rewrite_story():
     if not row:
         return jsonify({"error": "Story not found"}), 404
 
-    rubric = RUBRICS.get(domain, RUBRICS["data_reporting"])
+    rubric = load_rubric(rubric_id)
 
     # Get the most recent score for context on failing criteria
     score_row = db.execute(
@@ -647,54 +768,46 @@ def rewrite_story():
     else:
         gaps_text = "Review all criteria and improve where possible."
 
-    prompt = f"""You are helping a scrum team improve a JIRA story for a Data, Reporting and Analytics team.
+    # Build a rubric-driven structural template — one section per criterion,
+    # using each criterion's good_example as guidance. Works for any rubric
+    # (story, feature, epic, defect) without hardcoded story-specific sections.
+    structure_lines = []
+    for c in rubric.get("criteria", []):
+        # Skip system-checked criteria like "Story Pointed" — those aren't
+        # in the description, they're metadata.
+        if c.get("scored_by") == "system":
+            continue
+        structure_lines.append(f"**{c['name']}**")
+        structure_lines.append(
+            f"[Address per: {c.get('good_example', c.get('description', '')).strip()} — or insert REQUIRED placeholder]"
+        )
+        structure_lines.append("")
+    structure_block = "\n".join(structure_lines).rstrip()
 
-ORIGINAL STORY:
+    level = rubric.get("level", "story")
+
+    prompt = f"""You are helping a scrum team improve a JIRA {level} against the Story Excellence Playbook v2.
+
+ORIGINAL {level.upper()}:
 Title: {row["story_title"] or "(untitled)"}
 Description:
 {row["story_description"] or "(no description provided)"}
 
-GAPS IDENTIFIED:
+GAPS IDENTIFIED ({rubric.get('name', 'Definition of Ready')}):
 {gaps_text}
 
-TASK: Rewrite the story description to address the gaps above.
+TASK: Rewrite the description to address the gaps above.
 
 CRITICAL RULES:
-1. Only use information present in or clearly inferable from the original story.
-2. Do NOT invent source tables, system names, calculations, or business rules not mentioned.
-3. Where required information is absent, insert a placeholder like: [REQUIRED: specify source table and owning system]
+1. Only use information present in or clearly inferable from the original.
+2. Do NOT invent source systems, calculations, business rules, or data not mentioned.
+3. Where required information is absent, insert a placeholder like: [REQUIRED: specify <what>].
 4. Keep all original intent and context.
-5. Output only the rewritten description — no preamble, no explanation.
+5. Output only the rewritten content — no preamble, no explanation.
 
-Use this structure:
+Use this structure (one section per Definition-of-Ready criterion):
 
-**As a** [role]
-**I need** [capability]
-**So that** [business outcome]
-
----
-**Source Data**
-[table/feed, owning system, refresh schedule — or REQUIRED placeholder]
-
-**Business Rules & Calculations**
-[transformations, key definitions, edge cases — or REQUIRED placeholder]
-
-**Output Artifact**
-[dashboard/report/table/file type and column list — or REQUIRED placeholder]
-
-**Acceptance Criteria**
-AC1: [binary, testable]
-AC2: [binary, testable]
-
-**Data Quality Checks**
-[row count tolerance, null checks, referential integrity — or REQUIRED placeholder]
-
-**Data Lineage**
-[Source System] → [Transformation Layer] → [Output Artifact] → [Business Consumer]
-
-**Dependencies**
-Upstream: [data feeds, other stories, external teams — or "None identified"]
-Downstream: [consumers — or "None identified"]"""
+{structure_block}"""
 
     try:
         client = _get_client()
@@ -713,7 +826,8 @@ Downstream: [consumers — or "None identified"]"""
 def quality_export():
     upload_id = request.args.get("upload_id", type=int)
     teams_raw = request.args.get("teams", "")
-    domain = request.args.get("domain", "data_reporting")
+    rubric_id = request.args.get("rubric_id") or request.args.get("domain") or "story-dor"
+    rubric_id = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
 
     if not upload_id:
         return jsonify({"error": "upload_id required"}), 400
@@ -722,7 +836,7 @@ def quality_export():
 
     db = get_db()
     where = "s.upload_id=? AND s.domain=?"
-    params = [upload_id, domain]
+    params = [upload_id, rubric_id]
     if teams:
         placeholders = ",".join("?" * len(teams))
         where += f" AND s.team IN ({placeholders})"
@@ -733,7 +847,7 @@ def quality_export():
         params,
     ).fetchall()
 
-    rubric = RUBRICS.get(domain, RUBRICS["data_reporting"])
+    rubric = load_rubric(rubric_id)
     criteria_ids = [c["id"] for c in rubric["criteria"]]
     criteria_names = [c["name"] for c in rubric["criteria"]]
 

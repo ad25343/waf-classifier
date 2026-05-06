@@ -1,0 +1,95 @@
+{
+  "id": "defect-dor",
+  "level": "defect",
+  "phase": "ready",
+  "name": "Defect — Definition of Ready",
+  "description": "7-criterion checklist for a defect to be sprint-ready. The playbook (v2) does not define a defect rubric; this is a proposed companion rubric and may evolve with team feedback.",
+  "source_doc": "rubrics/defect-dor.json (companion to docs/playbook/story-excellence-v2.docx)",
+  "source_version": "draft v1",
+  "source_section": "n/a — proposed",
+  "effective_date": "2026-05-05",
+  "scoring_mode": "balanced",
+  "thresholds": {
+    "ready":      { "min_score": 85, "all_required_pass": true },
+    "needs_work": { "min_score": 56 }
+  },
+  "criteria": [
+    {
+      "id": "steps_to_reproduce",
+      "name": "Steps to Reproduce",
+      "description": "Numbered, deterministic steps a fresh engineer can follow to hit the bug.",
+      "why": "Without reproducible steps, defects become 'works on my machine' arguments and stall.",
+      "fix": "Write numbered steps starting from a known state, including any required setup data and the user role used.",
+      "good_example": "1. Login as MF Asset Manager. 2. Open Servicing dashboard. 3. Filter by property type = MF. 4. Click Export. Result: empty file.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "expected_vs_actual",
+      "name": "Expected vs Actual Behavior",
+      "description": "Both expected and actual behavior are stated explicitly.",
+      "why": "If only one is stated, reviewers fill in the gap with assumptions and triage gets stuck.",
+      "fix": "State 'Expected: ...' and 'Actual: ...' as separate, concrete sentences.",
+      "good_example": "Expected: export returns 1,247 rows. Actual: export returns 0 rows, no error shown to user.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "environment_version",
+      "name": "Environment / Version",
+      "description": "Where the defect was observed — environment, build/version, browser, data refresh state.",
+      "why": "Defects in dev vs prod behave differently; without context, fixes target the wrong scenario.",
+      "fix": "Include environment, build version, browser/device (if UI), and data refresh state at the time of observation.",
+      "good_example": "Env: prod-mf · Build: 2026.05.04-r2 · Browser: Chrome 124 · Data: T-1 nightly refresh.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "severity_impact",
+      "name": "Severity and User Impact",
+      "description": "How many users are affected, how often, and what they cannot do as a result.",
+      "why": "Severity drives prioritization; without it, defects are triaged by who shouts loudest.",
+      "fix": "State severity (Critical / High / Medium / Low), affected user count, frequency, and what the workaround is (if any).",
+      "good_example": "Severity: High · ~40 MF asset managers blocked from weekly export · Workaround: pull via SQL (~15 min/user) · Frequency: every export attempt this week.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "reproducibility",
+      "name": "Reproducibility",
+      "description": "Whether the defect is always reproducible, intermittent, or only with specific data.",
+      "why": "Intermittent defects need different fix strategies than always-reproducible ones.",
+      "fix": "State reproducibility plainly: 'Always', 'Intermittent (~X% of attempts)', or 'Only with [data condition]'.",
+      "good_example": "Always reproducible on filter combo (MF + property_type=MF). Other filter combos work correctly.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    },
+    {
+      "id": "linked_source",
+      "name": "Linked Source / Likely Origin",
+      "description": "Which story, feature, or recent change introduced the defect (if known) — for regression tracking.",
+      "why": "Linking defects to their source enables systemic fixes and surfaces patterns in regression-prone areas.",
+      "fix": "Link to the story/feature suspected of introducing the bug, or note 'origin unknown' if it's not yet identified.",
+      "good_example": "Linked to STORY-MF-1042 'Export pagination' shipped 2026-04-22 — bug likely introduced by the LIMIT clause change.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 0.5
+    },
+    {
+      "id": "diagnostic_evidence",
+      "name": "Diagnostic Evidence Attached",
+      "description": "Screenshot, log snippet, network trace, query plan, or other evidence the squad can use to debug.",
+      "why": "Without evidence, the squad burns sprint time recreating the failure context before fixing it.",
+      "fix": "Attach at least one of: screenshot, console/network log, error stack, query plan, or sample malformed payload.",
+      "good_example": "Network HAR attached. Console log: 'Cannot read property length of undefined' at export.js:147. Query plan from prod attached.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    }
+  ]
+}

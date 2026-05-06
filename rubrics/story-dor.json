@@ -1,0 +1,96 @@
+{
+  "id": "story-dor",
+  "level": "story",
+  "phase": "ready",
+  "name": "Story — Definition of Ready",
+  "description": "7-criterion checklist ensuring a story is independently deliverable in a single sprint. A developer should be able to pick it up at sprint start and deliver by sprint end with no open questions.",
+  "source_doc": "docs/playbook/story-excellence-v2.docx",
+  "source_version": "v2",
+  "source_section": "8.3",
+  "effective_date": "2026-05-05",
+  "scoring_mode": "balanced",
+  "thresholds": {
+    "ready":      { "min_score": 85, "all_required_pass": true },
+    "needs_work": { "min_score": 56 }
+  },
+  "criteria": [
+    {
+      "id": "template_complete",
+      "name": "Template Fully Populated",
+      "description": "All template fields populated — no empty placeholders or 'TBD' fields.",
+      "why": "Empty fields surface mid-sprint as open questions and block the squad.",
+      "fix": "Fill in the missing template fields before bringing the story to refinement.",
+      "good_example": "Title, persona, capability, business outcome, source data, business rules, ACs, and traceability all written out — no 'TBD' or blanks.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 0.5
+    },
+    {
+      "id": "acceptance_criteria",
+      "name": "Acceptance Criteria are Binary and Testable",
+      "description": "Acceptance criteria are stated as binary (pass/fail), independently testable conditions — not subjective ('looks right').",
+      "why": "Subjective ACs cause demo rejection because PO and tester have different mental models.",
+      "fix": "Rewrite each AC as a binary, testable statement (AC1, AC2... format) a tester can verify without ambiguity.",
+      "good_example": "AC1: MF delinquency rate for March 2026 matches EDW query within 0.01%. AC2: Filtering by property type returns only loans in that type. AC3: Dashboard loads in under 3 seconds.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "source_systems",
+      "name": "Source Systems Confirmed Accessible",
+      "description": "Upstream source systems, tables, feeds, or APIs the story touches are named and the squad has confirmed access.",
+      "why": "Discovering mid-sprint that a developer can't reach the data forces a wait or scope cut.",
+      "fix": "Name the source table/feed/API, owning system, refresh schedule, and confirm the squad has working access.",
+      "good_example": "Source: dw.loan_performance_monthly (EDW). Refresh: nightly 02:00 EST. Access confirmed via service account svc-mf-analytics on 2026-05-04.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "business_rules",
+      "name": "Business Rules Unambiguous and Signed Off",
+      "description": "Transformation logic, GSE/MF-specific definitions, calculations, and edge cases are written out explicitly and signed off by the analyst.",
+      "why": "Vague references to 'standard logic' cause rework when squads interpret them differently.",
+      "fix": "Write out the exact calculation, key term definitions used by the team, and how edge cases (nulls, exclusions, rounding) are handled.",
+      "good_example": "Delinquency rate = loans 30+ DPD / total active loans. reporting_date = last business day of prior month. Exclude Paid Off and REO. Signed off by C. Mehta on 2026-05-03.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    },
+    {
+      "id": "linked_to_feature",
+      "name": "Linked to Parent Feature",
+      "description": "The story is explicitly linked to a parent feature so the strategic intent is traceable in two clicks.",
+      "why": "Stories without a parent feature can't be impact-analyzed when the feature scope changes.",
+      "fix": "Link the story to its parent feature in the backlog tool. If no feature exists yet, define one before sprinting the story.",
+      "good_example": "Parent feature: FEAT-1042 'Standardized Sub-Servicer Daily Activity File Ingestion'.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "three_amigos",
+      "name": "Three-Amigos Review Complete",
+      "description": "PO, one developer, and one QA have walked through the story together and agreed it's ready.",
+      "why": "Three-Amigos surfaces hidden assumptions before sprinting — cheaper than discovering them mid-sprint.",
+      "fix": "Schedule a 15-min Three-Amigos walkthrough; capture sign-off from PO + Dev + QA before marking the story ready.",
+      "good_example": "Three-Amigos completed 2026-05-02 with PO (R. Patel), Dev (T. Chen), QA (M. Singh). No unresolved questions.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 0.5
+    },
+    {
+      "id": "sized",
+      "name": "Sized — Pointed by the Squad",
+      "description": "Story has been estimated in story points by the team during refinement or planning.",
+      "why": "Unpointed stories cannot be planned into a sprint — they are invisible to capacity planning.",
+      "fix": "Estimate the story in story points at the next refinement session.",
+      "good_example": "Story Points: 5",
+      "scored_by": "system",
+      "system_check": "has_story_points",
+      "required": true,
+      "weight": 1.0
+    }
+  ]
+}

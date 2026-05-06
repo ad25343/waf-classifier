@@ -1090,18 +1090,18 @@
             </div>
         </div>
 
-        <!-- Rubric Reference (collapsible) -->
+        <!-- Rubric Reference (collapsible). Title + source line are populated by loadQualityRubric(). -->
         <div class="card" style="margin-bottom:16px;">
             <div class="card-title" onclick="toggleCard(this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-                <span>📋 Definition of Ready Rubric — Data, Reporting &amp; Analytics</span>
+                <span id="quality-rubric-title">📋 Definition of Ready Rubric</span>
                 <span style="display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:11px;color:var(--text-muted);font-weight:400;">GSE-MF Story Excellence Playbook v1.0</span>
+                    <span id="quality-rubric-source" style="font-size:11px;color:var(--text-muted);font-weight:400;">Story Excellence Playbook v2</span>
                     <span class="card-chevron" style="font-size:12px;">▼</span>
                 </span>
             </div>
             <div class="card-body" style="display:none;">
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6;">
-                    A story is <strong>Ready</strong> when all 9 criteria below are true. A developer should be able to pick it up on Monday and deliver by Friday — with no open questions.
+                <p id="quality-rubric-blurb" style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6;">
+                    Loading rubric…
                 </p>
                 <div style="overflow-x:auto;">
                     <table style="width:100%;font-size:12px;border-collapse:collapse;">
@@ -1117,11 +1117,15 @@
                         <tbody id="quality-rubric-tbody"></tbody>
                     </table>
                 </div>
-                <div style="margin-top:14px;padding:10px 14px;background:var(--bg-tertiary);border-radius:7px;font-size:12px;color:var(--text-secondary);line-height:1.6;">
+                <div id="quality-rubric-thresholds" style="margin-top:14px;padding:10px 14px;background:var(--bg-tertiary);border-radius:7px;font-size:12px;color:var(--text-secondary);line-height:1.6;">
                     <strong style="color:var(--text-primary);">Scoring thresholds:</strong>
-                    &nbsp;<span style="color:var(--success);">● Ready</span> = 8–9 criteria met &nbsp;|&nbsp;
-                    <span style="color:var(--warning);">● Needs Work</span> = 5–7 criteria met &nbsp;|&nbsp;
-                    <span style="color:var(--error);">● Not Ready</span> = &lt;5 criteria met
+                    &nbsp;<span style="color:var(--success);">● Ready</span> ≥ 85% &amp; all required pass &nbsp;|&nbsp;
+                    <span style="color:var(--warning);">● Needs Work</span> 56–84% &nbsp;|&nbsp;
+                    <span style="color:var(--error);">● Not Ready</span> &lt; 56%
+                </div>
+                <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">
+                    Strictness mode: <span id="quality-rubric-mode" style="color:var(--text-secondary);font-weight:600;">balanced</span>
+                    · Source: <a id="quality-rubric-source-link" href="#" style="color:var(--text-muted);text-decoration:underline;" target="_blank">playbook</a>
                 </div>
             </div>
         </div>
@@ -3623,22 +3627,77 @@ let _qualityResults = [];
 
 // ── Rubric rendering ──────────────────────────────────────────
 
-async function loadQualityRubric() {
+// Tracks the active rubric so the rest of the Quality view (rewrite, score
+// requests) can pass it through. Defaults to story-dor; overridden by the
+// level selector once that ships in Phase 3.
+let _qualityRubric = null;
+let _qualityRubricId = 'story-dor';
+
+async function loadQualityRubric(rubricId) {
+    rubricId = rubricId || _qualityRubricId || 'story-dor';
     try {
-        const res = await fetch('/api/quality/rubric?domain=data_reporting');
+        const res = await fetch('/api/quality/rubric?rubric_id=' + encodeURIComponent(rubricId));
         const data = await res.json();
-        const criteria = data.rubric.criteria;
+        const r = data.rubric;
+        _qualityRubric = r;
+        _qualityRubricId = r.id;
+
+        // Title + source attribution (Layer 0)
+        const titleEl = document.getElementById('quality-rubric-title');
+        if (titleEl) titleEl.textContent = '📋 ' + (r.name || 'Definition of Ready Rubric');
+        const sourceEl = document.getElementById('quality-rubric-source');
+        if (sourceEl) sourceEl.textContent =
+            (r.source_doc ? r.source_doc.split('/').pop() : 'playbook') +
+            (r.source_section ? ' · §' + r.source_section : '') +
+            (r.source_version ? ' · ' + r.source_version : '');
+        const linkEl = document.getElementById('quality-rubric-source-link');
+        if (linkEl && r.source_doc) {
+            linkEl.href = (window.APP_ROOT || '') + '/' + r.source_doc;
+            linkEl.textContent = r.source_doc.split('/').pop();
+        }
+        const modeEl = document.getElementById('quality-rubric-mode');
+        if (modeEl) modeEl.textContent = r.scoring_mode || 'balanced';
+
+        // Blurb
+        const blurbEl = document.getElementById('quality-rubric-blurb');
+        if (blurbEl) {
+            const reqCount = (r.criteria || []).filter(c => c.required).length;
+            blurbEl.innerHTML = (r.description || '') +
+                ` <span style="color:var(--text-muted);">(${r.criteria.length} criteria, ${reqCount} required to pass.)</span>`;
+        }
+
+        // Thresholds
+        const thEl = document.getElementById('quality-rubric-thresholds');
+        if (thEl && r.thresholds) {
+            const ready = r.thresholds.ready || {};
+            const needs = r.thresholds.needs_work || {};
+            thEl.innerHTML =
+                '<strong style="color:var(--text-primary);">Scoring thresholds:</strong>' +
+                '&nbsp;<span style="color:var(--success);">● Ready</span> ≥ ' + (ready.min_score || 85) + '%' +
+                (ready.all_required_pass ? ' &amp; all required pass' : '') + ' &nbsp;|&nbsp;' +
+                '<span style="color:var(--warning);">● Needs Work</span> ≥ ' + (needs.min_score || 56) + '% &nbsp;|&nbsp;' +
+                '<span style="color:var(--error);">● Not Ready</span> &lt; ' + (needs.min_score || 56) + '%';
+        }
+
+        // Criteria table (Layer 1 — good_example surfaces here)
         const tbody = document.getElementById('quality-rubric-tbody');
         if (!tbody) return;
-        tbody.innerHTML = criteria.map((c, i) => `
+        tbody.innerHTML = (r.criteria || []).map((c, i) => {
+            const reqBadge = c.required
+                ? '<span style="display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.5px;padding:2px 5px;border-radius:3px;background:rgba(244,63,94,0.15);color:#f43f5e;margin-left:6px;vertical-align:middle;">REQUIRED</span>'
+                : '';
+            const sysBadge = (c.scored_by === 'system')
+                ? '<span style="display:inline-block;font-size:9px;font-weight:600;letter-spacing:0.5px;padding:2px 5px;border-radius:3px;background:rgba(99,102,241,0.15);color:#6366f1;margin-left:6px;vertical-align:middle;" title="Scored locally without an AI call">SYSTEM</span>'
+                : '';
+            return `
             <tr style="border-top:1px solid var(--border);${i % 2 === 0 ? 'background:var(--bg-secondary);' : ''}">
-                <td style="padding:8px 10px;color:var(--text-muted);font-size:11px;">${i + 1}</td>
-                <td style="padding:8px 10px;font-weight:600;color:var(--text-primary);">${c.name}</td>
-                <td style="padding:8px 10px;color:var(--text-secondary);line-height:1.5;">${c.description}</td>
-                <td style="padding:8px 10px;color:var(--success);font-size:11px;line-height:1.5;font-style:italic;">${c.good_example}</td>
-                <td style="padding:8px 10px;color:var(--warning);font-size:11px;line-height:1.5;">${c.fix}</td>
-            </tr>
-        `).join('');
+                <td style="padding:8px 10px;color:var(--text-muted);font-size:11px;vertical-align:top;">${i + 1}</td>
+                <td style="padding:8px 10px;font-weight:600;color:var(--text-primary);vertical-align:top;">${c.name}${reqBadge}${sysBadge}</td>
+                <td style="padding:8px 10px;color:var(--text-secondary);line-height:1.5;vertical-align:top;">${c.description}</td>
+                <td style="padding:8px 10px;color:var(--success);font-size:11px;line-height:1.5;font-style:italic;vertical-align:top;">${c.good_example || '—'}</td>
+                <td style="padding:8px 10px;color:var(--warning);font-size:11px;line-height:1.5;vertical-align:top;">${c.fix || '—'}</td>
+            </tr>`;
+        }).join('');
     } catch(e) { console.error('Rubric load failed', e); }
 }
 
@@ -3904,22 +3963,33 @@ async function loadSavedQualityResults() {
 }
 
 // ── Render results ────────────────────────────────────────────
+// The render is now driven entirely by the active rubric loaded into
+// _qualityRubric — order, names, fixes, and good_examples all come from
+// the JSON file in /rubrics/.
 
-const QUALITY_CRITERIA_ORDER = [
-    'narrative','source_data','business_rules','output_artifact',
-    'acceptance_criteria','data_quality','traceability','story_points','dependencies'
-];
-const QUALITY_CRITERIA_NAMES = {
-    narrative: 'Narrative', source_data: 'Source Data', business_rules: 'Business Rules',
-    output_artifact: 'Output Artifact', acceptance_criteria: 'Acceptance Criteria',
-    data_quality: 'Data Quality', traceability: 'Traceability',
-    story_points: 'Story Pointed', dependencies: 'Dependencies',
-};
+function _qualityCriteriaOrder() {
+    if (_qualityRubric && Array.isArray(_qualityRubric.criteria)) {
+        return _qualityRubric.criteria.map(c => c.id);
+    }
+    return [];
+}
 
-function qualityBadge(score) {
-    if (score >= 89) return { label: 'Ready', color: 'var(--success)', bg: 'rgba(74,222,128,0.12)' };
+function _qualityCriterion(cid) {
+    if (_qualityRubric && Array.isArray(_qualityRubric.criteria)) {
+        return _qualityRubric.criteria.find(c => c.id === cid) || { id: cid, name: cid };
+    }
+    return { id: cid, name: cid };
+}
+
+function qualityBadge(score, band) {
+    // Prefer band when the backend supplied one (post-rubric-refactor).
+    if (band === 'ready')      return { label: 'Ready',      color: 'var(--success)', bg: 'rgba(74,222,128,0.12)' };
+    if (band === 'needs_work') return { label: 'Needs Work', color: 'var(--warning)', bg: 'rgba(251,191,36,0.12)' };
+    if (band === 'not_ready')  return { label: 'Not Ready',  color: 'var(--error)',   bg: 'rgba(248,113,113,0.12)' };
+    // Fallback to score thresholds for legacy rows.
+    if (score >= 89) return { label: 'Ready',      color: 'var(--success)', bg: 'rgba(74,222,128,0.12)' };
     if (score >= 56) return { label: 'Needs Work', color: 'var(--warning)', bg: 'rgba(251,191,36,0.12)' };
-    return { label: 'Not Ready', color: 'var(--error)', bg: 'rgba(248,113,113,0.12)' };
+    return                  { label: 'Not Ready',  color: 'var(--error)',   bg: 'rgba(248,113,113,0.12)' };
 }
 
 function renderQualityResults(results) {
@@ -3974,17 +4044,31 @@ function renderQualityResults(results) {
 
 function _renderQualityStoryRows(sorted) {
     const tbody = document.getElementById('quality-results-tbody');
+    const order = _qualityCriteriaOrder();
     tbody.innerHTML = sorted.map((r, i) => {
-        const badge = qualityBadge(r.overall_score);
+        const badge = qualityBadge(r.overall_score, r.band);
         const detailId = 'qdetail_' + i;
-        const criteriaRows = QUALITY_CRITERIA_ORDER.map(cid => {
+        // For each criterion: show pass/fail; if FAIL, surface BOTH the fix
+        // (Layer 1 prescriptive) AND the playbook's good_example (Layer 1 reference).
+        const criteriaRows = order.map(cid => {
             const c = r.criteria[cid] || {};
-            const pass = c.pass;
-            return `<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
-                <span style="font-size:14px;flex-shrink:0;margin-top:1px;">${pass ? '✓' : '✗'}</span>
-                <div style="flex:1;">
-                    <span style="font-size:12px;font-weight:600;color:${pass ? 'var(--success)' : 'var(--text-primary)'};">${QUALITY_CRITERIA_NAMES[cid]}</span>
-                    ${!pass && c.fix ? `<div style="font-size:11px;color:var(--warning);margin-top:2px;">→ ${c.fix}</div>` : ''}
+            const def = _qualityCriterion(cid);
+            const pass = !!c.pass;
+            const fix = c.fix || (!pass ? def.fix : '') || '';
+            const example = (!pass && def.good_example) ? def.good_example : '';
+            const required = !!def.required;
+            return `<div style="padding:6px 0;border-bottom:1px solid var(--border);">
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                    <span style="font-size:14px;flex-shrink:0;margin-top:1px;">${pass ? '✓' : '✗'}</span>
+                    <div style="flex:1;">
+                        <span style="font-size:12px;font-weight:600;color:${pass ? 'var(--success)' : (required ? 'var(--error)' : 'var(--text-primary)')};">
+                            ${def.name || cid}${required ? ' <span style="font-size:9px;font-weight:700;letter-spacing:0.4px;color:var(--error);">REQUIRED</span>' : ''}
+                        </span>
+                        ${!pass && fix ? `<div style="font-size:11px;color:var(--warning);margin-top:3px;">→ ${fix}</div>` : ''}
+                        ${example ? `<div style="font-size:11px;color:var(--success);margin-top:3px;font-style:italic;line-height:1.5;border-left:2px solid var(--success);padding-left:8px;background:rgba(74,222,128,0.06);">
+                            <span style="font-weight:600;font-style:normal;">What good looks like:</span> ${example}
+                        </div>` : ''}
+                    </div>
                 </div>
             </div>`;
         }).join('');
@@ -4008,11 +4092,11 @@ function _renderQualityStoryRows(sorted) {
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;">
                     ${criteriaRows}
                 </div>
-                <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
-                    <div style="font-size:11px;color:var(--text-muted);">Scored ${(r.scored_at||'').slice(0,16).replace('T',' ')}</div>
+                <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div style="font-size:11px;color:var(--text-muted);">Scored ${(r.scored_at||'').slice(0,16).replace('T',' ')}${r.scoring_mode ? ' · mode: ' + r.scoring_mode : ''}</div>
                     <button onclick="event.stopPropagation();rewriteQualityStory(${r.classification_id},'${(r.story_title||'').replace(/'/g,"\\'")}',event)"
                             class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 12px;">
-                        ✍ Suggest Rewrite
+                        ✨ What good looks like for this story
                     </button>
                 </div>
             </td>
@@ -4026,10 +4110,15 @@ function filterQualityResults(status) {
     const statusMap = { all: 0, ready: 2, needs_work: 3, not_ready: 4 };
     kpiCards.forEach((el, i) => el.classList.toggle('active', i === statusMap[status]));
 
+    // Prefer band when present (rubric-driven); fall back to score thresholds for legacy rows.
+    const matchBand = (r, want) => r.band ? r.band === want :
+        (want === 'ready'      ? r.overall_score >= 89 :
+         want === 'needs_work' ? r.overall_score >= 56 && r.overall_score < 89 :
+         want === 'not_ready'  ? r.overall_score < 56 : true);
     let filtered = _qualityResults;
-    if (status === 'ready')           filtered = _qualityResults.filter(r => r.overall_score >= 89);
-    else if (status === 'needs_work') filtered = _qualityResults.filter(r => r.overall_score >= 56 && r.overall_score < 89);
-    else if (status === 'not_ready')  filtered = _qualityResults.filter(r => r.overall_score < 56);
+    if (status === 'ready')           filtered = _qualityResults.filter(r => matchBand(r, 'ready'));
+    else if (status === 'needs_work') filtered = _qualityResults.filter(r => matchBand(r, 'needs_work'));
+    else if (status === 'not_ready')  filtered = _qualityResults.filter(r => matchBand(r, 'not_ready'));
 
     _renderQualityStoryRows([...filtered].sort((a, b) => a.overall_score - b.overall_score));
 }

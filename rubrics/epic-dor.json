@@ -1,0 +1,95 @@
+{
+  "id": "epic-dor",
+  "level": "epic",
+  "phase": "ready",
+  "name": "Epic — Definition of Ready",
+  "description": "7-criterion checklist confirming an epic is fundable, measurable, and decomposable before features are spun up against it.",
+  "source_doc": "docs/playbook/story-excellence-v2.docx",
+  "source_version": "v2",
+  "source_section": "6.2",
+  "effective_date": "2026-05-05",
+  "scoring_mode": "balanced",
+  "thresholds": {
+    "ready":      { "min_score": 85, "all_required_pass": true },
+    "needs_work": { "min_score": 56 }
+  },
+  "criteria": [
+    {
+      "id": "outcome_measurable",
+      "name": "Strategic Outcome Stated as a Measurable Change",
+      "description": "The outcome is expressed as 'something is true after that wasn't true before' — with a baseline and a target.",
+      "why": "Without a measurable outcome, the portfolio can't tell if the epic was successful.",
+      "fix": "State the outcome as: '[metric] moves from [baseline] to [target] by [date].' Avoid output-led language ('build the AUS API').",
+      "good_example": "80% of conforming SF loans receive a lender commitment same-day, up from 35% baseline, by end of Q4.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "sponsor_named",
+      "name": "Business Sponsor Named and Engaged",
+      "description": "An accountable executive who funds and owns the outcome is named.",
+      "why": "Sponsor-less epics drift and stall when trade-offs need a decision.",
+      "fix": "Name the accountable executive (title + name) who funds the work and reviews progress at portfolio level.",
+      "good_example": "Sponsor: SVP, SF Acquisitions — J. Lee. Engaged via monthly portfolio review.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "lob_lifecycle_clear",
+      "name": "Lines of Business and Lifecycle Stages Identified",
+      "description": "Which LoBs (SF / MF / CapMkts) and which of the 10 lifecycle stages the epic touches are explicitly listed.",
+      "why": "Cross-LoB and cross-stage epics need explicit coordination — implicit scope causes mid-stream surprises.",
+      "fix": "List the LoBs (any combination of SF / MF / CapMkts) and the lifecycle stages (Acquisition, UW, Pricing & Commitments, Loan Boarding, Servicing, Default Mgmt, Securitization, Investor Reporting, CapMkts Ops, Risk & Compliance) the epic touches.",
+      "good_example": "LoB: Single Family. Lifecycle stages: Acquisition → Underwriting → Pricing & Commitments.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "metrics_agreed",
+      "name": "Success Metrics Agreed with Finance and Risk",
+      "description": "1-3 metrics with current baseline and target, signed off by finance and risk partners.",
+      "why": "Metrics not pre-agreed with finance/risk get challenged at delivery time and the epic's success becomes contestable.",
+      "fix": "Document 1-3 metrics with baselines and targets and capture sign-off from finance and risk before kicking off features.",
+      "good_example": "% same-day commits (baseline 35%, target 80%); Lender NPS (+15 points); Manual review volume (-50%). Signed off by Finance (M. Tan) and Risk (P. Singh) on 2026-04-28.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "capacity_confirmed",
+      "name": "Capacity Envelope Confirmed at Portfolio Review",
+      "description": "Approximate quarters of effort and number of squads expected to contribute have been agreed at portfolio review.",
+      "why": "Without a capacity envelope, the portfolio overcommits and competing epics stall each other.",
+      "fix": "State the rough capacity ask (quarters × squads) and confirm it has been accepted at portfolio review.",
+      "good_example": "Capacity: 2 quarters × 3 squads (1 SF Origination, 1 Platform, 1 Risk Reporting). Confirmed at Q3 portfolio review.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    },
+    {
+      "id": "decomposed_into_features",
+      "name": "Initial Decomposition Into Features Begun",
+      "description": "Top-level feature list is drafted, even if rough — proves the epic is decomposable.",
+      "why": "Epics that can't be decomposed are too big to plan and tend to absorb scope indefinitely.",
+      "fix": "Draft the initial feature list (titles + capability statements). 3-7 features is typical; >10 suggests the epic should be split.",
+      "good_example": "Features: 1) Real-Time AUS Decision API · 2) Lender Onboarding Flow · 3) Same-Day Commitment Letter Generation · 4) Lender Self-Service Portal.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    },
+    {
+      "id": "risks_named",
+      "name": "Top 3 Risks Surfaced With Named Owners",
+      "description": "The three biggest risks to the epic's success are named, each with a named owner and a mitigation approach.",
+      "why": "Risks surfaced late become program issues; risks surfaced early become managed work.",
+      "fix": "Document the top 3 risks (e.g. data dependency slip, regulatory change, vendor delay) with a named owner and mitigation for each.",
+      "good_example": "R1: EDW team capacity slip — owner: A. Sharma — mitigation: pre-book Q4 sprints. R2: FHFA rule change in Q4 — owner: C. Mehta — mitigation: monthly check-in with regulator liaison. R3: Lender adoption < 30% — owner: J. Lee — mitigation: partner with top 3 lenders before GA.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    }
+  ]
+}
