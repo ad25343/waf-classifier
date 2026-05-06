@@ -122,32 +122,86 @@ Click any result to navigate to that team's detail view.
 
 ## Score Story Quality
 
-The Story Quality tab in Analytics scores your uploaded stories against the Definition of Ready (DoR) rubric from the GSE-MF Story Excellence Playbook.
+The Story Quality tab in Analytics scores backlog items against the Definition of Ready (DoR) from the **Story Excellence Playbook v2** (`docs/playbook/story-excellence-v2.docx`). Rubrics are composable: a universal **base** for the level (Story / Feature / Epic / Defect) plus an optional **domain extension** (Data & Reporting, Capital Markets, SF Origination, MF Servicing, Risk & Compliance) that adds line-of-business-specific criteria.
 
 1. Go to **Analytics** and select a specific upload from the **Data Source** dropdown at the top
 2. Click the **Story Quality** tab
-3. Optionally filter to specific teams using the Teams dropdown (all teams selected by default)
-4. Click **Score Stories** — the app AI-scores every story in the background
-5. Results appear with KPI cards (Ready / Needs Work / Not Ready) and a per-story table
-6. Click any story row to expand it and see pass/fail for all 9 criteria with fix suggestions
-7. Click **✍ Suggest Rewrite** on any story to open the rewrite chat:
-   - The AI drafts a complete rewrite using only the original story content
+3. Pick a **Level** — Story (default), Feature, Epic, or Defect
+4. Optionally pick a **Domain** — leaves it on *Generic / Base only* and you score against the universal rubric. Pick a domain (e.g. *Data & Reporting* or *Capital Markets*) to layer extension criteria on top.
+   - The four non-Data domains ship as **starter content** marked with an amber banner. Domain stewards should review and customize via the Domain Editor (link below the rubric reference card) before relying on those scores in production decisions.
+5. Optionally filter to specific teams using the Teams dropdown (all teams selected by default)
+6. Click **Score Stories** — the app AI-scores every item in the background
+7. Results appear with KPI cards (Ready / Needs Work / Not Ready) and a per-story table
+8. Click any row to expand it. Each criterion shows pass/fail; failed criteria surface both the prescriptive **fix** AND the playbook's **"What good looks like"** example as a green callout
+9. Click **✨ What good looks like for this story** on any row to open the rewrite session:
+   - The AI drafts a complete rewrite addressing every failed criterion, structured one section per DoR criterion in the active rubric
    - `[REQUIRED: ...]` placeholders mark information the team must supply
    - Type follow-up messages to iterate: *"The source table is dw.loan_performance"* or *"Tighten AC2"*
    - Click **Copy latest** to paste the current version into JIRA
-   - Keep iterating until the story is sprint-ready
-8. Click **⬇ Export CSV** to download scores for all stories in the current view
+   - Results are cached in-memory by `(story, rubric)` — re-clicks are free within a process lifetime
+10. Click **⬇ Export CSV** to download scores for all items in the current view
 
 **Scoring Run History** (bottom of the tab) lists every past run. Click **Load** to replay any run's results, or **Delete** to remove it.
 
-**Scoring thresholds:**
-| Status | Criteria met |
+**Scoring thresholds (from each rubric's `thresholds` section):**
+
+| Status | Default rule |
 |--------|-------------|
-| Ready | 8–9 of 9 (≥ 89%) |
-| Needs Work | 5–7 of 9 (56–88%) |
-| Not Ready | < 5 of 9 (< 56%) |
+| **Ready** | Score ≥ 85% AND every `required: true` criterion passes |
+| **Needs Work** | Score 56–84% (or any required criterion fails) |
+| **Not Ready** | Score < 56% |
+
+A story scoring 86 with one required criterion failing is correctly **Needs Work**, not **Ready** — the threshold combines a numeric floor with a required-pass rule.
+
+**Strictness mode** (`scoring_mode` field on each rubric, defaults to `balanced`):
+- `lenient` — pass if reasonably inferable from context
+- `balanced` — pass if clearly met or unambiguously inferable; fail if you'd have to assume
+- `strict` — pass only if explicitly addressed with concrete details
 
 > **Note:** Restart the app (`python app.py`) after first install to ensure the quality scoring tables are created. New scoring runs will not appear in history until after a restart.
+
+---
+
+## Customize a Domain Rubric (Domain Editor)
+
+The Domain Editor lets domain stewards review, edit, and reset the JSON extensions in `rubrics/domains/{id}/` from the UI.
+
+1. From the Story Quality tab, click **⚙ Manage domain rubrics →** under the rubric source line. (Or go directly to `/quality-domains`.)
+2. Pick a domain on the left rail. The `starter` badge marks placeholder content drafted by the platform team.
+3. Pick a level tab (Story / Feature / Epic / Defect).
+4. Edit:
+   - **Top metadata** — name, description, source doc/version, effective date
+   - **Placeholder toggle** — un-check it once your team has validated the criteria; the amber banner disappears for everyone using the rubric
+   - **Per-criterion cards** — id, name, required/weight/scored_by, description, why, fix, "what good looks like"
+   - **+ Add criterion** to extend, **Delete** on any card to remove
+5. Click **Save changes**. The previous file is backed up to `<path>.bak` and the in-process rubric cache is invalidated — the Story Quality view picks up the change on its next refresh.
+6. Made a mistake? **Reset to previous** restores from the backup (only shown when one exists).
+
+If a domain × level doesn't have an extension yet, the editor shows a **+ Create extension** button that scaffolds a fresh JSON shell to start from.
+
+---
+
+## Run a Merge
+
+The Merge view (`/merge`) joins three Jira-style files into a single classified backlog view by name.
+
+1. Go to **Admin → File Merger**
+2. Upload **Epic Attributes**, **Feature Attributes**, and **Story Attributes** files (CSV or Excel). Any subset works — uploading just Story works for a sanity check; full join needs all three.
+3. **Confirm column mappings.** The app suggests mappings; review per-file and adjust the dropdowns. Required fields are marked.
+4. Click **Run Merge**. The five stat cards summarize the result:
+   - **Total Stories** — every row from the Story file
+   - **Complete** — Story + Feature + Epic resolved (these go to AI for analysis)
+   - **Orphans** — missing Feature or Epic (excluded from AI)
+   - **Missing WAF** — complete rows whose Epic has no WAF set (still go to AI)
+   - **Missing R/C** — complete rows whose Epic has no Run/Change tag (still go to AI)
+   - **Click any card to filter the preview to that subset.** Click again to reset.
+5. **Click any preview row** to see every field on that record + a Reject/Restore button. Use the legend pills under the table for finer filtering (Missing Feature only, Missing Epic only, etc.).
+6. Download options:
+   - **Download All** — every row with a Status column
+   - **Download Orphans** — orphan rows only (visible only if there are orphans)
+7. **Submit Complete for Analysis** runs AI classification on the complete rows only. A confirmation modal lists what's being excluded before the request fires.
+
+Run/Change comes from the **epic** record — either from a Run/Change column on the epic file, or from a `(Run)` / `(Change)` suffix in the epic name (e.g. `"Q4 Patching (Run)"`). Stories don't drive Run/Change in merge mode.
 
 ---
 

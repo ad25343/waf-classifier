@@ -12,9 +12,14 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 |---------|-------------|
 | **Classify** | Live chat or batch classification for new stories during grooming |
 | **Analytics** | Upload JIRA data → map columns → AI reviews every row → flag mismatches → save → summary insights |
-| **Teams** | Two-panel team analytics: left tree nav (Team › Epic › Feature) + right sortable story table. Cross-team epic matrix. Data Source filter per upload. |
+| **Story Quality** | Score uploaded backlog items against the **Story Excellence Playbook v2** Definition of Ready. Composite rubrics: universal base (Story / Feature / Epic / Defect) + optional domain extension (Data, CapMkts, SF Origination, MF Servicing, Risk). Per-criterion "what good looks like" examples surface inline on failure. Strictness mode is configurable per rubric (lenient / balanced / strict). |
+| **Domain Editor** | (`/quality-domains`) Domain stewards review, edit, save, and revert the JSON criteria for their line of business — no code change needed. Backs up previous versions on save. |
+| **File Merger** | Three-file Jira merge (Epic + Feature + Story) with name-based join. Per-file column mapping, status flags (complete / missing feature / missing epic), orphan handling, Missing-WAF and Missing-R/C surfacing, clickable stat-card filtering, two-phase upload + confirm flow. |
+| **Disputes** | Flag any AI classification as wrong from the **Classify**, **History**, **Teams**, or **Lineage** view. Reviewers triage flagged disputes on `/disputes` — dismiss, accept into Ground Truth, or escalate for WAF review. |
+| **Teams** | Drill-down team-of-teams pills → team pills → story detail. Two-panel team analytics with cross-team epic matrix. Data Source filter per upload. |
 | **Epic Lineage** | Health scores, mismatch flags, story tree drill-down with collapsible feature sections and sort controls |
 | **Global Search** | FTS5 full-text search across all classifications with context-rich results (breadcrumb, badges, upload source) |
+| **Category Aliases** | (`/aliases`) Add custom shorthand → canonical mappings so the matcher accepts org-specific terminology without code changes |
 | **WAF Reference** | Browse all 8 WAF categories — definitions, decision rules, color codes, and examples |
 | **Version Library** | Save named snapshots of WAF Definitions and Ground Truth. Pick any version per classification run. Version IDs recorded in upload history for full traceability. |
 | **Settings** | Manage WAF definitions (inline editable), ground truth (inline edit/add/delete), Version Library (named WAF + GT snapshots), and batch size configuration |
@@ -76,12 +81,20 @@ The app auto-loads WAF definitions and ground truth from `test-data/` on startup
 |-------|------|---------|
 | `/` | Home | Landing page with navigation cards and system status |
 | `/classify` | Classifier | Chat-based AI classification with epic tagging |
-| `/history` | Analytics | Upload → Map Columns → AI verify → Review → Summary → Lineage → History |
-| `/teams` | Teams | Two-panel team analytics with cross-team epic matrix |
+| `/history` | Analytics | Upload → Map Columns → AI verify → Review → Summary → Story Quality → Lineage → History |
+| `/teams` | Teams | Drill-down ToT → Team pills with cross-team epic matrix |
 | `/lineage` | Epic Lineage | Epic health scores, WAF breakdowns, and story tree |
 | `/dashboard` | Dashboard | Real-time KPI cards and distribution charts |
+| `/disputes` | Disputes | Triage flagged AI classifications (dismiss / accept into GT / escalate to WAF review) |
+| `/merge` | File Merger | Three-file Jira merge (Epic + Feature + Story) with name-based join, orphan handling, status filters |
 | `/waf-reference` | WAF Reference | Browse all 8 WAF categories with definitions and decision rules |
+| `/aliases` | Category Aliases | Add custom shorthand → canonical mappings for the matcher |
+| `/quality-domains` | Domain Editor | Review and edit Definition-of-Ready extension JSONs per line of business |
 | `/settings` | Settings | WAF definitions (inline editable), ground truth, Version Library, and processing configuration |
+
+The top-nav groups views: **Home · Classify · Analyze ▾ · Admin ▾ · Settings**, where:
+- **Analyze** = Analyze Stories · Epic Lineage · Teams · Classification Disputes
+- **Admin** = File Merger · WAF Reference · Category Aliases · Domain Editor
 
 ## Analytics Workflow
 

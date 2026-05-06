@@ -1123,35 +1123,75 @@ Hard delete a dispute record. Returns 404 if not found.
 
 ## Story Quality
 
+Story Quality scores backlog items against a Definition-of-Ready rubric loaded from `rubrics/`. Rubrics compose: a universal **base** for the level (`story` / `feature` / `epic` / `defect`) plus an optional **domain extension** (`data` / `capmkts` / `sf-origination` / `mf-servicing` / `risk` / …) that adds line-of-business-specific criteria.
+
+The composite rubric id has the form `<level>-dor` or `<level>-dor:<domain>`. Examples:
+- `story-dor` — universal Story DoR (7 criteria)
+- `story-dor:data` — universal + Data extension (10 criteria)
+- `story-dor:capmkts` — universal + CapMkts extension (11 criteria)
+- `feature-dor:data`, `epic-dor`, `defect-dor`, etc.
+
+The legacy parameter `domain=data_reporting` is still accepted and resolves to `story-dor`. New code should use `rubric_id` (composite) or `rubric_id` + `domain` (split).
+
 ### GET /api/quality/rubric
 
-Return the Definition of Ready rubric for a given domain.
+Return a rubric definition. Composes base + domain extension on the fly.
 
 **Query Parameters:**
 | Param | Type | Description |
 |-------|------|-------------|
-| `domain` | string | Optional. Default: `data_reporting`. |
+| `rubric_id` | string | Composite, e.g. `story-dor`, `story-dor:data`. Optional. |
+| `level` | string | One of `story`, `feature`, `epic`, `defect`. Optional. |
+| `domain` | string | Optional. Layers an extension on top of the level base. |
+
+If only `domain` is supplied and its value is a legacy alias (e.g. `data_reporting`), it is treated as a `rubric_id`.
 
 **Response:**
 ```json
 {
   "rubric": {
-    "id": "data_reporting",
-    "name": "Data & Reporting",
-    "full_name": "Data, Reporting & Analytics — Definition of Ready",
-    "source": "GSE-MF Story Excellence Playbook v1.0",
+    "id": "story-dor:data",
+    "level": "story",
+    "phase": "ready",
+    "domain": "data",
+    "name": "Story — Definition of Ready (Base)",
+    "extension_name": "Story DoR — Data & Reporting Extensions",
+    "extension_is_placeholder": false,
+    "scoring_mode": "balanced",
+    "source_doc": "docs/playbook/story-excellence-v2.docx",
+    "source_version": "v2",
+    "source_section": "8.3",
+    "thresholds": {
+      "ready": { "min_score": 85, "all_required_pass": true },
+      "needs_work": { "min_score": 56 }
+    },
     "criteria": [
       {
-        "id": "narrative",
-        "name": "Narrative Format",
-        "description": "Story uses 'As a / I need / So that' format",
-        "why": "Anchors work to a stakeholder need and measurable outcome.",
-        "good_example": "As a Senior Risk Analyst / I need a portfolio delinquency dashboard / So that ...",
-        "fix": "Rewrite as: As a [role] / I need [capability] / So that [outcome]"
+        "id": "acceptance_criteria",
+        "name": "Acceptance Criteria are Binary and Testable",
+        "description": "...",
+        "why": "...",
+        "fix": "...",
+        "good_example": "AC1: ... AC2: ... AC3: ...",
+        "scored_by": "ai",
+        "required": true,
+        "weight": 1.0
       }
     ]
   },
-  "domains": [{ "id": "data_reporting", "name": "Data & Reporting" }]
+  "available": [
+    { "id": "story-dor",   "level": "story",   "phase": "ready", "name": "Story — Definition of Ready (Base)" },
+    { "id": "feature-dor", "level": "feature", "phase": "ready", "name": "Feature — Definition of Ready (Base)" },
+    { "id": "epic-dor",    "level": "epic",    "phase": "ready", "name": "Epic — Definition of Ready" },
+    { "id": "defect-dor",  "level": "defect",  "phase": "ready", "name": "Defect — Definition of Ready" }
+  ],
+  "domains": [
+    { "id": "data",            "name": "Data & Reporting",        "is_placeholder": false, "levels": ["story", "feature"] },
+    { "id": "capmkts",         "name": "Capital Markets",         "is_placeholder": true,  "levels": ["story", "feature"] },
+    { "id": "sf-origination",  "name": "Single Family Origination","is_placeholder": true, "levels": ["story", "feature"] },
+    { "id": "mf-servicing",    "name": "Multifamily Servicing",   "is_placeholder": true,  "levels": ["story", "feature"] },
+    { "id": "risk",            "name": "Risk & Compliance",       "is_placeholder": true,  "levels": ["story", "feature"] }
+  ]
 }
 ```
 
@@ -1163,49 +1203,45 @@ List uploads eligible for quality scoring (must have at least one saved classifi
 ```json
 {
   "uploads": [
-    {
-      "upload_id": 3,
-      "filename": "sprint-backlog.csv",
-      "uploaded_at": "2026-04-03T10:00:00",
-      "story_count": 99,
-      "team_count": 5
-    }
+    { "upload_id": 3, "filename": "sprint-backlog.csv", "uploaded_at": "2026-04-03T10:00:00", "story_count": 99, "team_count": 5 }
   ]
 }
 ```
 
-### GET /api/quality/teams
+### GET /api/quality/team-of-teams?upload_id=N
 
-List teams and story counts for a specific upload.
+Return distinct Team-of-Teams values for an upload. Strict-match only — does NOT fall back to subcategory keywords.
 
-**Query Parameters:**
-| Param | Type | Description |
-|-------|------|-------------|
-| `upload_id` | int | **Required.** |
+### GET /api/quality/teams?upload_id=N&team_of_teams=X
 
-**Response:**
-```json
-{ "teams": [{ "name": "Data Services", "count": 5 }] }
-```
+Return teams in an upload, optionally filtered by Team of Teams.
 
 ### POST /api/quality/score
 
-Start a background scoring job for the given upload and teams.
+Start a background scoring job.
 
 **Request:**
 ```json
 {
   "upload_id": 3,
   "teams": ["Data Services"],
-  "domain": "data_reporting"
+  "rubric_id": "story-dor",
+  "domain": "data"
 }
 ```
 
-`teams` — optional array; omit or pass `[]` to score all teams.
+| Field | Description |
+|-------|-------------|
+| `upload_id` | Required. Which upload to score. |
+| `teams` | Optional array; omit or `[]` to score all teams. |
+| `rubric_id` | Composite id, OR base id with `domain` supplied separately. |
+| `domain` | Optional. Layers a domain extension on top of the rubric. |
+
+Legacy: `domain=data_reporting` (no `rubric_id`) still works — treated as `story-dor`.
 
 **Response:**
 ```json
-{ "job_id": "a3f2c1b4", "job_number": 1, "total": 5 }
+{ "job_id": "a3f2c1b4", "job_number": 1, "total": 5, "rubric_id": "story-dor:data" }
 ```
 
 ### GET /api/quality/job/\<job_id\>
@@ -1219,128 +1255,184 @@ Poll status of a running scoring job.
   "job_number": 1,
   "progress": 3,
   "total": 5,
-  "results": [...],
+  "results": [
+    {
+      "classification_id": 42,
+      "story_title": "...",
+      "team": "Data Services",
+      "story_id": "STR-1001",
+      "rubric_id": "story-dor:data",
+      "rubric_level": "story",
+      "rubric_phase": "ready",
+      "scoring_mode": "balanced",
+      "band": "needs_work",
+      "overall_score": 71.4,
+      "passed_count": 7,
+      "total_count": 10,
+      "criteria": {
+        "acceptance_criteria": { "pass": true },
+        "data_quality":        { "pass": false, "fix": "Add row-count tolerance and null checks." }
+      }
+    }
+  ],
   "error": null
 }
 ```
 
-`status` values: `pending`, `running`, `complete`, `error`
+`status` values: `pending`, `running`, `complete`, `error`.
+`band` values: `ready`, `needs_work`, `not_ready` — derived from rubric thresholds, including the `all_required_pass` rule.
 
 ### GET /api/quality/results
 
-Fetch scored story results. Use either `upload_id` (latest scores for that upload) or `run_id` (exact run).
+Return saved scoring results for an upload (or specific run).
 
 **Query Parameters:**
-| Param | Type | Description |
-|-------|------|-------------|
-| `upload_id` | int | Filter by upload (required unless `run_id` provided) |
-| `run_id` | string | Load results from a specific run |
-| `domain` | string | Default: `data_reporting` |
-| `teams` | string | Comma-separated team names (optional filter) |
-
-**Response:**
-```json
-{
-  "results": [
-    {
-      "classification_id": 42,
-      "story_title": "Build delinquency dashboard",
-      "team": "Data Services",
-      "story_id": "STR-001",
-      "overall_score": 66.7,
-      "passed_count": 6,
-      "total_count": 9,
-      "criteria": {
-        "narrative": { "pass": true },
-        "source_data": { "pass": false, "fix": "Add the source table name and owning system" }
-      },
-      "scored_at": "2026-04-03T10:15:00",
-      "description_empty": false
-    }
-  ],
-  "count": 1
-}
-```
+| Param | Description |
+|-------|-------------|
+| `upload_id` | Required (or `run_id`). |
+| `run_id` | Optional — fetch a specific historical run. |
+| `teams` | Optional comma-separated list. |
+| `rubric_id` | Composite id; defaults to `story-dor`. |
+| `domain` | Optional split form. |
 
 ### GET /api/quality/export
 
-Download scored results as CSV.
-
-**Query Parameters:** Same as `/api/quality/results` (requires `upload_id`).
-
-Returns `text/csv` with columns: Story ID, Story Title, Team, Score %, Passed, Total, one column per criterion (PASS or FAIL: fix text), Scored At.
+Same parameters as `/results`. Returns a CSV download with one row per scored story plus per-criterion PASS/FAIL columns.
 
 ### GET /api/quality/history
 
-List all scoring runs in reverse chronological order.
-
-**Response:**
-```json
-{
-  "runs": [
-    {
-      "run_id": "a3f2c1b4",
-      "job_number": 1,
-      "scored_at": "2026-04-03T10:15:00",
-      "upload_id": 3,
-      "upload_filename": "sprint-backlog.csv",
-      "domain": "data_reporting",
-      "teams": ["Data Services"],
-      "story_count": 5,
-      "avg_score": 44.4,
-      "ready_count": 0,
-      "needs_work_count": 2,
-      "not_ready_count": 3
-    }
-  ]
-}
-```
+List all completed scoring runs for the current upload (or all uploads).
 
 ### DELETE /api/quality/history/\<run_id\>
 
-Delete a scoring run and all its associated story scores.
-
-**Response:** `{ "ok": true }`
+Delete a scoring run and its row-level scores.
 
 ### POST /api/quality/rewrite
 
-Generate an initial AI story rewrite addressing failing DoR criteria. Only uses information present in the original story; missing information is marked with `[REQUIRED: ...]` placeholders.
+Generate a "what good looks like" rewrite for a single story, addressing the criteria that failed in the most recent score. Cached in-memory by `(classification_id, rubric_id)` so re-clicks are free within a process lifetime.
 
 **Request:**
 ```json
 {
   "classification_id": 42,
-  "domain": "data_reporting"
+  "rubric_id": "story-dor",
+  "domain": "data",
+  "force": false
 }
 ```
+
+`force: true` bypasses the cache and re-generates.
 
 **Response:**
 ```json
 {
-  "rewritten": "**As a** Senior Risk Analyst\n**I need** ...",
-  "title": "Build delinquency dashboard"
+  "rewritten": "**Acceptance Criteria are Binary and Testable**\nAC1: ...\nAC2: ...\n\n**Output Artifact Defined**\nDashboard: ...",
+  "title": "Build delinquency dashboard",
+  "cached": false
 }
 ```
 
+The output structure is rubric-driven — one section per Definition-of-Ready criterion that the rewrite addresses. Each section uses the criterion's `good_example` as guidance.
+
 ### POST /api/quality/chat
 
-Continue an iterative story rewrite session. Sends the full conversation history to the AI with the original story as fixed context.
+Continue an iterative rewrite session.
 
 **Request:**
 ```json
 {
   "classification_id": 42,
-  "domain": "data_reporting",
+  "rubric_id": "story-dor:data",
   "messages": [
-    { "role": "assistant", "content": "**As a** Senior Risk Analyst..." },
-    { "role": "user", "content": "The source table is dw.loan_performance in EDW" }
+    { "role": "assistant", "content": "..." },
+    { "role": "user",      "content": "The source table is dw.loan_performance in EDW" }
   ]
 }
 ```
 
-`messages` — full conversation array in `[{role, content}]` format. The original story is provided via system prompt, not in messages.
+`messages` is the full conversation array. The original story is supplied via system prompt; do not include it in `messages`.
 
 **Response:**
 ```json
-{ "reply": "**As a** Senior Risk Analyst\n**I need** ...\n\n**Source Data**\ndw.loan_performance, EDW, nightly refresh..." }
+{ "reply": "**As a** Senior Risk Analyst\n**I need** ...\n\n**Source Data**\ndw.loan_performance ..." }
 ```
+
+---
+
+## Domain Extension Editor
+
+Endpoints powering the `/quality-domains` page — let domain stewards review, edit, and reset extension JSON files without touching the filesystem.
+
+### GET /api/quality/extension
+
+Load the raw JSON of a domain extension for editing.
+
+**Query Parameters:**
+| Param | Description |
+|-------|-------------|
+| `domain` | Domain id (`data`, `capmkts`, …). Required. |
+| `level` | One of `story`, `feature`, `epic`, `defect`. Required. |
+
+**Response:**
+```json
+{
+  "domain": "capmkts",
+  "level":  "story",
+  "path":   "domains/capmkts/story-extension.json",
+  "has_backup": false,
+  "extension": {
+    "id": "story-dor:capmkts",
+    "level": "story",
+    "domain": "capmkts",
+    "name": "Story DoR — Capital Markets Extensions (Starter Draft)",
+    "is_placeholder": true,
+    "placeholder_note": "Starter content. Replace with real CapMkts criteria.",
+    "criteria": [ /* ... */ ]
+  }
+}
+```
+
+`has_backup` indicates whether `<path>.bak` exists, so the UI knows whether to offer a Reset button. Returns `404` if the extension does not exist (the UI then offers a "Create extension" flow).
+
+### PUT /api/quality/extension
+
+Save (overwrite) a domain extension. Validates structure, backs up the previous file to `<path>.bak`, writes the new content, and invalidates the in-process rubric cache.
+
+**Request:**
+```json
+{
+  "domain": "capmkts",
+  "level":  "story",
+  "extension": {
+    "name": "...",
+    "description": "...",
+    "is_placeholder": false,
+    "criteria": [ /* full criteria array */ ]
+  }
+}
+```
+
+**Validation:** `extension.criteria` must be a list. Each criterion needs a non-empty `id` and `name`. Duplicate ids within an extension are rejected. The `domain` and `level` fields on the saved JSON are auto-stamped from the request.
+
+**Response:**
+```json
+{ "success": true, "path": "domains/capmkts/story-extension.json" }
+```
+
+**Path safety:** the editor path resolution rejects `..`, `/` in the domain id, empty values, and any level outside `{story, feature, epic, defect}`. Edits cannot escape `rubrics/domains/`.
+
+### POST /api/quality/extension/reset
+
+Restore a domain extension from its `.bak` backup, if one exists.
+
+**Request:**
+```json
+{ "domain": "capmkts", "level": "story" }
+```
+
+**Response:**
+```json
+{ "success": true }
+```
+
+Returns `404` if no backup exists for that extension.

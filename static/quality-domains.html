@@ -33,9 +33,18 @@
         .header-text h1 { font-size: 22px; font-weight: 700; }
         .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
         .top-nav { display: flex; gap: 4px; padding: 8px 24px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); justify-content: flex-end; }
-        .top-nav-link { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; white-space: nowrap; }
+        .top-nav-link { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; white-space: nowrap; transition: background 0.15s, color 0.15s; }
         .top-nav-link:hover { background: var(--bg-tertiary); color: var(--text-primary); }
         .top-nav-link.active { background: var(--accent); color: #fff; }
+        .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
+        .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
+        .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; min-width: 200px; padding: 6px; z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
+        .nav-dropdown-item { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; white-space: nowrap; }
+        .nav-dropdown-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-dropdown-item.active { color: var(--accent); font-weight: 600; }
         .theme-toggle { background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 14px; }
 
         .layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; padding: 16px 24px 40px; max-width: 1400px; margin: 0 auto; }
@@ -105,11 +114,42 @@
 
 <nav class="top-nav">
     <a href="/" class="top-nav-link">Home</a>
-    <a href="/history" class="top-nav-link">Story Quality</a>
-    <a href="/quality-domains" class="top-nav-link active">Domain Editor</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <div class="nav-dropdown">
+        <span class="top-nav-link nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/history"  class="nav-dropdown-item">Analyze Stories</a>
+            <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
+            <a href="/teams"    class="nav-dropdown-item">Teams</a>
+            <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
+        </div>
+    </div>
+    <div class="nav-dropdown">
+        <span class="top-nav-link active nav-dropdown-btn">Admin <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/merge"           class="nav-dropdown-item">File Merger</a>
+            <a href="/waf-reference"   class="nav-dropdown-item">WAF Reference</a>
+            <a href="/aliases"         class="nav-dropdown-item">Category Aliases</a>
+            <a href="/quality-domains" class="nav-dropdown-item active">Domain Editor</a>
+        </div>
+    </div>
     <a href="/settings" class="top-nav-link">Settings</a>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light"><span class="theme-icon">☾</span></button>
 </nav>
+<script>
+// Wire up the dropdown click behavior (matches other pages)
+document.querySelectorAll('.nav-dropdown-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const dd = btn.closest('.nav-dropdown');
+        document.querySelectorAll('.nav-dropdown.open').forEach(d => { if (d !== dd) d.classList.remove('open'); });
+        dd.classList.toggle('open');
+    });
+});
+document.addEventListener('click', () => {
+    document.querySelectorAll('.nav-dropdown.open').forEach(d => d.classList.remove('open'));
+});
+</script>
 
 <div class="layout">
     <!-- Left rail: domain list -->
@@ -125,8 +165,10 @@
     <!-- Main editor pane -->
     <main>
         <div class="level-tabs" id="level-tabs">
-            <button class="level-tab active" data-level="story" onclick="selectLevel('story')">Story</button>
-            <button class="level-tab" data-level="feature" onclick="selectLevel('feature')">Feature</button>
+            <button class="level-tab active" data-level="story"   onclick="selectLevel('story')">Story</button>
+            <button class="level-tab"        data-level="feature" onclick="selectLevel('feature')">Feature</button>
+            <button class="level-tab"        data-level="epic"    onclick="selectLevel('epic')">Epic</button>
+            <button class="level-tab"        data-level="defect"  onclick="selectLevel('defect')">Defect</button>
         </div>
         <div class="editor-card" id="editor-card">
             <div style="text-align:center;padding:60px 20px;color:var(--text-muted);font-size:14px;">

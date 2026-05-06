@@ -2,6 +2,99 @@
 
 ---
 
+## v3.7.0 — May 2026
+
+Real Story Excellence playbook adopted, composite rubrics with optional domain extensions, in-app domain editor, inline dispute flagging on three more pages, merge feature overhaul, and a Team-of-Teams filter bugfix.
+
+### Story Quality scoring — major rewrite
+
+- **Real playbook in repo.** The fictional `"GSE-MF Story Excellence Playbook v1.0"` attribution that shipped in v3.4.0 has been replaced with the actual *Story Excellence Playbook v2*, now stored at `docs/playbook/story-excellence-v2.docx` (canonical) and `docs/playbook/story-excellence-v2.md` (extracted text for diff-friendly PR review). All scoring now traces back to a verifiable source document.
+- **Rubrics as data, not code.** The hardcoded `RUBRICS` dict in `routes/quality.py` is gone. Rubrics now live as JSON files under `rubrics/` so editing a criterion no longer requires a code change. Each criterion carries `id`, `name`, `description`, `why`, `fix`, `good_example`, `required`, `weight`, and `scored_by` (`ai` | `system`).
+- **Four base level rubrics** (universal across domains):
+  - `rubrics/base/story-dor.json` — 7 criteria from playbook §8.3 (replaces the old 9-criterion rubric)
+  - `rubrics/base/feature-dor.json` — 7 criteria from §7.2 (new)
+  - `rubrics/base/epic-dor.json` — 7 criteria from §6.2 (new)
+  - `rubrics/base/defect-dor.json` — 7 criteria, companion rubric (the playbook does not define one)
+- **Optional domain extensions.** Stories aren't one-size-fits-all — a Capital Markets story has different DoR concerns than a Data story. New `rubrics/domains/{id}/` layer adds criteria specific to a line of business:
+  - `data/` — real content for Data & Reporting (output artifact, DQ checks, lineage)
+  - `capmkts/` — starter content for Capital Markets (settlement window, pricing source, counterparty, risk impact)
+  - `sf-origination/` — starter content for SF Origination (AUS rule version, TILA/RESPA, lender integration)
+  - `mf-servicing/` — starter content for MF Servicing (sub-servicer reach, investor reporting, property type)
+  - `risk/` — starter content for Risk & Compliance (regulatory citation, audit log, sign-off chain, effective date)
+  - All four non-Data extensions are explicitly marked `is_placeholder: true`. The UI shows an amber **"⚠ Starter content"** banner so reviewers know to customize before relying on scores in production decisions.
+- **Composite rubric loader.** Effective rubric = `base ∪ extension`, deduped by criterion id (extension wins on conflict). Stories scored against `story-dor:capmkts` see the 7 universal criteria + 4 CapMkts criteria. Generic / no-domain selection uses base-only.
+- **Two-picker UI on `/history` Story Quality tab.** New "Level" dropdown (Story / Feature / Epic / Defect) and optional "Domain" dropdown (Generic / Data / CapMkts / SF / MF / Risk). Selecting a level + domain reloads the rubric reference card with the combined criteria.
+- **"What good looks like" surfacing.** When a criterion fails on the expanded story row, both the prescriptive **fix** AND the playbook's **good_example** appear inline — Layer 1 surfacing. The "Suggest Rewrite" button is now labelled "✨ What good looks like for this story" and its modal title matches.
+- **Rewrite endpoint cached.** `/api/quality/rewrite` results now cache in-memory by `(classification_id, rubric_id)`. Re-clicks don't re-spend on the AI within a process lifetime. Pass `force=true` to bypass.
+- **Scoring strictness configurable per rubric.** New `scoring_mode` field on each rubric (`lenient` | `balanced` | `strict`) branches the AI prompt instruction. Defaults to `balanced` — pass when met or unambiguously inferable, fail when you'd have to assume.
+- **Per-rubric thresholds with required-pass rule.** Each rubric carries `thresholds.ready.min_score` and `thresholds.ready.all_required_pass`. A story scoring 86 with a required criterion failing is now correctly **Needs Work**, not **Ready**.
+- **Bands flow through the API.** Each scored row carries a `band` field (`ready` / `needs_work` / `not_ready`) computed from the rubric's thresholds. Frontend prefers `band` over score thresholds for filtering.
+
+### Domain Editor (new page)
+
+New `/quality-domains` route — a dedicated screen for domain stewards to review, edit, and reset extension JSON files without touching the filesystem or merging code.
+
+- **Left rail** lists all domains from the manifest with a `starter` badge for placeholder ones.
+- **All four level tabs.** Story, Feature, Epic, and Defect are all editable. Epic and Defect criteria are largely domain-neutral in practice but the editor doesn't gatekeep — if a team finds a real domain-specific need at those levels, they can extend.
+- **Per-criterion editor cards** with id, name, description, why, fix, "what good looks like", required toggle, weight, and `scored_by` selector. Add / Delete buttons per criterion.
+- **Save** writes the JSON, backs up the previous version to `<path>.bak`, and invalidates the in-process rubric cache so changes appear on the Story Quality view's next refresh.
+- **Reset to previous** restores from `.bak` (only shown when a backup exists).
+- **Create extension** flow scaffolds a fresh JSON shell when a domain × level doesn't have a file yet.
+- **Path validation** rejects `..`, `/`, empties, and unknown levels — the editor cannot escape `rubrics/domains/`.
+
+### Inline dispute flagging on three more pages
+
+Until v3.6 you could only file a classification dispute from the single-story Classify page (`/`). After bulk verify or while browsing teams/lineage you had no way to flag a wrong AI classification. Big workflow gap. v3.7 adds a **🚩 Flag classification** button to:
+
+- **History** (`/history`) — story detail overlay header
+- **Teams** (`/teams`) — team / epic story detail modal
+- **Lineage** (`/lineage`) — epic→feature→story drill-in
+
+A new shared helper `static/dispute-modal.js` is auto-injected on every page by `routes/pages.py`, so any view can call `window.openDisputeModal({...})` with no per-page imports. Posts to the existing `/api/disputes` endpoint — same shape as the form on `/`.
+
+### Merge feature overhaul
+
+- **Per-file mapping cards.** Replaces single auto-detect with three explicit mapping panels (Epic / Feature / Story), one card per uploaded file. Required-field validation is conditional on which files are present.
+- **Name-based join.** Feature → Epic and Story → Feature now join by name, not ID. The original Feature ID and Epic ID are still surfaced in the merged output.
+- **Status flags + orphan handling.** Per-row status: `complete` (story + feature + epic resolved), `missing_feature`, `missing_epic`. Orphan rows are visible everywhere (preview + downloads) but always excluded from AI analysis. Two informational flags don't block analysis: `_flag_missing_waf` (epic has no WAF) and `_flag_missing_run_change` (epic has no Run/Change tag).
+- **Five clickable stat cards.** Total / Complete / Orphans / Missing WAF / Missing R/C — clicking any card filters the preview table to that subset. Legend pills under the table mirror the filters for finer states.
+- **Clickable preview rows** open a detail modal showing every field on the merged record + a Reject/Restore button.
+- **Two-phase upload flow.** `/api/merge/preview` returns suggested column mappings + sample rows. User confirms or adjusts in the UI, then `/api/merge/process` runs the merge with confirmed mappings. Tokens are full UUIDs with a 1-hour TTL.
+- **Two download buttons.** "Download All" (complete + orphans, with Status column) and "Download Orphans" (orphans only, conditionally visible).
+- **"Submit Complete for Analysis"** confirmation modal surfaces what's being excluded before AI analysis is requested.
+- **Sample data updated.** `test-data/merge-samples/` epic/feature/story files now use name-based joins, include intentional orphans for demo, and seed alias-system test records (`Audit & Compliance`, `Lift and Shift`, `BAU Maintenance`, `Innovation Bet`) that require manual alias entries to map. New `sample-consolidated.csv` provides the same dataset flattened into one file for the upload/verify path.
+
+### Team of Teams — filter bugfix + drill-down UX
+
+- **Bugfix.** The Team-of-Teams filter on the Teams view was occasionally showing data from a "Subcategory" or similar column. Root cause: legacy fallback keywords (`sub-category`, `subcategory`, `waf sub`, `sub_cat`) on the `team_of_teams` field auto-mapper. After the v3.4-era column rename `waf_subcategory → team_of_teams` they should have been removed but weren't. Now strict-match only: `["team of teams", "team_of_teams"]` everywhere (verify, analytics, merge, waf_core).
+- **Drill-down UX.** The Teams view used to show ToT dropdown + Team pills side-by-side — crowded. Now a single hierarchical drill: **Step 1** ToT pills (with "All Teams of Teams" option), **Step 2** Team pills filtered to the chosen ToT (with "← All Teams of Teams" back link). When a file has no ToT data, Step 1 is skipped automatically.
+
+### Navigation — Tools → Admin
+
+- The top-nav **Tools** dropdown is renamed to **Admin** to better reflect what lives there: File Merger, WAF Reference, Category Aliases, and the new **Domain Editor**. Settings stays separate (it's actual app configuration). Renamed across all 11 page templates.
+
+### Test data — WAF Sub ghost cleanup
+
+- The synthetic test CSVs (`compliance-focus-60.csv`, `multi-team-product-120.csv`, etc.) emitted a meaningless `Sub-Category` column that previously got auto-mapped into the `team_of_teams` DB column via the now-removed fallback keywords. The generator script no longer outputs that column. Existing CSVs in `test-data/` still have the stale column; they'll regenerate clean next time the script runs.
+
+### API Changes
+
+- `GET  /api/quality/rubric` — accepts `rubric_id` (composite, e.g. `story-dor:data`) OR `level` + `domain`. Legacy `domain=data_reporting` still resolves to `story-dor`. Response includes `rubric` (composed), `available` (level rubrics on disk), and `domains` (manifest entries).
+- `POST /api/quality/score`, `GET /api/quality/results`, `GET /api/quality/export`, `POST /api/quality/chat`, `POST /api/quality/rewrite` — all accept `rubric_id` (preferred) or `rubric_id` + `domain` split. Old `domain` field still accepted as a legacy alias.
+- `POST /api/quality/rewrite` — new `force: true` flag bypasses the in-memory cache.
+- `GET  /api/quality/extension?domain=&level=` — load the JSON of a domain extension for editing.
+- `PUT  /api/quality/extension` — save (overwrite) a domain extension. Body: `{ domain, level, extension }`. Backs up the previous file to `<path>.bak`.
+- `POST /api/quality/extension/reset` — restore an extension from its `.bak` backup.
+- `POST /api/merge/preview` — first phase of the new merge flow. Returns `{token, files: {epic, feature, story: each with uploaded/columns/sample_rows/target_fields/suggested_mappings}, required: {...}}`.
+- `POST /api/merge/process` — second phase. Body includes `token` + per-file confirmed mappings.
+- `GET  /api/merge/download/<token>` — supports `only_complete` and `only_orphans` query flags.
+
+### Database
+
+No schema changes in v3.7.0. The existing `story_quality_scores.domain` column continues to store rubric ids (now composite, e.g. `story-dor:data`); old rows under `data_reporting` map to `story-dor` via the legacy alias. Future commit may rename the column to `rubric_id` for clarity.
+
+---
+
 ## v3.6.0 — April 2026
 
 Classification Disputes workflow, PI Number field, ephemeral Classify page, and expanded trend data.
