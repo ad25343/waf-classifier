@@ -1,0 +1,26 @@
+{
+  "id": "feature-dor:sf-origination",
+  "level": "feature",
+  "phase": "ready",
+  "domain": "sf-origination",
+  "name": "Feature DoR — SF Origination Extensions (Starter Draft)",
+  "description": "Placeholder feature-level criteria for SF Origination. SF Origination stewards should review and replace.",
+  "source_doc": "rubrics/domains/sf-origination/feature-extension.json",
+  "source_version": "starter v0",
+  "source_section": "n/a — extension placeholder",
+  "is_placeholder": true,
+  "placeholder_note": "Starter content. Replace with real SF Origination feature DoR criteria.",
+  "criteria": [
+    {
+      "id": "fair_lending_review",
+      "name": "Fair Lending Review Scoped",
+      "description": "Whether the feature changes underwriting logic, pricing, or credit-decisioning is identified, and Fair Lending review is scheduled if so.",
+      "why": "Fair lending exposure ships silently when underwriting changes don't trigger review.",
+      "fix": "Confirm Fair Lending review is required (yes/no). If yes, schedule before the feature ships.",
+      "good_example": "Fair Lending review: required. Scheduled for 2026-05-12 with [Fair Lending lead].",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    }
+  ]
+}

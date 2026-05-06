@@ -1,0 +1,36 @@
+{
+  "id": "feature-dor:data",
+  "level": "feature",
+  "phase": "ready",
+  "domain": "data",
+  "name": "Feature DoR — Data & Reporting Extensions",
+  "description": "Two additional criteria for Data & Reporting features — data contract and lineage map. Layered on top of the base Feature DoR.",
+  "source_doc": "docs/playbook/story-excellence-v2.docx",
+  "source_version": "v2 + data-domain extensions",
+  "source_section": "n/a — extension",
+  "is_placeholder": false,
+  "criteria": [
+    {
+      "id": "data_contract",
+      "name": "Data Contract Defined",
+      "description": "Output schema (columns, types, semantics) is documented as a contract that downstream consumers can build against.",
+      "why": "Producers and consumers iterating on a verbal schema agreement leads to integration breakage.",
+      "fix": "Document the output schema in a shared location (Confluence, Git, schema registry); name a schema owner.",
+      "good_example": "Schema: dw_mart.delinquency_daily (loan_id BIGINT NOT NULL, reporting_date DATE NOT NULL, delinquency_pct DECIMAL(5,2)). Owner: Risk Reporting team. Versioned in git at schemas/delinquency_daily.yml.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "lineage_map",
+      "name": "End-to-End Lineage Map",
+      "description": "Lineage from upstream source through every transformation layer to the consumer is mapped — at the feature level — and visible in the data catalog.",
+      "why": "Without an end-to-end lineage, impact analysis when an upstream feed changes becomes guesswork.",
+      "fix": "Trace the lineage in the data catalog (e.g. Collibra, OpenLineage). Confirm upstream owners and downstream consumers are tagged.",
+      "good_example": "Upstream: EDW.loan_performance (owner: Acquisitions team) → ETL job mart_delinquency_daily.py → dw_mart.delinquency_daily → Risk Reporting Dashboard (consumer: Risk Committee). Cataloged in OpenLineage on 2026-04-30.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 0.5
+    }
+  ]
+}

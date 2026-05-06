@@ -45,54 +45,186 @@ BATCH_SIZE = 5  # stories per AI call
 # Backward compatibility: the old `domain` query parameter still works and
 # maps to the new rubric ids via _DOMAIN_ALIASES below.
 
-RUBRICS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "rubrics")
+RUBRICS_DIR     = os.path.join(os.path.dirname(os.path.dirname(__file__)), "rubrics")
+BASE_DIR        = os.path.join(RUBRICS_DIR, "base")
+DOMAINS_DIR     = os.path.join(RUBRICS_DIR, "domains")
+MANIFEST_PATH   = os.path.join(RUBRICS_DIR, "manifest.json")
 
+# Maps from older rubric / domain ids to the canonical level + domain pair.
+# Keeps existing API callers working after the directory restructure.
+_LEGACY_RUBRIC_TO_LEVEL = {
+    "data_reporting": "story",
+    "story-dor":      "story",
+    "story":          "story",
+    "feature-dor":    "feature",
+    "feature":        "feature",
+    "epic-dor":       "epic",
+    "epic":           "epic",
+    "defect-dor":     "defect",
+    "defect":         "defect",
+}
+
+_rubric_cache: dict = {}
+
+
+def _read_json(path: str):
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception:
+        return None
+
+
+def list_domains() -> list:
+    """Read manifest.json and return the available domains."""
+    manifest = _read_json(MANIFEST_PATH) or {}
+    return manifest.get("domains", [])
+
+
+def list_rubrics() -> list:
+    """Enumerate available level rubrics (the base ones).
+
+    Domain extensions are not standalone rubrics — they layer on top of a
+    base. Use list_domains() to enumerate domains.
+    """
+    out = []
+    if not os.path.isdir(BASE_DIR):
+        return out
+    for fn in sorted(os.listdir(BASE_DIR)):
+        if not fn.endswith(".json"):
+            continue
+        r = _read_json(os.path.join(BASE_DIR, fn))
+        if not r:
+            continue
+        out.append({
+            "id":    r.get("id"),
+            "level": r.get("level"),
+            "phase": r.get("phase"),
+            "name":  r.get("name"),
+        })
+    return out
+
+
+def _canonical_level(rubric_or_level: str) -> str:
+    """Resolve a value (e.g. 'story-dor', 'feature', 'data_reporting') to a level."""
+    if not rubric_or_level:
+        return "story"
+    if rubric_or_level in _LEGACY_RUBRIC_TO_LEVEL:
+        return _LEGACY_RUBRIC_TO_LEVEL[rubric_or_level]
+    # Pattern: 'X-dor' → 'X'
+    if rubric_or_level.endswith("-dor"):
+        return rubric_or_level[:-4]
+    return rubric_or_level
+
+
+def _split_composite(rubric_id: str) -> tuple:
+    """Split 'story-dor:data' into ('story', 'data'). 'story-dor' → ('story', None)."""
+    if ":" in rubric_id:
+        head, dom = rubric_id.split(":", 1)
+        return _canonical_level(head), (dom or None)
+    return _canonical_level(rubric_id), None
+
+
+def _load_base(level: str) -> dict:
+    """Load the universal rubric for a level."""
+    path = os.path.join(BASE_DIR, f"{level}-dor.json")
+    r = _read_json(path)
+    if not r:
+        # Fall back to story-dor if the requested level is unknown.
+        r = _read_json(os.path.join(BASE_DIR, "story-dor.json")) or {"criteria": []}
+    return r
+
+
+def _load_extension(level: str, domain: str) -> dict:
+    """Load the domain extension for a level. Returns None if absent."""
+    if not domain:
+        return None
+    path = os.path.join(DOMAINS_DIR, domain, f"{level}-extension.json")
+    return _read_json(path)
+
+
+def load_rubric(rubric_id: str = None, level: str = None, domain: str = None) -> dict:
+    """Load a (possibly composite) rubric.
+
+    Two calling forms:
+      load_rubric("story-dor:data")              → level=story, domain=data
+      load_rubric(level="story", domain="data")  → same
+
+    Returns a single rubric dict whose `criteria` is the union of base
+    and (optional) domain extension criteria, deduped by criterion id
+    with the extension overriding the base on conflict.
+    """
+    # Resolve level + domain
+    if rubric_id and not level:
+        lvl, dom = _split_composite(rubric_id)
+        level = lvl
+        if domain is None:
+            domain = dom
+    if not level:
+        level = "story"
+    domain = domain or None
+
+    cache_key = f"{level}:{domain or ''}"
+    if cache_key in _rubric_cache:
+        return _rubric_cache[cache_key]
+
+    base = _load_base(level)
+    ext  = _load_extension(level, domain)
+
+    # Compose
+    composed = dict(base)  # shallow copy
+    composed["id"] = f"{level}-dor" + (f":{domain}" if domain else "")
+    composed["level"] = level
+    composed["domain"] = domain
+    composed["base_name"] = base.get("name")
+    if ext:
+        composed["extension_name"] = ext.get("name")
+        composed["extension_is_placeholder"] = bool(ext.get("is_placeholder"))
+        composed["extension_placeholder_note"] = ext.get("placeholder_note")
+        # Append extension criteria, deduping by id (extension wins on conflict).
+        seen = {c["id"]: c for c in base.get("criteria", [])}
+        for c in ext.get("criteria", []):
+            seen[c["id"]] = c
+        composed["criteria"] = list(seen.values())
+
+    _rubric_cache[cache_key] = composed
+    return composed
+
+
+def invalidate_rubric_cache():
+    """Drop the rubric cache. Call after any extension JSON is edited."""
+    _rubric_cache.clear()
+
+
+# Legacy alias map kept for older API callers / DB rows.
+# Maps: legacy value → canonical composite rubric id.
 _DOMAIN_ALIASES = {
-    "data_reporting": "story-dor",   # old default — story-level DoR
+    "data_reporting": "story-dor",
     "story":          "story-dor",
     "feature":        "feature-dor",
     "epic":           "epic-dor",
     "defect":         "defect-dor",
 }
 
-_rubric_cache: dict = {}
 
+def normalize_rubric_id(rubric_id: str = None, domain: str = None) -> str:
+    """Build a canonical composite rubric id from input.
 
-def load_rubric(rubric_id: str) -> dict:
-    """Load a rubric JSON file from /rubrics/. Cached on first read."""
-    rid = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
-    if rid in _rubric_cache:
-        return _rubric_cache[rid]
-    path = os.path.join(RUBRICS_DIR, f"{rid}.json")
-    if not os.path.exists(path):
-        # Fall back to story-dor if requested rubric is unknown
-        path = os.path.join(RUBRICS_DIR, "story-dor.json")
-    with open(path, "r", encoding="utf-8") as fh:
-        rubric = json.load(fh)
-    _rubric_cache[rid] = rubric
-    return rubric
-
-
-def list_rubrics() -> list:
-    """Enumerate available rubrics (id, level, phase, name)."""
-    out = []
-    if not os.path.isdir(RUBRICS_DIR):
-        return out
-    for fn in sorted(os.listdir(RUBRICS_DIR)):
-        if not fn.endswith(".json"):
-            continue
-        try:
-            with open(os.path.join(RUBRICS_DIR, fn), "r", encoding="utf-8") as fh:
-                r = json.load(fh)
-            out.append({
-                "id":    r.get("id"),
-                "level": r.get("level"),
-                "phase": r.get("phase"),
-                "name":  r.get("name"),
-            })
-        except Exception:
-            continue
-    return out
+    Examples:
+      ("story-dor", "data")     → "story-dor:data"
+      ("data_reporting", None)  → "story-dor"
+      ("story-dor:data", None)  → "story-dor:data"
+      (None, None)              → "story-dor"
+    """
+    if not rubric_id:
+        return "story-dor"
+    rubric_id = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
+    # If a domain is also passed, prefer attaching it.
+    if domain and ":" not in rubric_id:
+        rubric_id = f"{rubric_id}:{domain}"
+    return rubric_id
 
 
 # ── System-check registry ─────────────────────────────────────────────────────
@@ -417,22 +549,34 @@ def _run_scoring_job(job_id: str, classification_ids: list, rubric_id: str, job_
 
 @quality_bp.route("/api/quality/rubric", methods=["GET"])
 def get_rubric():
-    """Return a rubric definition.
+    """Return a (possibly composite) rubric definition.
 
-    Query params:
-      rubric_id  preferred — e.g. story-dor, feature-dor, epic-dor, defect-dor
-      domain     legacy alias — old code used domain=data_reporting; resolves to story-dor
+    Query params (all optional):
+      rubric_id  composite, e.g. 'story-dor' or 'story-dor:data'
+      level      'story' | 'feature' | 'epic' | 'defect'
+      domain     'data' | 'capmkts' | 'sf-origination' | 'mf-servicing' | 'risk' (or empty)
 
-    Response also includes `available` — the list of all rubrics on disk.
+    The response also includes `available` (level rubrics) and `domains`
+    (the manifest), so the UI can populate two dropdowns from one call.
     """
-    rubric_id = request.args.get("rubric_id") or request.args.get("domain") or "story-dor"
-    rubric = load_rubric(rubric_id)
-    available = list_rubrics()
+    rubric_id = request.args.get("rubric_id")
+    level     = request.args.get("level")
+    domain    = request.args.get("domain")
+    # If only the legacy domain param was supplied AND it's actually a
+    # legacy rubric alias (e.g. data_reporting) — treat it as rubric_id.
+    if not rubric_id and not level and domain in _DOMAIN_ALIASES:
+        rubric_id = domain
+        domain = None
+
+    if rubric_id:
+        rubric = load_rubric(rubric_id, domain=domain)
+    else:
+        rubric = load_rubric(level=level, domain=domain)
+
     return jsonify({
         "rubric":    rubric,
-        "available": available,
-        # Legacy 'domains' field kept so existing UI code keeps working.
-        "domains":   [{"id": r["id"], "name": r["name"]} for r in available],
+        "available": list_rubrics(),
+        "domains":   list_domains(),
     })
 
 
@@ -521,8 +665,14 @@ def start_scoring():
     data = request.json or {}
     upload_id = data.get("upload_id")
     teams = data.get("teams", [])
-    # Accept the new `rubric_id` field; fall back to the legacy `domain`.
-    rubric_id = data.get("rubric_id") or data.get("domain") or "story-dor"
+    # Accept either:
+    #   {rubric_id: 'story-dor:data'}                — new composite form
+    #   {rubric_id: 'story-dor', domain: 'data'}      — split form (UI sends this)
+    #   {domain: 'data_reporting'}                    — legacy alias
+    rubric_id = normalize_rubric_id(
+        data.get("rubric_id") or data.get("domain"),
+        data.get("domain") if data.get("rubric_id") else None,
+    )
 
     if not upload_id:
         return jsonify({"error": "upload_id required"}), 400
@@ -592,8 +742,14 @@ def quality_job_status(job_id):
 def quality_results():
     upload_id = request.args.get("upload_id", type=int)
     teams_raw = request.args.get("teams", "")
-    rubric_id = request.args.get("rubric_id") or request.args.get("domain") or "story-dor"
-    rubric_id = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
+    # Accept rubric_id (composite) OR rubric_id + domain split. Legacy
+    # 'domain' alone is also accepted as a legacy alias.
+    rid_in    = request.args.get("rubric_id")
+    domain_in = request.args.get("domain")
+    if not rid_in and domain_in in _DOMAIN_ALIASES:
+        rubric_id = _DOMAIN_ALIASES[domain_in]
+    else:
+        rubric_id = normalize_rubric_id(rid_in, domain_in if rid_in else None)
     run_id = request.args.get("run_id")
 
     if not upload_id and not run_id:
@@ -680,7 +836,10 @@ def delete_quality_run(run_id):
 def quality_chat():
     data = request.json or {}
     classification_id = data.get("classification_id")
-    rubric_id = data.get("rubric_id") or data.get("domain") or "story-dor"
+    rubric_id = normalize_rubric_id(
+        data.get("rubric_id") or data.get("domain"),
+        data.get("domain") if data.get("rubric_id") else None,
+    )
     messages = data.get("messages", [])   # [{role, content}, ...]
 
     if not classification_id or not messages:
@@ -736,14 +895,16 @@ def rewrite_story():
     """
     data = request.json or {}
     classification_id = data.get("classification_id")
-    rubric_id = data.get("rubric_id") or data.get("domain") or "story-dor"
+    rubric_id = normalize_rubric_id(
+        data.get("rubric_id") or data.get("domain"),
+        data.get("domain") if data.get("rubric_id") else None,
+    )
     force = bool(data.get("force"))
 
     if not classification_id:
         return jsonify({"error": "classification_id required"}), 400
 
-    rid_norm = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
-    cache_key = (int(classification_id), rid_norm)
+    cache_key = (int(classification_id), rubric_id)
     if not force and cache_key in _rewrite_cache:
         cached = _rewrite_cache[cache_key]
         return jsonify({"rewritten": cached["rewritten"], "title": cached["title"], "cached": True})
@@ -847,8 +1008,12 @@ Use this structure (one section per Definition-of-Ready criterion):
 def quality_export():
     upload_id = request.args.get("upload_id", type=int)
     teams_raw = request.args.get("teams", "")
-    rubric_id = request.args.get("rubric_id") or request.args.get("domain") or "story-dor"
-    rubric_id = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
+    rid_in    = request.args.get("rubric_id")
+    domain_in = request.args.get("domain")
+    if not rid_in and domain_in in _DOMAIN_ALIASES:
+        rubric_id = _DOMAIN_ALIASES[domain_in]
+    else:
+        rubric_id = normalize_rubric_id(rid_in, domain_in if rid_in else None)
 
     if not upload_id:
         return jsonify({"error": "upload_id required"}), 400

@@ -1,0 +1,59 @@
+{
+  "id": "story-dor:risk",
+  "level": "story",
+  "phase": "ready",
+  "domain": "risk",
+  "name": "Story DoR — Risk & Compliance Extensions (Starter Draft)",
+  "description": "Placeholder criteria for Risk & Compliance stories. Risk stewards should review and customize.",
+  "source_doc": "rubrics/domains/risk/story-extension.json",
+  "source_version": "starter v0",
+  "source_section": "n/a — extension placeholder",
+  "is_placeholder": true,
+  "placeholder_note": "Starter content. Replace with real Risk & Compliance DoR criteria.",
+  "criteria": [
+    {
+      "id": "regulatory_citation",
+      "name": "Regulatory Citation Provided",
+      "description": "The specific regulation, rule, or internal policy driving this story is cited (with section/version).",
+      "why": "Compliance work without a regulatory anchor cannot be defended in audit and tends to drift.",
+      "fix": "Cite the regulation (FHFA Advisory Bulletin, SEC Rule, FFIEC guidance, or internal policy) with section and version.",
+      "good_example": "Driven by FHFA Advisory Bulletin AB 2024-04, Section 3.2. Internal policy ref: RISK-POL-117 v3.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "audit_log_required",
+      "name": "Audit Log Requirement Stated",
+      "description": "Whether the change requires an immutable audit log (and what it should capture) is documented.",
+      "why": "Risk and compliance workflows need replayable audit logs — features without explicit logging requirements ship without them.",
+      "fix": "State whether audit logging is required and which fields, actor identifiers, and retention apply.",
+      "good_example": "Audit log: every override decision logged with actor, timestamp, before/after values, and justification text. Retention: 7 years per RISK-POL-117.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "signoff_chain",
+      "name": "Sign-Off Chain Defined",
+      "description": "The required approval / sign-off chain for the change is stated (e.g. 1st line, 2nd line, internal audit).",
+      "why": "Risk changes that ship without the right approvals create internal-audit findings.",
+      "fix": "List the required approvers in order. Reference the policy that mandates the chain.",
+      "good_example": "Sign-off chain: 1st-line owner ([name]) → 2nd-line risk reviewer ([name]) → Internal Audit (informational). Policy: RISK-GOV-21.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    },
+    {
+      "id": "effective_date",
+      "name": "Effective Date Stated",
+      "description": "The date the change becomes effective (regulatory deadline or internal go-live) is stated.",
+      "why": "Compliance work has hard external deadlines; effective dates buried in conversations don't make sprint commitments visible.",
+      "fix": "State the effective date and whether it's an external regulatory deadline or an internal target.",
+      "good_example": "Effective date: 2026-07-01 (FHFA Advisory Bulletin compliance deadline). Hard deadline; cannot slip.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 0.5
+    }
+  ]
+}

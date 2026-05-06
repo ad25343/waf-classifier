@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "description": "Catalog of available domains for layering on top of base rubrics. Each domain's extensions live in rubrics/domains/{id}/{level}-extension.json.",
+  "default_domain": null,
+  "domains": [
+    {
+      "id": "data",
+      "name": "Data & Reporting",
+      "description": "Stories that produce data products — dashboards, reports, tables, files, APIs serving analytics.",
+      "is_placeholder": false,
+      "levels": ["story", "feature"]
+    },
+    {
+      "id": "capmkts",
+      "name": "Capital Markets",
+      "description": "Trading, settlement, securitization, and investor reporting workflows.",
+      "is_placeholder": true,
+      "levels": ["story", "feature"]
+    },
+    {
+      "id": "sf-origination",
+      "name": "Single Family Origination",
+      "description": "Loan acquisition, underwriting, and commitment workflows for the SF book.",
+      "is_placeholder": true,
+      "levels": ["story", "feature"]
+    },
+    {
+      "id": "mf-servicing",
+      "name": "Multifamily Servicing",
+      "description": "Sub-servicer integration, asset management, and investor reporting for the MF book.",
+      "is_placeholder": true,
+      "levels": ["story", "feature"]
+    },
+    {
+      "id": "risk",
+      "name": "Risk & Compliance",
+      "description": "Risk reporting, regulatory submissions, and internal control work.",
+      "is_placeholder": true,
+      "levels": ["story", "feature"]
+    }
+  ]
+}

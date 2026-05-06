@@ -1,0 +1,59 @@
+{
+  "id": "story-dor:capmkts",
+  "level": "story",
+  "phase": "ready",
+  "domain": "capmkts",
+  "name": "Story DoR — Capital Markets Extensions (Starter Draft)",
+  "description": "Placeholder criteria for Capital Markets stories. These are starter content drafted to show the pattern — the CapMkts team should review and customize before scoring real stories.",
+  "source_doc": "rubrics/domains/capmkts/story-extension.json (companion to docs/playbook/story-excellence-v2.docx)",
+  "source_version": "starter v0",
+  "source_section": "n/a — extension placeholder",
+  "is_placeholder": true,
+  "placeholder_note": "Drafted by the platform team as a starting point. Capital Markets stewards: review, edit, and remove this banner once you've validated the criteria with your domain experts.",
+  "criteria": [
+    {
+      "id": "settlement_window",
+      "name": "Settlement Window Specified",
+      "description": "The expected settlement timing (T+0, T+1, T+2) and its implications on the workflow are stated.",
+      "why": "Missing the settlement window leads to systems that pass tests but fail in production trading hours.",
+      "fix": "State the settlement window (T+0 / T+1 / T+2) and any market-close cutoffs that constrain the workflow.",
+      "good_example": "Settlement: T+0. Cutoff: 14:30 ET (1 hour before market close). Late submissions queue for next-day allocation.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "pricing_source",
+      "name": "Pricing Source / Curve Identified",
+      "description": "The pricing source, curve, or rate engine the story depends on is named with its refresh cadence.",
+      "why": "Pricing assumptions baked into stories without an authoritative source cause downstream P&L disputes.",
+      "fix": "Name the pricing source (e.g. internal curve engine, vendor feed) and the refresh cadence; confirm the squad has access.",
+      "good_example": "Pricing: internal MBS curve, refreshed every 15 minutes from the trading desk model. Source: pricing.mbs_curve_v3.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "counterparty_coverage",
+      "name": "Counterparty / Dealer Coverage Stated",
+      "description": "Which counterparties or dealers the story applies to (and which it explicitly does NOT) is documented.",
+      "why": "Implicit counterparty scope leads to either silent under-coverage or surprise integrations mid-sprint.",
+      "fix": "List the counterparties / dealers in scope and out of scope.",
+      "good_example": "In scope: top 5 dealers by Q1 2026 volume (DealerA, DealerB, DealerC, DealerD, DealerE). Out of scope: Tier 2 dealers — handled in FEAT-CM-073.",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    },
+    {
+      "id": "risk_impact_assessed",
+      "name": "Portfolio / Risk Impact Assessed",
+      "description": "How the change affects portfolio metrics, hedges, or risk limits is stated and signed off by Risk.",
+      "why": "Trading-system changes that pass functional ACs but breach risk limits cause production incidents.",
+      "fix": "Document the portfolio / hedge / risk-limit impact. Confirm sign-off by Risk for any non-trivial change.",
+      "good_example": "Risk impact: increases convexity exposure on MBS book by ~0.2%. Within current risk limits. Signed off by [Risk lead] on [date].",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    }
+  ]
+}

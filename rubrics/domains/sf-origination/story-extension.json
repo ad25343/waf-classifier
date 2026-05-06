@@ -1,0 +1,59 @@
+{
+  "id": "story-dor:sf-origination",
+  "level": "story",
+  "phase": "ready",
+  "domain": "sf-origination",
+  "name": "Story DoR — SF Origination Extensions (Starter Draft)",
+  "description": "Placeholder criteria for Single Family Origination stories. SF Origination stewards should review and customize.",
+  "source_doc": "rubrics/domains/sf-origination/story-extension.json",
+  "source_version": "starter v0",
+  "source_section": "n/a — extension placeholder",
+  "is_placeholder": true,
+  "placeholder_note": "Starter content. Replace with real SF Origination DoR criteria.",
+  "criteria": [
+    {
+      "id": "aus_rule_version",
+      "name": "AUS Rule Version Stated",
+      "description": "Which version of the Automated Underwriting System rule set the story applies against is named.",
+      "why": "AUS rule sets evolve; building against an unnamed version causes silent regression as rules update.",
+      "fix": "State the AUS version (e.g. DU 11.0, LPA 24.2) and the date it became effective for this story.",
+      "good_example": "AUS: DU 11.0 (effective 2026-04-15). Tested against DU sandbox on 2026-04-30.",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "regulatory_disclosure",
+      "name": "TILA/RESPA Disclosure Impact Identified",
+      "description": "Whether the change touches TILA/RESPA-regulated disclosure content (LE, CD, NOIR) is stated.",
+      "why": "Disclosure changes can trigger 3-day or 7-day re-disclosure timing rules — silent changes are a UDAAP risk.",
+      "fix": "State whether TILA/RESPA disclosures are touched. If yes, name the compliance review owner.",
+      "good_example": "Touches Loan Estimate (Section A: Origination Charges). Compliance review by [name] on [date].",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "lender_integration",
+      "name": "Lender Integration Contract Reviewed",
+      "description": "If the story affects a lender-facing interface (API, portal, file format), the integration contract is reviewed and downstream lenders are notified.",
+      "why": "Lender systems integrate against published contracts; silent breaks cause same-day production incidents.",
+      "fix": "Confirm the integration contract is unchanged or that breaking changes have been communicated to lenders.",
+      "good_example": "AUS Decision API contract unchanged (v3.2). Or: 'Adds new optional field decision_subcode; backward-compatible. Lender bulletin sent 2026-04-25.'",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    },
+    {
+      "id": "borrower_facing_copy",
+      "name": "Borrower-Facing Copy Approved",
+      "description": "If the story produces text seen by borrowers (emails, letters, portal screens), the copy is approved by Marketing/Compliance.",
+      "why": "Borrower-facing copy is a regulatory and brand surface — unapproved text creates UDAAP and brand risk.",
+      "fix": "Confirm copy approval from Marketing/Compliance. Or attest 'no borrower-facing copy in this story.'",
+      "good_example": "Email subject and body approved by Marketing on 2026-05-01. Or: 'No borrower-facing copy in this story.'",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 0.5
+    }
+  ]
+}

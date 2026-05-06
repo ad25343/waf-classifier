@@ -1,0 +1,48 @@
+{
+  "id": "story-dor:mf-servicing",
+  "level": "story",
+  "phase": "ready",
+  "domain": "mf-servicing",
+  "name": "Story DoR — MF Servicing Extensions (Starter Draft)",
+  "description": "Placeholder criteria for Multifamily Servicing stories. MF Servicing stewards should review and customize.",
+  "source_doc": "rubrics/domains/mf-servicing/story-extension.json",
+  "source_version": "starter v0",
+  "source_section": "n/a — extension placeholder",
+  "is_placeholder": true,
+  "placeholder_note": "Starter content. Replace with real MF Servicing DoR criteria.",
+  "criteria": [
+    {
+      "id": "subservicer_reach",
+      "name": "Sub-Servicer Reach Stated",
+      "description": "Which sub-servicers (of the active set) the story applies to is documented.",
+      "why": "MF servicing operates across multiple sub-servicers with different capabilities; implicit scope causes silent gaps.",
+      "fix": "List the sub-servicers in scope (and out of scope) and confirm capability with each named contact.",
+      "good_example": "In scope: WellsFargo, KeyBank, Berkadia (covers ~85% of portfolio). Out of scope: Tier 2 sub-servicers (FEAT-MF-094 covers them).",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "investor_reporting_impact",
+      "name": "Investor Reporting Impact Identified",
+      "description": "Whether the change affects investor reporting (tape format, factor publication, remittance) is identified.",
+      "why": "Servicing changes can ripple into investor reporting timing and accuracy — silent breaks affect investor trust.",
+      "fix": "State the investor-reporting impact. If material, confirm Investor Reporting team has reviewed.",
+      "good_example": "Affects Section 8 of the monthly tape (delinquency status). Reviewed with Investor Reporting team on [date].",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    },
+    {
+      "id": "property_type_coverage",
+      "name": "Property Type Coverage Stated",
+      "description": "Which property types (MF Conventional, Senior Housing, Healthcare, Affordable, etc.) the story applies to is stated.",
+      "why": "MF property types have different servicing rules; assuming 'all MF' is rarely correct.",
+      "fix": "List the property types in scope and out of scope, or attest 'applies to all MF property types'.",
+      "good_example": "In scope: MF Conventional and Affordable. Out of scope: Senior Housing and Healthcare (different servicing rules — see FEAT-MF-101).",
+      "scored_by": "ai",
+      "required": false,
+      "weight": 1.0
+    }
+  ]
+}

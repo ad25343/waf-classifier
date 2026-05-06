@@ -1,0 +1,26 @@
+{
+  "id": "feature-dor:risk",
+  "level": "feature",
+  "phase": "ready",
+  "domain": "risk",
+  "name": "Feature DoR — Risk & Compliance Extensions (Starter Draft)",
+  "description": "Placeholder feature-level criteria for Risk & Compliance.",
+  "source_doc": "rubrics/domains/risk/feature-extension.json",
+  "source_version": "starter v0",
+  "source_section": "n/a — extension placeholder",
+  "is_placeholder": true,
+  "placeholder_note": "Starter content. Replace with real Risk & Compliance feature DoR criteria.",
+  "criteria": [
+    {
+      "id": "control_owner",
+      "name": "Control Owner Named",
+      "description": "If the feature implements or modifies a control, the named control owner (within Risk) is documented.",
+      "why": "Controls without an owner drift; owners without controls can't catch drift.",
+      "fix": "Name the control owner and the control ID it maps to (or attest 'no control modified').",
+      "good_example": "Control: RISK-CTRL-082 (delinquency reporting completeness). Owner: [Risk lead]. Or: 'No existing control modified.'",
+      "scored_by": "ai",
+      "required": true,
+      "weight": 1.0
+    }
+  ]
+}
