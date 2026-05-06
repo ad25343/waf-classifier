@@ -21,6 +21,10 @@ quality_bp = Blueprint("quality_bp", __name__)
 _quality_jobs: dict = {}
 _quality_job_counter: int = 0
 
+# In-memory rewrite cache: (classification_id, rubric_id) -> {rewritten, title}
+# Lives for the lifetime of the process. Cleared on app restart.
+_rewrite_cache: dict = {}
+
 BATCH_SIZE = 5  # stories per AI call
 
 
@@ -725,12 +729,24 @@ Keep responses focused — lead with the updated content, add a brief explanatio
 
 @quality_bp.route("/api/quality/rewrite", methods=["POST"])
 def rewrite_story():
+    """Generate a 'what good looks like' rewrite for a single story.
+
+    Cached in-memory by (classification_id, rubric_id) so repeat clicks
+    don't re-spend on the AI. Pass force=true to re-generate.
+    """
     data = request.json or {}
     classification_id = data.get("classification_id")
     rubric_id = data.get("rubric_id") or data.get("domain") or "story-dor"
+    force = bool(data.get("force"))
 
     if not classification_id:
         return jsonify({"error": "classification_id required"}), 400
+
+    rid_norm = _DOMAIN_ALIASES.get(rubric_id, rubric_id)
+    cache_key = (int(classification_id), rid_norm)
+    if not force and cache_key in _rewrite_cache:
+        cached = _rewrite_cache[cache_key]
+        return jsonify({"rewritten": cached["rewritten"], "title": cached["title"], "cached": True})
 
     db = get_db()
     row = db.execute(
@@ -817,7 +833,12 @@ Use this structure (one section per Definition-of-Ready criterion):
             messages=[{"role": "user", "content": prompt}],
         )
         rewritten = resp.content[0].text.strip()
-        return jsonify({"rewritten": rewritten, "title": row["story_title"]})
+        # Cache so re-clicks (and the post-click read) don't re-spend on AI.
+        _rewrite_cache[cache_key] = {
+            "rewritten": rewritten,
+            "title": row["story_title"] or "",
+        }
+        return jsonify({"rewritten": rewritten, "title": row["story_title"], "cached": False})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
