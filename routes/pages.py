@@ -114,3 +114,8 @@ def disputes_page():
 @pages_bp.route("/aliases")
 def aliases_page():
     return _serve("aliases.html")
+
+
+@pages_bp.route("/quality-domains")
+def quality_domains_page():
+    return _serve("quality-domains.html")

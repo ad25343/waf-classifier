@@ -1065,3 +1065,145 @@ def quality_export():
         mimetype="text/csv",
         headers={"Content-Disposition": f'attachment; filename="story_quality_{upload_id}.csv"'},
     )
+
+
+# ── Domain extension editor endpoints ────────────────────────────────────────
+# Lets domain stewards review, edit, and reset the JSON extensions from the UI.
+
+_VALID_LEVELS = {"story", "feature", "epic", "defect"}
+
+
+def _extension_path(domain: str, level: str) -> str:
+    """Resolve the on-disk path for a domain+level extension. Validates inputs."""
+    if not domain or not isinstance(domain, str) or "/" in domain or ".." in domain:
+        raise ValueError("invalid domain id")
+    if level not in _VALID_LEVELS:
+        raise ValueError(f"level must be one of {sorted(_VALID_LEVELS)}")
+    return os.path.join(DOMAINS_DIR, domain, f"{level}-extension.json")
+
+
+def _backup_path(path: str) -> str:
+    """Sibling path used to stash the previous version when an extension is saved."""
+    return path + ".bak"
+
+
+@quality_bp.route("/api/quality/extension", methods=["GET"])
+def get_extension():
+    """Return the raw JSON of a domain extension for editing.
+
+    Query params: domain, level
+    """
+    domain = (request.args.get("domain") or "").strip()
+    level  = (request.args.get("level")  or "").strip()
+    try:
+        path = _extension_path(domain, level)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    raw = _read_json(path)
+    if raw is None:
+        return jsonify({"error": "Extension not found", "domain": domain, "level": level}), 404
+    return jsonify({
+        "domain": domain,
+        "level":  level,
+        "extension": raw,
+        "path": os.path.relpath(path, RUBRICS_DIR),
+        "has_backup": os.path.exists(_backup_path(path)),
+    })
+
+
+@quality_bp.route("/api/quality/extension", methods=["PUT"])
+def put_extension():
+    """Save (overwrite) a domain extension.
+
+    Body:
+      { domain: 'data', level: 'story', extension: { ... full JSON ... } }
+
+    The existing file (if any) is backed up to <path>.bak before write.
+    The rubric cache is invalidated so the next /api/quality/rubric call
+    sees the new content.
+    """
+    data = request.json or {}
+    domain    = (data.get("domain") or "").strip()
+    level     = (data.get("level")  or "").strip()
+    extension = data.get("extension")
+    if not isinstance(extension, dict):
+        return jsonify({"error": "extension must be a JSON object"}), 400
+    try:
+        path = _extension_path(domain, level)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    # Sanity-check the structure: must have criteria array; each criterion needs
+    # at least id and name. Anything malformed is rejected before we touch disk.
+    if not isinstance(extension.get("criteria"), list):
+        return jsonify({"error": "extension.criteria must be a list"}), 400
+    seen_ids = set()
+    for i, c in enumerate(extension["criteria"]):
+        if not isinstance(c, dict):
+            return jsonify({"error": f"criteria[{i}] must be an object"}), 400
+        cid = (c.get("id") or "").strip()
+        if not cid:
+            return jsonify({"error": f"criteria[{i}].id is required"}), 400
+        if cid in seen_ids:
+            return jsonify({"error": f"duplicate criterion id: {cid!r}"}), 400
+        seen_ids.add(cid)
+        if not (c.get("name") or "").strip():
+            return jsonify({"error": f"criteria[{i}].name is required"}), 400
+
+    # Stamp metadata so the UI can surface it
+    extension["domain"] = domain
+    extension["level"]  = level
+    extension["phase"]  = extension.get("phase", "ready")
+
+    # Ensure parent directory exists (creating a domain on first save)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    # Backup the existing file before overwriting
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                prev = fh.read()
+            with open(_backup_path(path), "w", encoding="utf-8") as fh:
+                fh.write(prev)
+        except Exception as e:
+            return jsonify({"error": f"backup failed: {e}"}), 500
+
+    try:
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(extension, fh, indent=2, ensure_ascii=False)
+            fh.write("\n")
+    except Exception as e:
+        return jsonify({"error": f"write failed: {e}"}), 500
+
+    invalidate_rubric_cache()
+    return jsonify({"success": True, "path": os.path.relpath(path, RUBRICS_DIR)})
+
+
+@quality_bp.route("/api/quality/extension/reset", methods=["POST"])
+def reset_extension():
+    """Restore a domain extension from its .bak backup, if one exists.
+
+    Body: { domain, level }
+    """
+    data = request.json or {}
+    domain = (data.get("domain") or "").strip()
+    level  = (data.get("level")  or "").strip()
+    try:
+        path = _extension_path(domain, level)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    bak = _backup_path(path)
+    if not os.path.exists(bak):
+        return jsonify({"error": "no backup found for this extension"}), 404
+    try:
+        with open(bak, "r", encoding="utf-8") as fh:
+            content = fh.read()
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(content)
+    except Exception as e:
+        return jsonify({"error": f"restore failed: {e}"}), 500
+
+    invalidate_rubric_cache()
+    return jsonify({"success": True})
