@@ -162,6 +162,12 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
                 "ai_suggested_waf": ai_cat, "ai_tot": ai_tot, "ai_color": ai_color,
                 "ai_run_change": ai_rc, "ai_confidence": ai_conf, "ai_reason": ai_reason,
                 "is_match": is_match,
+                # v3.7+: pass through Epic / Feature attributes for Item Quality scoring.
+                "story_type":          s.get("story_type", ""),
+                "epic_description":    s.get("epic_description", ""),
+                "epic_sponsor":        s.get("epic_sponsor", ""),
+                "epic_block":          s.get("epic_block", ""),
+                "feature_description": s.get("feature_description", ""),
             })
         return results
     except Exception as e:
@@ -444,6 +450,13 @@ def bulk_verify():
         epic_id_col      = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
         story_points_col = find_col(["story points", "story_points", "points", " sp ", "estimate"])
         pi_number_col    = find_col(["pi name", "pi number", "pi_number", "pi #", "program increment", " pi "])
+        # v3.7+: capture Epic / Feature attributes so Item Quality scoring at
+        # those levels has real content to evaluate (mirrors analytics.py).
+        story_type_col   = find_col(["issue type", "story type", "type"])
+        epic_desc_col    = find_col(["epic description", "epic desc", "epic summary"])
+        epic_sponsor_col = find_col(["sponsor", "epic sponsor", "owner", "epic owner"])
+        epic_block_col   = find_col(["block", "sub-block", "org", "epic block"])
+        feat_desc_col    = find_col(["feature description", "feature desc", "feature summary"])
 
         if not title_col:
             return jsonify({"error": "File must have a 'Story Title' or 'Summary' column"}), 400
@@ -477,6 +490,11 @@ def bulk_verify():
                 "epic_id": str(row.get(epic_id_col, "")).strip() if epic_id_col else "",
                 "story_points": str(row.get(story_points_col, "")).strip() if story_points_col else "",
                 "pi_number": str(row.get(pi_number_col, "")).strip() if pi_number_col else "",
+                "story_type":          str(row.get(story_type_col, "")).strip() if story_type_col else "",
+                "epic_description":    str(row.get(epic_desc_col, "")).strip() if epic_desc_col else "",
+                "epic_sponsor":        str(row.get(epic_sponsor_col, "")).strip() if epic_sponsor_col else "",
+                "epic_block":          str(row.get(epic_block_col, "")).strip() if epic_block_col else "",
+                "feature_description": str(row.get(feat_desc_col, "")).strip() if feat_desc_col else "",
             })
 
         if not stories:
@@ -634,8 +652,10 @@ def bulk_verify_save():
                 team_of_teams, waf_color, run_change, confidence,
                 was_mismatch, original_tag, approved, team, epic, parent_feature,
                 story_id, feature_id, epic_id, story_points, upload_id, original_color,
-                waf_reasoning, pi_number)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                waf_reasoning, pi_number,
+                story_type, epic_description, epic_sponsor, epic_block, feature_description)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       ?, ?, ?, ?, ?)""",
             (ts,
              row.get("title", ""),
              row.get("description", ""),
@@ -657,7 +677,12 @@ def bulk_verify_save():
              upload_id,
              row.get("file_color", ""),
              row.get("ai_reason", ""),
-             row.get("pi_number", ""))
+             row.get("pi_number", ""),
+             row.get("story_type", ""),
+             row.get("epic_description", ""),
+             row.get("epic_sponsor", ""),
+             row.get("epic_block", ""),
+             row.get("feature_description", ""))
         )
         saved += 1
 

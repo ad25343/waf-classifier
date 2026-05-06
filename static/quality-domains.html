@@ -328,6 +328,14 @@ function renderEditor(data) {
         <button class="add-crit-btn" onclick="addCriterion()">+ Add criterion</button>
     `;
 
+    const exemplarList = `
+        <div class="crit-list" id="exemplar-list">
+            ${(e.exemplars || []).map((ex, i) => exemplarCardHtml(ex, i)).join('') ||
+              '<div style="text-align:center;padding:30px 16px;color:var(--text-muted);font-size:13px;background:var(--bg-tertiary);border-radius:8px;">No exemplars yet. Add one to give the AI a concrete passing reference for this ' + _activeLevel + '.</div>'}
+        </div>
+        <button class="add-crit-btn" onclick="addExemplar()" style="border-color:rgba(232,148,74,0.5);color:var(--accent);background:rgba(232,148,74,0.08);">+ Add exemplar</button>
+    `;
+
     const actions = `
         <div class="actions-bar">
             <button class="btn btn-primary" onclick="saveExtension()">Save changes</button>
@@ -340,15 +348,98 @@ function renderEditor(data) {
         </div>
     `;
 
+    const isBase = (_activeDomain === 'base');
+    const heading = isBase
+        ? `<h2>${_activeLevel.charAt(0).toUpperCase() + _activeLevel.slice(1)} — Base Rubric (all domains)</h2>
+           <div class="editor-meta">Universal criteria and exemplars used for every ${_activeLevel}-level scoring run, regardless of domain. File: rubrics/base/${_activeLevel}-dor.json</div>`
+        : `<h2>${E(dom.name || _activeDomain)} — ${_activeLevel.charAt(0).toUpperCase() + _activeLevel.slice(1)} DoR Extension</h2>
+           <div class="editor-meta">Adds these criteria on top of the universal ${_activeLevel} base rubric (rubrics/base/${_activeLevel}-dor.json).</div>`;
+
+    // Tabs — Criteria + Exemplars (Domain Editor 'inner tabs')
+    const innerTabs = `
+        <div style="display:flex;gap:6px;margin:18px 0 12px;border-bottom:1px solid var(--border);">
+            <button class="inner-tab" data-tab="criteria" onclick="selectInnerTab('criteria')"
+                    style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-secondary);border-bottom:2px solid transparent;">
+                Criteria <span style="font-weight:400;color:var(--text-muted);">(${(e.criteria || []).length})</span>
+            </button>
+            <button class="inner-tab" data-tab="exemplars" onclick="selectInnerTab('exemplars')"
+                    style="padding:8px 14px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-secondary);border-bottom:2px solid transparent;">
+                Exemplars <span style="font-weight:400;color:var(--text-muted);">(${(e.exemplars || []).length})</span>
+            </button>
+        </div>
+    `;
+
     card.innerHTML = `
-        <h2>${E(dom.name || _activeDomain)} — ${_activeLevel.charAt(0).toUpperCase() + _activeLevel.slice(1)} DoR Extension</h2>
-        <div class="editor-meta">Adds these criteria on top of the universal ${_activeLevel} base rubric (rubrics/base/${_activeLevel}-dor.json).</div>
+        ${heading}
         ${banner}
         ${meta}
-        <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-muted);margin:18px 0 10px;">Criteria (${(e.criteria || []).length})</h3>
-        ${critList}
+        ${innerTabs}
+        <div id="inner-pane-criteria">${critList}</div>
+        <div id="inner-pane-exemplars" style="display:none;">
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:12px;background:var(--bg-tertiary);padding:10px 12px;border-radius:6px;border-left:3px solid var(--accent);">
+                Exemplars are <strong>full passing examples</strong> from your organization. The AI sees them as reference standards when scoring — concrete shape of what good looks like for ${_activeLevel === 'epic' ? 'an Epic' : _activeLevel === 'feature' ? 'a Feature' : _activeLevel === 'defect' ? 'a Defect' : 'a Story'}. Free-form text — paste a Confluence excerpt, Jira description, or write fresh prose.
+            </div>
+            ${exemplarList}
+        </div>
         ${actions}
     `;
+    selectInnerTab('criteria');
+}
+
+function selectInnerTab(tab) {
+    document.querySelectorAll('.inner-tab').forEach(t => {
+        const active = t.dataset.tab === tab;
+        t.style.color = active ? 'var(--text-primary)' : 'var(--text-secondary)';
+        t.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
+    });
+    document.getElementById('inner-pane-criteria').style.display  = (tab === 'criteria')  ? 'block' : 'none';
+    document.getElementById('inner-pane-exemplars').style.display = (tab === 'exemplars') ? 'block' : 'none';
+}
+
+function exemplarCardHtml(ex, i) {
+    return `
+        <div class="crit-card" data-exemplar-idx="${i}">
+            <div class="crit-head">
+                <input type="text" class="field-input" data-key="name" value="${E(ex.name || '')}" placeholder="Exemplar name (e.g. 'Same-Day Lender Commitments for Conforming Loans')" style="flex:1;">
+                <button class="delete-btn" onclick="deleteExemplar(${i})">Delete</button>
+            </div>
+            <div class="crit-body">
+                <label>Content<br>(free-form)</label>
+                <textarea class="field-text" data-key="content" rows="8" placeholder="Paste or write the full content of this exemplar — outcome, sponsor, metrics, lifecycle stages, risks, etc. The AI ingests this as-is when scoring.">${E(ex.content || '')}</textarea>
+                <label>Why it<br>passes</label>
+                <textarea class="field-text" data-key="why_this_passes" rows="2" placeholder="(Optional) One sentence on what makes this exemplar a passing example — anchors the AI's calibration.">${E(ex.why_this_passes || '')}</textarea>
+                <label>Added by</label>
+                <input type="text" class="field-input" data-key="added_by" value="${E(ex.added_by || '')}" placeholder="(Optional) team or person who added this">
+            </div>
+        </div>
+    `;
+}
+
+function addExemplar() {
+    if (!_extension) return;
+    _extension.exemplars = _extension.exemplars || [];
+    _extension.exemplars.push({
+        name: '',
+        content: '',
+        why_this_passes: '',
+        added_by: '',
+        effective_date: new Date().toISOString().slice(0, 10),
+    });
+    renderEditor({ extension: _extension });
+    selectInnerTab('exemplars');
+    // Scroll to the new card
+    setTimeout(() => {
+        const cards = document.querySelectorAll('[data-exemplar-idx]');
+        cards[cards.length - 1]?.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }, 50);
+}
+
+function deleteExemplar(i) {
+    if (!_extension || !_extension.exemplars) return;
+    if (!confirm('Delete this exemplar?')) return;
+    _extension.exemplars.splice(i, 1);
+    renderEditor({ extension: _extension });
+    selectInnerTab('exemplars');
 }
 
 function critCardHtml(c, i) {
@@ -413,7 +504,9 @@ function _gatherFromUI() {
     out.is_placeholder = document.getElementById('ext-placeholder').checked;
     out.placeholder_note = (document.getElementById('ext-placeholder-note').value || '').trim();
     out.criteria = [];
-    document.querySelectorAll('.crit-card').forEach(card => {
+    // Criteria cards live under #inner-pane-criteria; exemplar cards under
+    // #inner-pane-exemplars. Filter by parent so we don't mix them up.
+    document.querySelectorAll('#inner-pane-criteria .crit-card').forEach(card => {
         const c = {};
         card.querySelectorAll('[data-key]').forEach(el => {
             const k = el.dataset.key;
@@ -426,6 +519,15 @@ function _gatherFromUI() {
             c.system_check = c.system_check || (c.id === 'sized' ? 'has_story_points' : 'has_story_points');
         }
         out.criteria.push(c);
+    });
+    out.exemplars = [];
+    document.querySelectorAll('#inner-pane-exemplars [data-exemplar-idx]').forEach(card => {
+        const ex = {};
+        card.querySelectorAll('[data-key]').forEach(el => {
+            ex[el.dataset.key] = (el.value || '').trim();
+        });
+        // Skip empty exemplars (no name AND no content)
+        if (ex.name || ex.content) out.exemplars.push(ex);
     });
     return out;
 }

@@ -13,6 +13,15 @@
     "ready":      { "min_score": 85, "all_required_pass": true },
     "needs_work": { "min_score": 56 }
   },
+  "exemplars": [
+    {
+      "name": "Same-Day Lender Commitments for Conforming Loans",
+      "content": "Outcome: 80% of conforming SF loans receive a lender commitment same-day, up from 35% baseline, by end of Q4.\n\nLifecycle Stages: Acquisition → Underwriting → Pricing & Commitments\nLines of Business: Single Family\nSponsor: SVP, SF Acquisitions — J. Lee\n\nSuccess Metrics (signed off with Finance and Risk):\n  - % same-day commits (baseline 35%, target 80%)\n  - Lender NPS (+15 points target)\n  - Manual review volume (-50% target)\n\nCapacity Envelope: 2 quarters × 3 squads (1 SF Origination, 1 Platform, 1 Risk Reporting). Confirmed at Q3 portfolio review.\n\nInitial Decomposition: Real-Time AUS Decision API · Lender Onboarding Flow · Same-Day Commitment Letter Generation · Lender Self-Service Portal\n\nTop 3 Risks:\n  1. EDW team capacity slip — owner: A. Sharma — mitigation: pre-book Q4 sprints\n  2. FHFA rule change in Q4 — owner: C. Mehta — mitigation: monthly check-in with regulator liaison\n  3. Lender adoption < 30% — owner: J. Lee — mitigation: partner with top 3 lenders before GA",
+      "why_this_passes": "Concrete measurable outcome with baseline + target; named accountable executive; LoB and lifecycle stages explicitly listed; metrics signed off cross-functionally; capacity envelope confirmed at portfolio review; initial feature decomposition complete; top 3 risks each have a named owner and mitigation. All 7 Epic DoR criteria addressed.",
+      "added_by": "platform-team",
+      "effective_date": "2026-05-06"
+    }
+  ],
   "criteria": [
     {
       "id": "outcome_measurable",

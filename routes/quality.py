@@ -95,9 +95,26 @@ def _read_json(path: str):
 
 
 def list_domains() -> list:
-    """Read manifest.json and return the available domains."""
+    """Read manifest.json and return the available domains.
+
+    A virtual 'base' domain is prepended so the Domain Editor's left rail
+    can offer 'Base (all domains)' as a way to edit the universal rubric
+    file (rubrics/base/{level}-dor.json) — that's where generic criteria
+    and exemplars live, applicable to every scoring run regardless of
+    which business domain is selected.
+    """
     manifest = _read_json(MANIFEST_PATH) or {}
-    return manifest.get("domains", [])
+    real_domains = manifest.get("domains", [])
+    base_entry = {
+        "id": "base",
+        "name": "Base (all domains)",
+        "description": "Universal criteria and exemplars applied to every scoring run, "
+                       "regardless of which business domain is selected.",
+        "is_placeholder": False,
+        "is_base": True,
+        "levels": ["story", "feature", "epic", "defect"],
+    }
+    return [base_entry] + real_domains
 
 
 def list_rubrics() -> list:
@@ -196,6 +213,9 @@ def load_rubric(rubric_id: str = None, level: str = None, domain: str = None) ->
     composed["level"] = level
     composed["domain"] = domain
     composed["base_name"] = base.get("name")
+    # Exemplars: base exemplars apply to every scoring run; the active domain's
+    # exemplars are layered on top. Both end up in the AI prompt at scoring time.
+    base_exemplars = list(base.get("exemplars") or [])
     if ext:
         composed["extension_name"] = ext.get("name")
         composed["extension_is_placeholder"] = bool(ext.get("is_placeholder"))
@@ -205,6 +225,11 @@ def load_rubric(rubric_id: str = None, level: str = None, domain: str = None) ->
         for c in ext.get("criteria", []):
             seen[c["id"]] = c
         composed["criteria"] = list(seen.values())
+        # Exemplars: extension's exemplars append (no dedup — by design they
+        # represent the same level but for a specific LoB).
+        composed["exemplars"] = base_exemplars + list(ext.get("exemplars") or [])
+    else:
+        composed["exemplars"] = base_exemplars
 
     _rubric_cache[cache_key] = composed
     return composed
@@ -347,14 +372,42 @@ def _score_batch(stories: list, rubric: dict) -> list:
     mode = rubric.get("scoring_mode", "balanced")
     mode_text = _MODE_INSTRUCTIONS.get(mode, _MODE_INSTRUCTIONS["balanced"])
 
-    criteria_list = "\n".join(
-        f'{i + 1}. {c["id"]}: {c["description"]}'
-        for i, c in enumerate(ai_criteria)
-    )
+    # Each criterion line now includes the per-criterion good_example so the
+    # AI has a concrete shape for what passing looks like.
+    def _crit_line(i, c):
+        line = f'{i + 1}. {c["id"]}: {c["description"]}'
+        if c.get("good_example"):
+            line += f'\n     Example of passing this criterion: {c["good_example"]}'
+        return line
+    criteria_list = "\n".join(_crit_line(i, c) for i, c in enumerate(ai_criteria))
+
     stories_text = "\n\n".join(
         f'STORY_ID: {s["id"]}\nTitle: {s["title"]}\nDescription: {s["description"] or "(no description provided)"}'
         for s in stories
     )
+
+    # Reference exemplars — full passing items from this org. Layered:
+    # base exemplars + active domain's exemplars. Anchors AI scoring to the
+    # team's actual standard, not a generic notion.
+    exemplars = rubric.get("exemplars") or []
+    exemplars_block = ""
+    if exemplars:
+        ex_lines = []
+        for i, e in enumerate(exemplars[:3], 1):  # cap at 3 to keep prompt size sane
+            ex_lines.append(f"[EXEMPLAR {i}] {e.get('name','(unnamed)')}")
+            content = (e.get("content") or "").strip()
+            if content:
+                ex_lines.append(content)
+            why = (e.get("why_this_passes") or "").strip()
+            if why:
+                ex_lines.append(f"Why this passes: {why}")
+            ex_lines.append("")
+        exemplars_block = (
+            "\nREFERENCE EXEMPLARS — these are passing examples from this organization.\n"
+            "Compare candidates to these standards when evaluating.\n\n"
+            + "\n".join(ex_lines).strip()
+            + "\n"
+        )
 
     level = rubric.get("level", "story").capitalize()
     persona = (
@@ -371,7 +424,7 @@ def _score_batch(stories: list, rubric: dict) -> list:
     prompt = f"""You are a {persona}. You are reviewing {level} items against the Story Excellence Playbook v2 — Definition of Ready.
 
 {mode_text}
-
+{exemplars_block}
 CRITERIA:
 {criteria_list}
 
@@ -1219,11 +1272,19 @@ _VALID_LEVELS = {"story", "feature", "epic", "defect"}
 
 
 def _extension_path(domain: str, level: str) -> str:
-    """Resolve the on-disk path for a domain+level extension. Validates inputs."""
+    """Resolve the on-disk path for a domain+level rubric file.
+
+    Special domain id 'base' resolves to rubrics/base/{level}-dor.json so
+    the Domain Editor can edit the universal rubric (criteria + exemplars
+    that apply to every scoring run, regardless of which business domain
+    is selected).
+    """
     if not domain or not isinstance(domain, str) or "/" in domain or ".." in domain:
         raise ValueError("invalid domain id")
     if level not in _VALID_LEVELS:
         raise ValueError(f"level must be one of {sorted(_VALID_LEVELS)}")
+    if domain == "base":
+        return os.path.join(BASE_DIR, f"{level}-dor.json")
     return os.path.join(DOMAINS_DIR, domain, f"{level}-extension.json")
 
 
@@ -1295,6 +1356,28 @@ def put_extension():
         seen_ids.add(cid)
         if not (c.get("name") or "").strip():
             return jsonify({"error": f"criteria[{i}].name is required"}), 400
+
+    # Validate exemplars (optional). Each must be an object with at minimum
+    # a name OR content. Other fields are free-form.
+    exemplars = extension.get("exemplars") or []
+    if not isinstance(exemplars, list):
+        return jsonify({"error": "extension.exemplars must be a list"}), 400
+    cleaned = []
+    for i, ex in enumerate(exemplars):
+        if not isinstance(ex, dict):
+            return jsonify({"error": f"exemplars[{i}] must be an object"}), 400
+        name    = (ex.get("name") or "").strip()
+        content = (ex.get("content") or "").strip()
+        if not name and not content:
+            continue  # silently drop fully-empty entries
+        cleaned.append({
+            "name":            name,
+            "content":         content,
+            "why_this_passes": (ex.get("why_this_passes") or "").strip(),
+            "added_by":        (ex.get("added_by") or "").strip(),
+            "effective_date":  (ex.get("effective_date") or "").strip(),
+        })
+    extension["exemplars"] = cleaned
 
     # Stamp metadata so the UI can surface it
     extension["domain"] = domain
