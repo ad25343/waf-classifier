@@ -358,7 +358,7 @@ def admin_usage_tokens_trend():
 
 @admin_bp.route("/api/admin/usage/feature/<path:feature>")
 def admin_usage_feature_detail(feature):
-    """Drill-down for a single feature: time-series, slowest, error breakdown."""
+    """Drill-down for a single feature: daily series, raw routes, slowest, errors."""
     cutoff, window = _resolve_window()
     db = get_db()
     where, ps = _ts_filter(cutoff)
@@ -368,6 +368,17 @@ def admin_usage_feature_detail(feature):
                    SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END) AS errors
             FROM usage_events WHERE {where} AND feature = ?
             GROUP BY day ORDER BY day ASC""",
+        ps + [feature],
+    ).fetchall()
+    # Raw routes — critical for the 'Other' bucket so users can see exactly
+    # which paths are landing there and what to add to the feature catalog.
+    routes = db.execute(
+        f"""SELECT route, method, COUNT(*) AS hits,
+                   AVG(response_ms) AS avg_ms,
+                   SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END) AS errors,
+                   MAX(ts) AS last_used
+            FROM usage_events WHERE {where} AND feature = ?
+            GROUP BY route, method ORDER BY hits DESC LIMIT 30""",
         ps + [feature],
     ).fetchall()
     slowest = db.execute(
@@ -382,10 +393,22 @@ def admin_usage_feature_detail(feature):
             GROUP BY route, status ORDER BY cnt DESC""",
         ps + [feature],
     ).fetchall()
+    tokens = db.execute(
+        f"""SELECT COALESCE(SUM(input_tokens),0)  AS in_tok,
+                   COALESCE(SUM(output_tokens),0) AS out_tok,
+                   COALESCE(SUM(cost_usd),0)      AS cost
+            FROM token_events WHERE {where} AND feature = ?""",
+        ps + [feature],
+    ).fetchone()
     return jsonify({
         "feature": feature,
         "window":  window,
         "daily":   [dict(r) for r in daily],
+        "routes":  [{"route": r["route"], "method": r["method"], "hits": r["hits"],
+                     "avg_ms": round(r["avg_ms"] or 0.0, 1), "errors": r["errors"],
+                     "last_used": r["last_used"]} for r in routes],
         "slowest": [dict(r) for r in slowest],
         "errors":  [dict(r) for r in errors],
+        "tokens":  {"input": tokens[0] or 0, "output": tokens[1] or 0,
+                    "cost_usd": round(tokens[2] or 0.0, 4)},
     })
