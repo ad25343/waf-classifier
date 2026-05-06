@@ -119,6 +119,20 @@ def init_db():
         conn.execute("ALTER TABLE classifications ADD COLUMN pi_number TEXT DEFAULT ''")
     except sqlite3.OperationalError:
         pass
+    # ── v3.7+: Epic + Feature attributes preserved during upload, so the
+    # Story Quality scoring engine has real Epic/Feature content to evaluate
+    # at those levels (instead of synthesizing from child stories).
+    for _col, _type in [
+        ("story_type",          "TEXT DEFAULT ''"),
+        ("epic_description",    "TEXT DEFAULT ''"),
+        ("epic_sponsor",        "TEXT DEFAULT ''"),
+        ("epic_block",          "TEXT DEFAULT ''"),
+        ("feature_description", "TEXT DEFAULT ''"),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE classifications ADD COLUMN {_col} {_type}")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
 
     # Rename waf_subcategory → team_of_teams if old column still exists
     cols = [r[1] for r in conn.execute("PRAGMA table_info(classifications)").fetchall()]

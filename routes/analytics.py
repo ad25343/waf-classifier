@@ -572,6 +572,13 @@ def history_import():
         pi_number_col    = find_col(["pi name", "pi number", "pi_number", "pi #", "program increment", " pi "])
         epic_id_col      = find_col(["epic id", "epic_id", "epic key", "epic_key", "epic link", "initiative id"])
         feature_id_col   = find_col(["feature id", "feature_id", "feature key", "parent id", "parent_id"])
+        # v3.7+: preserve Epic + Feature attributes so quality scoring at
+        # those levels has real content to evaluate (not just child stories).
+        story_type_col   = find_col(["issue type", "story type", "type"])
+        epic_desc_col    = find_col(["epic description", "epic desc", "epic summary"])
+        epic_sponsor_col = find_col(["sponsor", "epic sponsor", "owner", "epic owner"])
+        epic_block_col   = find_col(["block", "sub-block", "org", "epic block"])
+        feat_desc_col    = find_col(["feature description", "feature desc", "feature summary"])
 
         if not title_col or not cat_col:
             return jsonify({"error": "File must have at least 'Story Title' (or 'Story Name') and 'WAF Category' columns"}), 400
@@ -608,15 +615,19 @@ def history_import():
                    (timestamp, story_title, story_description, waf_category,
                     team_of_teams, waf_color, run_change, confidence,
                     was_mismatch, original_tag, approved, team, epic, parent_feature,
-                    story_id, story_points, pi_number, epic_id, feature_id, upload_id)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    story_id, story_points, pi_number, epic_id, feature_id, upload_id,
+                    story_type, epic_description, epic_sponsor, epic_block, feature_description)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, '', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                           ?, ?, ?, ?, ?)""",
                 (ts, title,
                  _v(desc_col), _v(cat_col), _v(tot_col), _v(color_col),
                  _v(rc_col), _v(conf_col), _v(team_col, "default"),
                  _v(epic_col), _v(feature_col),
                  _v(story_id_col), _v(story_points_col),
                  _v(pi_number_col), _v(epic_id_col), _v(feature_id_col),
-                 upload_id)
+                 upload_id,
+                 _v(story_type_col), _v(epic_desc_col), _v(epic_sponsor_col),
+                 _v(epic_block_col), _v(feat_desc_col))
             )
             imported += 1
         db.commit()

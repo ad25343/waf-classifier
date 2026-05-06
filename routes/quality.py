@@ -424,7 +424,9 @@ def _run_scoring_job(job_id: str, classification_ids: list, rubric_id: str, job_
 
         placeholders = ",".join("?" * len(classification_ids))
         rows = conn.execute(
-            f"""SELECT id, story_title, story_description, story_points, team, story_id, upload_id
+            f"""SELECT id, story_title, story_description, story_points, team, story_id, upload_id,
+                       epic, parent_feature, story_type,
+                       epic_description, epic_sponsor, epic_block, feature_description
                 FROM classifications WHERE id IN ({placeholders})""",
             classification_ids,
         ).fetchall()
@@ -436,19 +438,71 @@ def _run_scoring_job(job_id: str, classification_ids: list, rubric_id: str, job_
         rubric = load_rubric(rubric_id)
         # Resolve to canonical id (e.g. 'data_reporting' → 'story-dor')
         canonical_id = rubric.get("id", rubric_id)
+        rubric_level = (rubric.get("level") or "story").lower()
         all_criteria_ids = [c["id"] for c in rubric["criteria"]]
         all_results = []
 
+        # ── Build the title/description the AI sees per row ───────────────
+        # For Story / Defect levels: pass the story's own title + description.
+        # For Epic / Feature levels: each row represents the Epic/Feature
+        # (selected via GROUP BY in start_scoring); synthesize a description
+        # from the preserved Epic/Feature attributes plus the upload's child
+        # stories so the AI has real content to evaluate.
+        def _synth_for_epic(r):
+            epic_name = (r["epic"] or "").strip()
+            parts = []
+            if r["epic_description"]:
+                parts.append(r["epic_description"])
+            if r["epic_sponsor"]:
+                parts.append(f"Sponsor: {r['epic_sponsor']}")
+            if r["epic_block"]:
+                parts.append(f"Block: {r['epic_block']}")
+            # Append a sample of child stories under this epic for context.
+            try:
+                children = conn.execute(
+                    "SELECT story_title, story_description FROM classifications "
+                    "WHERE upload_id=? AND epic=? LIMIT 5",
+                    (r["upload_id"], epic_name),
+                ).fetchall()
+                if children:
+                    titles = [str(c["story_title"] or "").strip() for c in children if c["story_title"]]
+                    if titles:
+                        parts.append("Sample child stories: " + " | ".join(titles[:5]))
+            except Exception:
+                pass
+            return epic_name, "\n\n".join(parts) or "(no description preserved on upload)"
+
+        def _synth_for_feature(r):
+            feat_name = (r["parent_feature"] or "").strip()
+            parts = []
+            if r["feature_description"]:
+                parts.append(r["feature_description"])
+            try:
+                children = conn.execute(
+                    "SELECT story_title, story_description FROM classifications "
+                    "WHERE upload_id=? AND parent_feature=? LIMIT 5",
+                    (r["upload_id"], feat_name),
+                ).fetchall()
+                if children:
+                    titles = [str(c["story_title"] or "").strip() for c in children if c["story_title"]]
+                    if titles:
+                        parts.append("Sample child stories: " + " | ".join(titles[:5]))
+            except Exception:
+                pass
+            return feat_name, "\n\n".join(parts) or "(no feature description preserved on upload)"
+
+        def _build_batch_record(r):
+            if rubric_level == "epic":
+                title, desc = _synth_for_epic(r)
+            elif rubric_level == "feature":
+                title, desc = _synth_for_feature(r)
+            else:
+                title, desc = (r["story_title"] or ""), (r["story_description"] or "")
+            return {"id": str(r["id"]), "title": title, "description": desc}
+
         for i in range(0, total, BATCH_SIZE):
             batch_rows = rows[i : i + BATCH_SIZE]
-            batch = [
-                {
-                    "id": str(r["id"]),
-                    "title": r["story_title"] or "",
-                    "description": r["story_description"] or "",
-                }
-                for r in batch_rows
-            ]
+            batch = [_build_batch_record(r) for r in batch_rows]
 
             try:
                 ai_results = _score_batch(batch, rubric)
@@ -695,6 +749,12 @@ def start_scoring():
     if not upload_id:
         return jsonify({"error": "upload_id required"}), 400
 
+    # Resolve the rubric's level so we can scope the SELECT correctly.
+    # Level matters: scoring 76 stories against an Epic rubric is meaningless;
+    # we should score the distinct Epics referenced by those stories.
+    rubric = load_rubric(rubric_id)
+    rubric_level = (rubric.get("level") or "story").lower()
+
     db = get_db()
     where = "upload_id = ?"
     params = [upload_id]
@@ -703,9 +763,46 @@ def start_scoring():
         where += f" AND COALESCE(team,'default') IN ({placeholders})"
         params.extend(teams)
 
-    rows = db.execute(f"SELECT id FROM classifications WHERE {where}", params).fetchall()
+    if rubric_level == "epic":
+        # One scored row per distinct Epic (by name; epic name is the canonical
+        # join key in this app). Use MIN(id) so each group has a representative
+        # classification id we can hang scores off.
+        rows = db.execute(
+            f"""SELECT MIN(id) as id FROM classifications
+                WHERE {where} AND COALESCE(epic,'') != ''
+                GROUP BY epic""",
+            params,
+        ).fetchall()
+    elif rubric_level == "feature":
+        rows = db.execute(
+            f"""SELECT MIN(id) as id FROM classifications
+                WHERE {where} AND COALESCE(parent_feature,'') != ''
+                GROUP BY parent_feature""",
+            params,
+        ).fetchall()
+    elif rubric_level == "defect":
+        # Match common bug-tagging conventions across exporters.
+        rows = db.execute(
+            f"""SELECT id FROM classifications
+                WHERE {where} AND (
+                    LOWER(COALESCE(story_type,'')) LIKE '%bug%' OR
+                    LOWER(COALESCE(story_type,'')) LIKE '%defect%'
+                )""",
+            params,
+        ).fetchall()
+    else:
+        # Default: story level → every row in the upload.
+        rows = db.execute(
+            f"SELECT id FROM classifications WHERE {where}", params
+        ).fetchall()
+
     if not rows:
-        return jsonify({"error": "No stories found for the selected upload and teams"}), 404
+        msg = {
+            "epic":    "No epics found for the selected upload. The upload may not have epic data, or the rubric level mismatches the data.",
+            "feature": "No features found for the selected upload.",
+            "defect":  "No defects (story_type=Bug) found for the selected upload.",
+        }.get(rubric_level, "No stories found for the selected upload and teams")
+        return jsonify({"error": msg}), 404
 
     global _quality_job_counter
     _quality_job_counter += 1
