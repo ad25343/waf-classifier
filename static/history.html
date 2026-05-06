@@ -1200,8 +1200,9 @@
                                 <th style="text-align:left;padding:8px 16px;white-space:nowrap;">Job #</th>
                                 <th style="text-align:left;padding:8px 12px;white-space:nowrap;">Scored</th>
                                 <th style="text-align:left;padding:8px 12px;">Upload</th>
-                                <th style="text-align:left;padding:8px 12px;">Teams</th>
-                                <th style="text-align:center;padding:8px 8px;white-space:nowrap;">Stories</th>
+                                <th style="text-align:left;padding:8px 8px;white-space:nowrap;">Level</th>
+                                <th style="text-align:left;padding:8px 8px;white-space:nowrap;">Domain</th>
+                                <th style="text-align:center;padding:8px 8px;white-space:nowrap;">Items</th>
                                 <th style="text-align:center;padding:8px 8px;white-space:nowrap;">Avg Score</th>
                                 <th style="text-align:center;padding:8px 8px;white-space:nowrap;color:var(--success);">Ready</th>
                                 <th style="text-align:center;padding:8px 8px;white-space:nowrap;color:var(--warning);">Needs Work</th>
@@ -1210,7 +1211,7 @@
                             </tr>
                         </thead>
                         <tbody id="quality-history-tbody">
-                            <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">No scoring runs yet</td></tr>
+                            <tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted);">No scoring runs yet</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -4471,20 +4472,40 @@ async function loadQualityHistory() {
         if (!tbody) return;
         const runs = data.runs || [];
         if (!runs.length) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">No scoring runs yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted);">No scoring runs yet</td></tr>';
             return;
         }
+        const LEVEL_LABEL = { story: 'Story', feature: 'Feature', epic: 'Epic', defect: 'Defect' };
+        const LEVEL_COLOR = {
+            story:   'var(--purple)',
+            feature: 'var(--teal)',
+            epic:    'var(--accent)',
+            defect:  'var(--error)',
+        };
+        const DOMAIN_LABEL = {
+            data:             'Data & Reporting',
+            capmkts:          'Capital Markets',
+            'sf-origination': 'SF Origination',
+            'mf-servicing':   'MF Servicing',
+            risk:             'Risk & Compliance',
+        };
         tbody.innerHTML = runs.map(r => {
             const avg = r.avg_score || 0;
             const avgColor = avg >= 70 ? 'var(--success)' : avg >= 50 ? 'var(--warning)' : 'var(--error)';
-            const teams = (r.teams || []).join(', ') || '<span style="color:var(--text-muted)">All</span>';
             const scored = (r.scored_at || '').slice(0,16).replace('T',' ');
+            const itemCount = r.item_count != null ? r.item_count : (r.story_count || 0);
+            const lvl = (r.level || 'story').toLowerCase();
+            const lvlLabel = LEVEL_LABEL[lvl] || lvl;
+            const lvlColor = LEVEL_COLOR[lvl] || 'var(--text-secondary)';
+            const dom = (r.business_domain || '').toLowerCase();
+            const domLabel = dom ? (DOMAIN_LABEL[dom] || dom) : '<span style="color:var(--text-muted);">— Generic —</span>';
             return `<tr style="border-top:1px solid var(--border);cursor:pointer;" onclick="if(!event.target.closest('button'))loadQualityRun('${r.run_id}')" title="Click to load this run">
                 <td style="padding:10px 16px;font-weight:600;color:var(--text-primary);">#${r.job_number}</td>
                 <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);white-space:nowrap;">${scored}</td>
                 <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.upload_filename||''}">${r.upload_filename || '—'}</td>
-                <td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">${teams}</td>
-                <td style="text-align:center;padding:10px 8px;font-size:13px;font-weight:600;">${r.story_count}</td>
+                <td style="padding:10px 8px;font-size:11px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;"><span style="color:${lvlColor};">${lvlLabel}</span></td>
+                <td style="padding:10px 8px;font-size:12px;color:var(--text-secondary);">${domLabel}</td>
+                <td style="text-align:center;padding:10px 8px;font-size:13px;font-weight:600;" title="${itemCount} ${lvlLabel.toLowerCase()}${itemCount === 1 ? '' : 's'} scored">${itemCount}</td>
                 <td style="text-align:center;padding:10px 8px;font-size:13px;font-weight:600;color:${avgColor};">${avg}%</td>
                 <td style="text-align:center;padding:10px 8px;font-size:13px;color:var(--success);">${r.ready_count}</td>
                 <td style="text-align:center;padding:10px 8px;font-size:13px;color:var(--warning);">${r.needs_work_count}</td>

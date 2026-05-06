@@ -56,7 +56,7 @@ _FEATURE_RULES = [
     # Page routes (top-level navigation hits)
     (re.compile(r"^/$"),                                 "Page — Home"),
     (re.compile(r"^/classify$"),                         "Page — Classify"),
-    (re.compile(r"^/history$"),                          "Page — Analytics / Story Quality"),
+    (re.compile(r"^/history$"),                          "Page — Analytics / Backlog Quality"),
     (re.compile(r"^/dashboard$"),                        "Page — Dashboard"),
     (re.compile(r"^/teams$"),                            "Page — Teams"),
     (re.compile(r"^/lineage$"),                          "Page — Epic Lineage"),

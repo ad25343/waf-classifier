@@ -928,25 +928,42 @@ def quality_history():
     rows = db.execute(
         """SELECT * FROM quality_runs ORDER BY scored_at DESC"""
     ).fetchall()
-    return jsonify({
-        "runs": [
-            {
-                "run_id": r["run_id"],
-                "job_number": r["job_number"],
-                "scored_at": r["scored_at"],
-                "upload_id": r["upload_id"],
-                "upload_filename": r["upload_filename"],
-                "domain": r["domain"],
-                "teams": json.loads(r["teams_json"] or "[]"),
-                "story_count": r["story_count"],
-                "avg_score": r["avg_score"],
-                "ready_count": r["ready_count"],
-                "needs_work_count": r["needs_work_count"],
-                "not_ready_count": r["not_ready_count"],
-            }
-            for r in rows
-        ]
-    })
+    # The 'domain' column on quality_runs holds the canonical rubric_id
+    # (e.g. 'epic-dor', 'story-dor:data') after the v3.7 refactor. Decode it
+    # into level + domain so the UI can show what was actually scored.
+    out = []
+    for r in rows:
+        rubric_id = r["domain"] or "story-dor"
+        level = "story"
+        dom = ""
+        try:
+            base, _, dom = rubric_id.partition(":")
+            if base.endswith("-dor"):
+                level = base[:-4]
+        except Exception:
+            pass
+        out.append({
+            "run_id": r["run_id"],
+            "job_number": r["job_number"],
+            "scored_at": r["scored_at"],
+            "upload_id": r["upload_id"],
+            "upload_filename": r["upload_filename"],
+            "domain": r["domain"],
+            "rubric_id": rubric_id,
+            "level": level,
+            "business_domain": dom,
+            "teams": json.loads(r["teams_json"] or "[]"),
+            # `story_count` is preserved for back-compat; `item_count` is the
+            # forward-looking name (works at any level — Stories, Features,
+            # Epics, Defects).
+            "story_count": r["story_count"],
+            "item_count":  r["story_count"],
+            "avg_score": r["avg_score"],
+            "ready_count": r["ready_count"],
+            "needs_work_count": r["needs_work_count"],
+            "not_ready_count": r["not_ready_count"],
+        })
+    return jsonify({"runs": out})
 
 
 @quality_bp.route("/api/quality/history/<run_id>", methods=["DELETE"])
