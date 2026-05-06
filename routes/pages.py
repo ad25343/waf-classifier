@@ -119,3 +119,8 @@ def aliases_page():
 @pages_bp.route("/quality-domains")
 def quality_domains_page():
     return _serve("quality-domains.html")
+
+
+@pages_bp.route("/admin/usage")
+def admin_usage_page():
+    return _serve("admin-usage.html")

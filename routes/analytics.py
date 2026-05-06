@@ -1087,6 +1087,15 @@ Write the narrative now:"""
                 max_tokens=300,
                 messages=[{"role": "user", "content": prompt}]
             )
+            try:
+                from routes.usage import record_token_use
+                u = getattr(response, "usage", None)
+                if u:
+                    record_token_use(AI_MODEL, getattr(u, "input_tokens", 0) or 0,
+                                     getattr(u, "output_tokens", 0) or 0,
+                                     route="/api/analytics/narrative")
+            except Exception:
+                pass
             narrative = response.content[0].text.strip()
         else:
             # Bedrock

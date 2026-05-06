@@ -91,6 +91,10 @@ app.register_blueprint(disputes_bp)
 from routes.aliases import aliases_bp
 app.register_blueprint(aliases_bp)
 
+from routes.usage import admin_bp, install_usage_tracking
+app.register_blueprint(admin_bp)
+install_usage_tracking(app)
+
 
 # ── Startup ──────────────────────────────────────────────────────
 def auto_load_sample_data():

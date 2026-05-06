@@ -28,6 +28,23 @@ _rewrite_cache: dict = {}
 BATCH_SIZE = 5  # stories per AI call
 
 
+def _log_tokens_safe(resp, model, route=None):
+    """Best-effort token logging — never raises."""
+    try:
+        usage = getattr(resp, "usage", None)
+        if not usage:
+            return
+        from routes.usage import record_token_use
+        record_token_use(
+            model=model,
+            input_tokens=getattr(usage, "input_tokens", 0) or 0,
+            output_tokens=getattr(usage, "output_tokens", 0) or 0,
+            route=route,
+        )
+    except Exception:
+        pass
+
+
 # ── Rubric loader ─────────────────────────────────────────────────────────────
 #
 # Rubrics are now JSON files in /rubrics/, sourced from the Story Excellence
@@ -380,6 +397,7 @@ ITEMS TO SCORE:
         max_tokens=2048,
         messages=[{"role": "user", "content": prompt}],
     )
+    _log_tokens_safe(resp, AI_MODEL, route="/api/quality/score")
     raw = resp.content[0].text.strip()
     if raw.startswith("```"):
         parts = raw.split("```")
@@ -880,6 +898,7 @@ Keep responses focused — lead with the updated content, add a brief explanatio
             system=system,
             messages=messages,
         )
+        _log_tokens_safe(resp, AI_MODEL, route="/api/quality/chat")
         reply = resp.content[0].text.strip()
         return jsonify({"reply": reply})
     except Exception as e:
@@ -993,6 +1012,7 @@ Use this structure (one section per Definition-of-Ready criterion):
             max_tokens=1500,
             messages=[{"role": "user", "content": prompt}],
         )
+        _log_tokens_safe(resp, AI_MODEL, route="/api/quality/rewrite")
         rewritten = resp.content[0].text.strip()
         # Cache so re-clicks (and the post-click read) don't re-spend on AI.
         _rewrite_cache[cache_key] = {

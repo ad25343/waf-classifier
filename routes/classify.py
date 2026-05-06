@@ -141,6 +141,15 @@ def classify():
             system=system,
             messages=recent_history
         )
+        try:
+            from routes.usage import record_token_use
+            u = getattr(response, "usage", None)
+            if u:
+                record_token_use(AI_MODEL, getattr(u, "input_tokens", 0) or 0,
+                                 getattr(u, "output_tokens", 0) or 0,
+                                 route="/api/classify")
+        except Exception:
+            pass
 
         assistant_message = response.content[0].text
         chat_history.append({"role": "assistant", "content": assistant_message})
@@ -190,6 +199,15 @@ def batch_classify():
             system=build_system_prompt(),
             messages=[{"role": "user", "content": batch_prompt}]
         )
+        try:
+            from routes.usage import record_token_use
+            u = getattr(response, "usage", None)
+            if u:
+                record_token_use(AI_MODEL, getattr(u, "input_tokens", 0) or 0,
+                                 getattr(u, "output_tokens", 0) or 0,
+                                 route="/api/batch-classify")
+        except Exception:
+            pass
 
         return jsonify({
             "response": response.content[0].text,

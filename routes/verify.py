@@ -99,6 +99,15 @@ def _classify_single_batch(batch, batch_offset, system_prompt, api_key, job_id_s
             system=system_prompt,
             messages=[{"role": "user", "content": batch_prompt}]
         )
+        try:
+            from routes.usage import record_token_use
+            u = getattr(response, "usage", None)
+            if u:
+                record_token_use(AI_MODEL, getattr(u, "input_tokens", 0) or 0,
+                                 getattr(u, "output_tokens", 0) or 0,
+                                 route="/api/verify")
+        except Exception:
+            pass
         ai_text = response.content[0].text
 
         ai_lines = []

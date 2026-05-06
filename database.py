@@ -375,6 +375,43 @@ def init_db():
                 "VALUES (?, ?, 'seed', ?)",
                 (_alias, _canonical, _now)
             )
+
+    # ── Usage tracking ──────────────────────────────────────────────────
+    # Aggregate, anonymous request + AI-token telemetry. No row-level
+    # record tracking — these tables only store feature-level events so
+    # the admin can see which features are used vs. ignored, and where
+    # the AI spend goes.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS usage_events (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts          TEXT    NOT NULL,
+            route       TEXT    NOT NULL,
+            method      TEXT    NOT NULL,
+            status      INTEGER,
+            response_ms INTEGER,
+            feature     TEXT,
+            session_id  TEXT
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_events_ts      ON usage_events(ts)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_events_feature ON usage_events(feature)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_events_route   ON usage_events(route)")
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS token_events (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts            TEXT    NOT NULL,
+            route         TEXT,
+            feature       TEXT,
+            model         TEXT,
+            input_tokens  INTEGER NOT NULL DEFAULT 0,
+            output_tokens INTEGER NOT NULL DEFAULT 0,
+            cost_usd      REAL    NOT NULL DEFAULT 0
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_token_events_ts      ON token_events(ts)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_token_events_feature ON token_events(feature)")
+
     conn.commit()
     conn.close()
 

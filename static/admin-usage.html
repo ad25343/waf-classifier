@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Classifier | Usage Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
+            --bg-primary: #111318; --bg-secondary: #1a1c25; --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1; --text-secondary: #9ca0b0; --text-muted: #6c7086;
+            --accent: #e8944a; --accent-hover: #d4832f;
+            --success: #4ade80; --warning: #fbbf24; --error: #f87171;
+            --teal: #2dd4bf; --purple: #c084fc; --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5; --bg-secondary: #ffffff; --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e; --text-secondary: #4a4a6a; --text-muted: #8888a0;
+            --accent: #d4722a; --accent-hover: #c0611e;
+            --success: #16a34a; --warning: #d97706; --error: #dc2626;
+            --teal: #0d9488; --purple: #9333ea; --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+               background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #d4722a); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: white; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+        .top-nav { display: flex; gap: 4px; padding: 8px 24px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); justify-content: flex-end; }
+        .top-nav-link { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+        .top-nav-link:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .top-nav-link.active { background: var(--accent); color: #fff; }
+        .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
+        .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
+        .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; min-width: 200px; padding: 6px; z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
+        .nav-dropdown-item { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; white-space: nowrap; }
+        .nav-dropdown-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-dropdown-item.active { color: var(--accent); font-weight: 600; }
+        .theme-toggle { background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 14px; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 16px 24px 40px; }
+
+        .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+        .toolbar select, .toolbar button { padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 7px; color: var(--text-primary); font-size: 13px; }
+        .toolbar button { cursor: pointer; }
+        .toolbar .since-label { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 18px; }
+        @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 700px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+        .kpi { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+        .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+        .kpi-value { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+        .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+        .row-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 18px; }
+        @media (max-width: 1000px) { .row-2 { grid-template-columns: 1fr; } }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+        .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); font-weight: 600; margin-bottom: 12px; }
+        .chart-wrap { position: relative; height: 240px; }
+
+        table.usage { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table.usage th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        table.usage td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        table.usage tr:hover td { background: var(--bg-tertiary); cursor: pointer; }
+        table.usage td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        table.usage .feature-name { color: var(--text-primary); font-weight: 600; }
+        table.usage .last-used { font-size: 11px; color: var(--text-muted); }
+        table.usage .err { color: var(--error); font-weight: 600; }
+
+        .pill { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.4px; padding: 2px 6px; border-radius: 4px; }
+        .pill.warn { background: rgba(251,191,36,0.15); color: var(--warning); }
+        .pill.ok   { background: rgba(74,222,128,0.15); color: var(--success); }
+        .pill.muted{ background: var(--bg-tertiary); color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/" class="header-left">
+        <div class="logo">W</div>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Usage Analytics — feature use, AI token spend, and retirement candidates</p>
+        </div>
+    </a>
+</div>
+
+<nav class="top-nav">
+    <a href="/" class="top-nav-link">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <div class="nav-dropdown">
+        <span class="top-nav-link nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/history"  class="nav-dropdown-item">Analyze Stories</a>
+            <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
+            <a href="/teams"    class="nav-dropdown-item">Teams</a>
+            <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
+        </div>
+    </div>
+    <div class="nav-dropdown">
+        <span class="top-nav-link active nav-dropdown-btn">Admin <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/merge"           class="nav-dropdown-item">File Merger</a>
+            <a href="/waf-reference"   class="nav-dropdown-item">WAF Reference</a>
+            <a href="/aliases"         class="nav-dropdown-item">Category Aliases</a>
+            <a href="/quality-domains" class="nav-dropdown-item">Domain Editor</a>
+            <a href="/admin/usage"     class="nav-dropdown-item active">Usage Analytics</a>
+        </div>
+    </div>
+    <a href="/settings" class="top-nav-link">Settings</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light"><span class="theme-icon">☾</span></button>
+</nav>
+<script>
+document.querySelectorAll('.nav-dropdown-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const dd = btn.closest('.nav-dropdown');
+        document.querySelectorAll('.nav-dropdown.open').forEach(d => { if (d !== dd) d.classList.remove('open'); });
+        dd.classList.toggle('open');
+    });
+});
+document.addEventListener('click', () => {
+    document.querySelectorAll('.nav-dropdown.open').forEach(d => d.classList.remove('open'));
+});
+</script>
+
+<div class="container">
+
+    <div class="toolbar">
+        <label style="font-size:12px;color:var(--text-muted);">Window:</label>
+        <select id="window-sel" onchange="reloadAll()">
+            <option value="all">All time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+        </select>
+        <button onclick="reloadAll()">↻ Refresh</button>
+        <span class="since-label" id="since-label"></span>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Total Requests</div><div class="kpi-value" id="kpi-requests">—</div><div class="kpi-sub">across all features</div></div>
+        <div class="kpi"><div class="kpi-label">Active Features</div><div class="kpi-value" id="kpi-features">—</div><div class="kpi-sub">with at least 1 hit</div></div>
+        <div class="kpi"><div class="kpi-label">Sessions</div><div class="kpi-value" id="kpi-sessions">—</div><div class="kpi-sub">unique browsers</div></div>
+        <div class="kpi"><div class="kpi-label">Errors (4xx/5xx)</div><div class="kpi-value" id="kpi-errors">—</div><div class="kpi-sub" id="kpi-errors-pct">— of total</div></div>
+        <div class="kpi"><div class="kpi-label">Tokens In/Out</div><div class="kpi-value" id="kpi-tokens">—</div><div class="kpi-sub" id="kpi-tokens-sub">— input · — output</div></div>
+        <div class="kpi"><div class="kpi-label">AI Cost (est.)</div><div class="kpi-value" id="kpi-cost">—</div><div class="kpi-sub">USD across AI calls</div></div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="row-2">
+        <div class="card">
+            <h3>Feature use over time</h3>
+            <div class="chart-wrap"><canvas id="chart-usage"></canvas></div>
+        </div>
+        <div class="card">
+            <h3>Daily AI cost</h3>
+            <div class="chart-wrap"><canvas id="chart-cost"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Top features -->
+    <div class="card" style="margin-bottom:18px;">
+        <h3>Most used features</h3>
+        <table class="usage">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th class="num">Hits</th>
+                    <th class="num">Sessions</th>
+                    <th class="num">Avg ms</th>
+                    <th class="num">Errors</th>
+                    <th class="num">AI cost</th>
+                    <th>Last used</th>
+                </tr>
+            </thead>
+            <tbody id="top-features"></tbody>
+        </table>
+    </div>
+
+    <!-- Bottom features (retirement candidates) -->
+    <div class="card">
+        <h3>Least used features <span class="pill warn">retirement candidates</span></h3>
+        <table class="usage">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th class="num">Hits</th>
+                    <th class="num">Sessions</th>
+                    <th class="num">Avg ms</th>
+                    <th>Last used</th>
+                </tr>
+            </thead>
+            <tbody id="bottom-features"></tbody>
+        </table>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">Features with zero hits in the active window are missing entirely — they won't appear here. Pick "All time" to see absolute use.</div>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    const nxt = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nxt);
+    localStorage.setItem('waf-theme', nxt);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = nxt === 'dark' ? '☾' : '☀';
+}
+
+function fmtInt(n)   { return Number(n || 0).toLocaleString(); }
+function fmtMoney(n) { return '$' + Number(n || 0).toFixed(4); }
+function fmtMs(n)    { const v = Number(n || 0); return v < 1000 ? v.toFixed(0) + ' ms' : (v / 1000).toFixed(2) + ' s'; }
+function fmtDate(s)  {
+    if (!s) return '—';
+    try { return new Date(s).toLocaleString(); } catch (e) { return s; }
+}
+
+let _usageChart = null, _costChart = null;
+
+function _windowParam() {
+    const v = document.getElementById('window-sel').value;
+    return v === 'all' ? '' : '?days=' + v;
+}
+
+async function _fetch(path) {
+    const res = await fetch('/api/admin/usage' + path + (path.includes('?') ? '&' : (_windowParam() ? '&' + _windowParam().slice(1) : '')));
+    return await res.json();
+}
+
+async function loadSummary() {
+    const qs = _windowParam();
+    const res = await fetch('/api/admin/usage/summary' + qs);
+    const d = await res.json();
+    document.getElementById('kpi-requests').textContent = fmtInt(d.total_requests);
+    document.getElementById('kpi-features').textContent = fmtInt(d.unique_features);
+    document.getElementById('kpi-sessions').textContent = fmtInt(d.unique_sessions);
+    document.getElementById('kpi-errors').textContent   = fmtInt(d.error_count);
+    const errPct = d.total_requests ? ((d.error_count / d.total_requests) * 100).toFixed(1) : '0.0';
+    document.getElementById('kpi-errors-pct').textContent = errPct + '% of total';
+    document.getElementById('kpi-tokens').textContent = fmtInt((d.input_tokens || 0) + (d.output_tokens || 0));
+    document.getElementById('kpi-tokens-sub').textContent = fmtInt(d.input_tokens || 0) + ' input · ' + fmtInt(d.output_tokens || 0) + ' output';
+    document.getElementById('kpi-cost').textContent = fmtMoney(d.ai_cost_usd);
+    document.getElementById('since-label').textContent = d.since
+        ? 'Earliest event: ' + fmtDate(d.since)
+        : 'No events recorded yet — exercise the app to populate the dashboard.';
+}
+
+async function loadFeatures() {
+    const qs = _windowParam();
+    const res = await fetch('/api/admin/usage/features' + qs);
+    const d = await res.json();
+    const features = d.features || [];
+
+    const top = features.slice(0, 10);
+    const bottom = features.slice(-10).reverse(); // smallest first
+
+    const renderRow = (f, includeCost) => `
+        <tr>
+            <td class="feature-name">${f.feature}</td>
+            <td class="num">${fmtInt(f.hits)}</td>
+            <td class="num">${fmtInt(f.sessions)}</td>
+            <td class="num">${fmtMs(f.avg_ms)}</td>
+            ${includeCost ? `<td class="num ${f.errors > 0 ? 'err' : ''}">${fmtInt(f.errors)}</td>` : ''}
+            ${includeCost ? `<td class="num">${f.ai_cost_usd > 0 ? fmtMoney(f.ai_cost_usd) : '—'}</td>` : ''}
+            <td class="last-used">${fmtDate(f.last_used)}</td>
+        </tr>`;
+
+    document.getElementById('top-features').innerHTML = top.length
+        ? top.map(f => renderRow(f, true)).join('')
+        : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No data yet.</td></tr>';
+
+    document.getElementById('bottom-features').innerHTML = bottom.length
+        ? bottom.map(f => renderRow(f, false)).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">No data yet.</td></tr>';
+}
+
+async function loadUsageTrend() {
+    const qs = _windowParam();
+    const res = await fetch('/api/admin/usage/trend' + qs);
+    const d = await res.json();
+    const points = d.points || [];
+
+    // Aggregate to daily totals + per-top-feature lines
+    const days = [...new Set(points.map(p => p.day))].sort();
+    const featureTotals = {};
+    points.forEach(p => { featureTotals[p.feature] = (featureTotals[p.feature] || 0) + p.hits; });
+    const topN = Object.entries(featureTotals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
+    const colors = ['#e8944a', '#4ade80', '#60a5fa', '#c084fc', '#fbbf24'];
+    const datasets = topN.map((feat, i) => ({
+        label: feat.replace(/^Page\s—\s/, '').replace(/^Story Quality\s—\s/, 'SQ — '),
+        data: days.map(d => {
+            const found = points.find(p => p.day === d && p.feature === feat);
+            return found ? found.hits : 0;
+        }),
+        borderColor: colors[i],
+        backgroundColor: colors[i] + '22',
+        borderWidth: 2,
+        tension: 0.25,
+    }));
+
+    const canvas = document.getElementById('chart-usage');
+    if (_usageChart) _usageChart.destroy();
+    _usageChart = new Chart(canvas, {
+        type: 'line',
+        data: { labels: days, datasets: datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#9ca0b0', boxWidth: 12, font: { size: 11 } } } },
+            scales: {
+                x: { ticks: { color: '#6c7086', font: { size: 10 } }, grid: { color: '#2e3244' } },
+                y: { beginAtZero: true, ticks: { color: '#6c7086', font: { size: 10 } }, grid: { color: '#2e3244' } },
+            },
+        },
+    });
+}
+
+async function loadCostTrend() {
+    const qs = _windowParam();
+    const res = await fetch('/api/admin/usage/tokens-trend' + qs);
+    const d = await res.json();
+    const points = d.points || [];
+
+    const canvas = document.getElementById('chart-cost');
+    if (_costChart) _costChart.destroy();
+    _costChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: points.map(p => p.day),
+            datasets: [{
+                label: 'AI cost (USD)',
+                data: points.map(p => p.cost_usd),
+                backgroundColor: 'rgba(232,148,74,0.5)',
+                borderColor: '#e8944a',
+                borderWidth: 1,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => '$' + Number(ctx.parsed.y || 0).toFixed(4),
+                    },
+                },
+            },
+            scales: {
+                x: { ticks: { color: '#6c7086', font: { size: 10 } }, grid: { color: '#2e3244' } },
+                y: { beginAtZero: true, ticks: {
+                    color: '#6c7086', font: { size: 10 },
+                    callback: v => '$' + Number(v).toFixed(2),
+                }, grid: { color: '#2e3244' } },
+            },
+        },
+    });
+}
+
+async function reloadAll() {
+    await Promise.all([loadSummary(), loadFeatures(), loadUsageTrend(), loadCostTrend()]);
+}
+
+reloadAll();
+</script>
+
+</body>
+</html>
