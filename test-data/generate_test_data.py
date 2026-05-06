@@ -25,16 +25,23 @@ COLUMNS = [
     "Issue Key",
 ]
 
-WAF_COLOR_MAP = {
-    "KTLO (Keep the Lights On)": "GRAY",
-    "Business Maintenance": "BLACK",
-    "Technical Maintenance": "BLACK",
-    "Regulatory (Operational)": "RED",
-    "Enterprise Strategic Priority": "ORANGE",
-    "Other Block Priority": "GREEN",
+# Canonical WAF taxonomy — single source of truth for test-data generation.
+# Color and Run/Change are PROPERTIES of Category, never set independently.
+# Mirrors the 8 categories in state.DEFAULT_WAF_CATEGORIES.
+WAF_TAXONOMY = {
+    "KTLO (Keep the Lights On)":     {"color": "GRAY",   "run_change": "Run"},
+    "Business Maintenance":          {"color": "BLACK",  "run_change": "Run"},
+    "Technical Maintenance":         {"color": "BLACK",  "run_change": "Run"},
+    "Regulatory (Operational)":      {"color": "RED",    "run_change": "Run"},
+    "Regulatory Mandated Change":    {"color": "RED",    "run_change": "Change"},
+    "Enterprise Strategic Priority": {"color": "ORANGE", "run_change": "Change"},
+    "Top Divisional Priority":       {"color": "YELLOW", "run_change": "Change"},
+    "Other Block Priority":          {"color": "GREEN",  "run_change": "Change"},
 }
+WAF_COLOR_MAP = {k: v["color"] for k, v in WAF_TAXONOMY.items()}
+WAF_RUN_CHANGE_MAP = {k: v["run_change"] for k, v in WAF_TAXONOMY.items()}
 
-ALL_CATEGORIES = list(WAF_COLOR_MAP.keys())
+ALL_CATEGORIES = list(WAF_TAXONOMY.keys())
 
 
 def random_date(start: datetime, end: datetime) -> str:
@@ -217,7 +224,7 @@ def build_compliance_dataset() -> list[dict]:
 
         waf_color = WAF_COLOR_MAP[waf_category]
 
-        run_change = "Run" if true_cat in ["KTLO (Keep the Lights On)", "Technical Maintenance", "Regulatory (Operational)"] else "Change"
+        run_change = WAF_RUN_CHANGE_MAP.get(true_cat, "Change")
 
         ts = random_date(datetime(2024, 7, 1), datetime(2024, 12, 31))
 
@@ -403,7 +410,7 @@ def build_platform_dataset() -> list[dict]:
 
         waf_color = WAF_COLOR_MAP[waf_category]
 
-        run_change = "Run" if true_cat in ["KTLO (Keep the Lights On)", "Technical Maintenance"] else "Change"
+        run_change = WAF_RUN_CHANGE_MAP.get(true_cat, "Change")
 
         ts = random_date(datetime(2024, 10, 1), datetime(2025, 3, 31))
 
@@ -623,7 +630,7 @@ def build_product_dataset() -> list[dict]:
 
         waf_color = WAF_COLOR_MAP[waf_category]
 
-        run_change = "Change" if true_cat in ["Enterprise Strategic Priority", "Other Block Priority"] else "Run"
+        run_change = WAF_RUN_CHANGE_MAP.get(true_cat, "Run")
 
         ts = random_date(datetime(2025, 1, 1), datetime(2025, 6, 30))
 

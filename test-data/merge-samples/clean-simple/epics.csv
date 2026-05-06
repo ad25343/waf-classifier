@@ -1,21 +1,21 @@
 Epic Id,Epic Name,Epic Desc,Block,WAF
 EP-001,Payments Modernization (Change),Migrate legacy payment rails to cloud-native microservices,Banking & Payments Org,ORANGE - Enterprise Strategic Priority
-EP-002,Identity & Access Management (Run),Consolidate SSO and RBAC across all enterprise applications,Platform & Infra Org,GRAY - KTLO
-EP-003,Customer Data Platform (Change),Build unified customer 360 view with real-time event streaming,Data & Analytics Org,BLUE - Efficiency
+EP-002,Identity & Access Management (Run),Consolidate SSO and RBAC across all enterprise applications,Platform & Infra Org,GRAY - KTLO (Keep the Lights On)
+EP-003,Customer Data Platform (Change),Build unified customer 360 view with real-time event streaming,Data & Analytics Org,GREEN - Other Block Priority
 EP-004,Regulatory Reporting Suite (Run),Automate regulatory filings and audit trails for compliance,Risk & Compliance Org,RED - Regulatory (Operational)
 EP-005,Mobile Banking App v4 (Change),Complete redesign of iOS and Android banking apps,Digital Channels Org,ORANGE - Enterprise Strategic Priority
 EP-006,Core Banking Upgrade (Change),Upgrade core banking system from legacy mainframe to distributed platform,Banking & Payments Org,ORANGE - Enterprise Strategic Priority
-EP-007,Cloud Infrastructure Migration (Change),Move all on-prem workloads to AWS cloud,Platform & Infra Org,BLUE - Efficiency
-EP-008,Security Zero Trust Programme (Run),Implement zero trust network access across all enterprise systems,Platform & Infra Org,PURPLE - Security
-EP-009,Data Governance Framework (Run),Establish enterprise data governance policies and tooling,Data & Analytics Org,GRAY - KTLO
+EP-007,Cloud Infrastructure Migration (Change),Move all on-prem workloads to AWS cloud,Platform & Infra Org,GREEN - Other Block Priority
+EP-008,Security Zero Trust Programme (Run),Implement zero trust network access across all enterprise systems,Platform & Infra Org,RED - Regulatory (Operational)
+EP-009,Data Governance Framework (Run),Establish enterprise data governance policies and tooling,Data & Analytics Org,GRAY - KTLO (Keep the Lights On)
 EP-010,Customer Onboarding Automation (Change),End-to-end digital onboarding for retail and business customers,Digital Channels Org,ORANGE - Enterprise Strategic Priority
 EP-011,Treasury Management System (Change),Replace legacy TMS with cloud-native treasury platform,Banking & Payments Org,ORANGE - Enterprise Strategic Priority
 EP-012,Fraud Prevention Platform (Change),Build next-gen ML fraud detection and case management,Risk & Compliance Org,ORANGE - Enterprise Strategic Priority
 EP-013,Audit & Controls Automation (Run),Automate internal controls testing and audit evidence collection,Risk & Compliance Org,RED - Regulatory (Operational)
-EP-014,API Gateway Modernisation (Change),Replace legacy ESB with API gateway and event mesh,Platform & Infra Org,BLUE - Efficiency
-EP-015,Employee Digital Workplace (Run),Upgrade internal tooling and collaboration platforms,Corporate Services Org,GRAY - KTLO
+EP-014,API Gateway Modernisation (Change),Replace legacy ESB with API gateway and event mesh,Platform & Infra Org,GREEN - Other Block Priority
+EP-015,Employee Digital Workplace (Run),Upgrade internal tooling and collaboration platforms,Corporate Services Org,GRAY - KTLO (Keep the Lights On)
 EP-016,Lending Origination Platform (Change),New digital loan origination system for retail and SME,Banking & Payments Org,ORANGE - Enterprise Strategic Priority
 EP-017,Real-time Payments (Change),ISO 20022 real-time payment rails for instant transfer,Banking & Payments Org,ORANGE - Enterprise Strategic Priority
-EP-018,Data Warehouse Decommission (Change),Migrate from legacy EDW to cloud lakehouse on Snowflake,Data & Analytics Org,BLUE - Efficiency
-EP-019,Vulnerability Management (Run),Continuous vulnerability scanning and remediation across all systems,Platform & Infra Org,PURPLE - Security
-EP-020,Branch Network Digitisation (Change),Digital self-service capabilities for physical branch network,Digital Channels Org,YELLOW - Top Divisional
+EP-018,Data Warehouse Decommission (Change),Migrate from legacy EDW to cloud lakehouse on Snowflake,Data & Analytics Org,GREEN - Other Block Priority
+EP-019,Vulnerability Management (Run),Continuous vulnerability scanning and remediation across all systems,Platform & Infra Org,RED - Regulatory (Operational)
+EP-020,Branch Network Digitisation (Change),Digital self-service capabilities for physical branch network,Digital Channels Org,YELLOW - Top Divisional Priority
