@@ -8,7 +8,7 @@ Real Story Excellence playbook adopted, composite rubrics with optional domain e
 
 ### Story Quality scoring — major rewrite
 
-- **Real playbook in repo.** The fictional `"GSE-MF Story Excellence Playbook v1.0"` attribution that shipped in v3.4.0 has been replaced with the actual *Story Excellence Playbook v2*, now stored at `docs/playbook/story-excellence-v2.docx` (canonical) and `docs/playbook/story-excellence-v2.md` (extracted text for diff-friendly PR review). All scoring now traces back to a verifiable source document.
+- **Real playbook in repo.** The fictional `"GSE-MF Story Excellence Playbook v1.0"` attribution that shipped in v3.4.0 has been replaced with the actual *Story Excellence Playbook v2*, now stored at `docs/playbook/story-excellence-v2.docx` (canonical), `docs/playbook/story-excellence-v2.md` (extracted text for diff-friendly PR review), `docs/playbook/story-excellence-v2.pptx` (18-slide companion deck — Epic / Feature / Story end-to-end), and `docs/playbook/story-excellence-mf-v1.pptx` (11-slide MF / Data & Reporting variant focused on Story-level DoR/DoD with reporting / pipeline / analytics-spike examples). All scoring now traces back to a verifiable source document.
 - **Rubrics as data, not code.** The hardcoded `RUBRICS` dict in `routes/quality.py` is gone. Rubrics now live as JSON files under `rubrics/` so editing a criterion no longer requires a code change. Each criterion carries `id`, `name`, `description`, `why`, `fix`, `good_example`, `required`, `weight`, and `scored_by` (`ai` | `system`).
 - **Four base level rubrics** (universal across domains):
   - `rubrics/base/story-dor.json` — 7 criteria from playbook §8.3 (replaces the old 9-criterion rubric)
