@@ -64,7 +64,11 @@ A new shared helper `static/dispute-modal.js` is auto-injected on every page by 
 - **Two-phase upload flow.** `/api/merge/preview` returns suggested column mappings + sample rows. User confirms or adjusts in the UI, then `/api/merge/process` runs the merge with confirmed mappings. Tokens are full UUIDs with a 1-hour TTL.
 - **Two download buttons.** "Download All" (complete + orphans, with Status column) and "Download Orphans" (orphans only, conditionally visible).
 - **"Submit Complete for Analysis"** confirmation modal surfaces what's being excluded before AI analysis is requested.
-- **Sample data updated.** `test-data/merge-samples/` epic/feature/story files now use name-based joins, include intentional orphans for demo, and seed alias-system test records (`Audit & Compliance`, `Lift and Shift`, `BAU Maintenance`, `Innovation Bet`) that require manual alias entries to map. New `sample-consolidated.csv` provides the same dataset flattened into one file for the upload/verify path.
+- **Sample data — restructured + completeness pass.** Consolidated all merge fixtures under `test-data/merge-samples/` (the prior `samples/` top-level folder is gone). Three sets now ship side by side, each with `epics.csv`, `features.csv`, `stories.csv`, AND a flattened `consolidated.csv` for the single-file upload path:
+  - `jira-realistic/` — 9 epics × 15 features × 31 stories. Realistic Jira-export schema with **complete columns** (Description, WAF Color, Run/Change, Block, Sponsor on epics; Description + WAF Color on features; Description + Story Points on stories). Multi-LoB, with seeded orphans + the 4 alias-test wrenches.
+  - `clean-simple/` — 20 epics × 31 features × 76 stories. Simpler 5-column schema with WAF Color encoded as `COLOR - Category`. All joins clean; no orphans.
+  - `edge-cases-simple/` — 4 × 8 × 18. Same simple schema, but seeded with orphan stories, orphan features, and malformed rows for testing the orphan-handling UI.
+  Each set has a `consolidated.csv` ready for the `/history` upload path. New `test-data/merge-samples/README.md` documents the structure and which set to use for which test scenario.
 
 ### Team of Teams — filter bugfix + drill-down UX
 
