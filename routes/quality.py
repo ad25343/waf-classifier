@@ -885,7 +885,8 @@ def quality_results():
             params.extend(teams)
 
     rows = db.execute(
-        f"""SELECT s.*, c.story_description
+        f"""SELECT s.*, c.story_description, c.epic, c.parent_feature, c.epic_id,
+                   c.feature_id, c.story_type, c.epic_description, c.feature_description
             FROM story_quality_scores s
             JOIN classifications c ON c.id = s.classification_id
             WHERE {where}
@@ -895,16 +896,26 @@ def quality_results():
 
     results = [
         {
-            "classification_id": r["classification_id"],
-            "story_title": r["story_title"],
-            "team": r["team"],
-            "story_id": r["story_id"],
-            "overall_score": r["overall_score"],
-            "passed_count": r["passed_count"],
-            "total_count": r["total_count"],
-            "criteria": json.loads(r["criteria_json"] or "{}"),
-            "scored_at": r["scored_at"],
-            "description_empty": not bool((r["story_description"] or "").strip()),
+            "classification_id":   r["classification_id"],
+            "story_title":         r["story_title"],
+            "team":                r["team"],
+            "story_id":            r["story_id"],
+            "overall_score":       r["overall_score"],
+            "passed_count":        r["passed_count"],
+            "total_count":         r["total_count"],
+            "criteria":            json.loads(r["criteria_json"] or "{}"),
+            "scored_at":           r["scored_at"],
+            "description_empty":   not bool((r["story_description"] or "").strip()),
+            # Surface the original content + hierarchy context so the UI can
+            # show users what was actually scored, not just the criteria.
+            "story_description":   r["story_description"] or "",
+            "epic":                r["epic"]                or "",
+            "epic_id":             r["epic_id"]             or "",
+            "epic_description":    r["epic_description"]    or "",
+            "parent_feature":      r["parent_feature"]      or "",
+            "feature_id":          r["feature_id"]          or "",
+            "feature_description": r["feature_description"] or "",
+            "story_type":          r["story_type"]          or "",
         }
         for r in rows
     ]

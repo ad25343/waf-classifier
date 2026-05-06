@@ -588,7 +588,7 @@
         <button class="tab" data-tab="summary">Summary</button>
         <button class="tab" data-tab="lineage">Epic Lineage</button>
         <button class="tab" data-tab="history">History</button>
-        <button class="tab" data-tab="quality">Story Quality</button>
+        <button class="tab" data-tab="quality">Backlog Quality</button>
     </div>
 
     <!-- ═══ SUMMARY ═══ -->
@@ -1046,7 +1046,7 @@
 
         <!-- Filters -->
         <div class="card" style="margin-bottom:16px;">
-            <div class="card-title" style="margin-bottom:14px;">Story Quality Scoring</div>
+            <div class="card-title" style="margin-bottom:14px;">Backlog Quality Scoring</div>
             <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
                 Using the <strong style="color:var(--text-secondary);">Data Source</strong> selected above. Select a specific upload to enable scoring.
             </div>
@@ -4157,24 +4157,70 @@ function _renderQualityStoryRows(sorted) {
             const c = r.criteria[cid] || {};
             const def = _qualityCriterion(cid);
             const pass = !!c.pass;
-            const fix = c.fix || (!pass ? def.fix : '') || '';
+            const aiFix = c.fix || '';                                // AI's per-item explanation (specific)
+            const rubricFix = !pass && def.fix ? def.fix : '';        // Rubric's generic recommendation
             const example = (!pass && def.good_example) ? def.good_example : '';
             const required = !!def.required;
-            return `<div style="padding:6px 0;border-bottom:1px solid var(--border);">
+            return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
                 <div style="display:flex;gap:10px;align-items:flex-start;">
                     <span style="font-size:14px;flex-shrink:0;margin-top:1px;">${pass ? '✓' : '✗'}</span>
                     <div style="flex:1;">
                         <span style="font-size:12px;font-weight:600;color:${pass ? 'var(--success)' : (required ? 'var(--error)' : 'var(--text-primary)')};">
                             ${def.name || cid}${required ? ' <span style="font-size:9px;font-weight:700;letter-spacing:0.4px;color:var(--error);">REQUIRED</span>' : ''}
                         </span>
-                        ${!pass && fix ? `<div style="font-size:11px;color:var(--warning);margin-top:3px;">→ ${fix}</div>` : ''}
-                        ${example ? `<div style="font-size:11px;color:var(--success);margin-top:3px;font-style:italic;line-height:1.5;border-left:2px solid var(--success);padding-left:8px;background:rgba(74,222,128,0.06);">
-                            <span style="font-weight:600;font-style:normal;">What good looks like:</span> ${example}
-                        </div>` : ''}
+                        ${!pass && aiFix ? `<div style="font-size:11px;color:var(--warning);margin-top:4px;line-height:1.5;"><span style="font-weight:600;">What's wrong:</span> ${esc(aiFix)}</div>` : ''}
+                        ${!pass && !aiFix && rubricFix ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5;font-style:italic;">Generic guidance: ${esc(rubricFix)}</div>` : ''}
+                        ${example ? `<details style="margin-top:6px;font-size:11px;line-height:1.5;">
+                            <summary style="cursor:pointer;color:var(--text-muted);font-style:italic;">Reference example (from rubric)</summary>
+                            <div style="color:var(--success);margin-top:4px;border-left:2px solid var(--success);padding-left:8px;background:rgba(74,222,128,0.06);">
+                                ${esc(example)}
+                            </div>
+                        </details>` : ''}
                     </div>
                 </div>
             </div>`;
         }).join('');
+
+        // Build the "what was actually scored" content block.
+        // Pick the description matching the rubric level — Epic scoring
+        // evaluates the Epic's description (not a child story), Feature
+        // scoring uses the Feature's description, etc. Defects score the
+        // story body since defects ARE stories with story_type=Bug.
+        const lvl = (r.rubric_level || 'story').toLowerCase();
+        let desc, contentLabel, contentTitleField;
+        if (lvl === 'epic') {
+            desc = (r.epic_description || '').trim();
+            contentLabel = 'Epic content scored';
+            contentTitleField = r.epic || r.story_title || '';
+        } else if (lvl === 'feature') {
+            desc = (r.feature_description || '').trim();
+            contentLabel = 'Feature content scored';
+            contentTitleField = r.parent_feature || r.story_title || '';
+        } else {
+            desc = (r.story_description || '').trim();
+            contentLabel = (lvl === 'defect') ? 'Defect content scored' : 'Story content scored';
+            contentTitleField = r.story_title || '';
+        }
+        const hasContent = !!desc;
+        const hierarchyChips = [];
+        if (r.epic)            hierarchyChips.push(`<span style="font-size:10px;font-weight:600;letter-spacing:0.3px;color:var(--accent);background:rgba(232,148,74,0.10);padding:2px 6px;border-radius:3px;">EPIC</span> <span style="color:var(--text-secondary);font-size:11px;">${esc(r.epic)}</span>`);
+        if (r.parent_feature)  hierarchyChips.push(`<span style="font-size:10px;font-weight:600;letter-spacing:0.3px;color:var(--teal);background:rgba(13,148,136,0.10);padding:2px 6px;border-radius:3px;">FEATURE</span> <span style="color:var(--text-secondary);font-size:11px;">${esc(r.parent_feature)}</span>`);
+        if (r.story_id)        hierarchyChips.push(`<span style="font-size:10px;font-weight:600;letter-spacing:0.3px;color:var(--purple);background:rgba(192,132,252,0.10);padding:2px 6px;border-radius:3px;">STORY</span> <span style="color:var(--text-secondary);font-size:11px;">${esc(r.story_id)}</span>`);
+        const hierarchyHtml = hierarchyChips.length
+            ? `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">${hierarchyChips.join('')}</div>`
+            : '';
+
+        const contentBlock = hasContent
+            ? `<div style="margin-bottom:14px;padding:10px 12px;background:var(--bg-tertiary);border-radius:7px;border-left:3px solid var(--accent);">
+                <div style="font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">${contentLabel}</div>
+                ${contentTitleField ? `<div style="font-size:13px;color:var(--text-primary);font-weight:600;margin-bottom:6px;">${esc(contentTitleField)}</div>` : ''}
+                <div style="font-size:12px;color:var(--text-primary);line-height:1.55;white-space:pre-wrap;">${esc(desc)}</div>
+              </div>`
+            : `<div style="margin-bottom:14px;padding:10px 12px;background:rgba(248,113,113,0.08);border-radius:7px;border-left:3px solid var(--error);">
+                <div style="font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--error);margin-bottom:4px;">No ${lvl === 'epic' ? 'Epic' : lvl === 'feature' ? 'Feature' : 'description'} content on file</div>
+                <div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">The AI scored this against the rubric without ${lvl === 'epic' ? 'an Epic Description' : lvl === 'feature' ? 'a Feature Description' : 'any description text'} — most criteria will fail by default. ${lvl === 'epic' ? 'Add Epic Description in JIRA' : lvl === 'feature' ? 'Add Feature Description in JIRA' : 'Add a description in JIRA'} and re-score, or click ✨ below to generate a draft.</div>
+              </div>`;
+
         return `
         <tr style="border-top:1px solid var(--border);" onclick="toggleQualityRow('${detailId}',this)" class="kpi-clickable">
             <td style="padding:10px 16px;">
@@ -4191,15 +4237,18 @@ function _renderQualityStoryRows(sorted) {
             <td style="text-align:center;padding:10px 8px;color:var(--text-muted);font-size:11px;">▼</td>
         </tr>
         <tr id="${detailId}" style="display:none;background:var(--bg-secondary);">
-            <td colspan="5" style="padding:12px 24px 16px;">
+            <td colspan="5" style="padding:14px 24px 16px;">
+                ${hierarchyHtml}
+                ${contentBlock}
+                <div style="font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Criteria — what passed and what didn't</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;">
                     ${criteriaRows}
                 </div>
-                <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                     <div style="font-size:11px;color:var(--text-muted);">Scored ${(r.scored_at||'').slice(0,16).replace('T',' ')}${r.scoring_mode ? ' · mode: ' + r.scoring_mode : ''}</div>
                     <button onclick="event.stopPropagation();rewriteQualityStory(${r.classification_id},'${(r.story_title||'').replace(/'/g,"\\'")}',event)"
-                            class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 12px;">
-                        ✨ What good looks like for this story
+                            class="btn btn-primary btn-sm" style="font-size:11px;padding:5px 14px;">
+                        ✨ Rewrite this ${r.rubric_level || 'item'}
                     </button>
                 </div>
             </td>

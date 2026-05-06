@@ -37,11 +37,11 @@ admin_bp = Blueprint("admin_bp", __name__)
 
 _FEATURE_RULES = [
     # AI calls — tagged so token costs roll up by feature
-    (re.compile(r"^/api/quality/score$"),                "Story Quality — Score Stories"),
-    (re.compile(r"^/api/quality/rewrite$"),              "Story Quality — What Good Looks Like"),
-    (re.compile(r"^/api/quality/chat$"),                 "Story Quality — Iterative Rewrite Chat"),
-    (re.compile(r"^/api/quality/extension"),             "Story Quality — Domain Editor"),
-    (re.compile(r"^/api/quality/"),                      "Story Quality — Other"),
+    (re.compile(r"^/api/quality/score$"),                "Backlog Quality — Score Items"),
+    (re.compile(r"^/api/quality/rewrite$"),              "Backlog Quality — What Good Looks Like"),
+    (re.compile(r"^/api/quality/chat$"),                 "Backlog Quality — Iterative Rewrite Chat"),
+    (re.compile(r"^/api/quality/extension"),             "Backlog Quality — Domain Editor"),
+    (re.compile(r"^/api/quality/"),                      "Backlog Quality — Other"),
     (re.compile(r"^/api/classify"),                      "Classify — Single Story"),
     (re.compile(r"^/api/verify"),                        "Verify — Bulk Upload"),
     (re.compile(r"^/api/disputes"),                      "Disputes"),

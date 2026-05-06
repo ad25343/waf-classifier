@@ -12,7 +12,7 @@ Scrum teams consistently misclassify stories against the 8-category WAF framewor
 |---------|-------------|
 | **Classify** | Live chat or batch classification for new stories during grooming |
 | **Analytics** | Upload JIRA data → map columns → AI reviews every row → flag mismatches → save → summary insights |
-| **Story Quality** | Score uploaded backlog items against the **Story Excellence Playbook v2** Definition of Ready. Composite rubrics: universal base (Story / Feature / Epic / Defect) + optional domain extension (Data, CapMkts, SF Origination, MF Servicing, Risk). Per-criterion "what good looks like" examples surface inline on failure. Strictness mode is configurable per rubric (lenient / balanced / strict). |
+| **Backlog Quality** | Score uploaded backlog items against the **Story Excellence Playbook v2** Definition of Ready. Composite rubrics: universal base (Story / Feature / Epic / Defect) + optional domain extension (Data, CapMkts, SF Origination, MF Servicing, Risk). Per-criterion "what good looks like" examples surface inline on failure. Strictness mode is configurable per rubric (lenient / balanced / strict). |
 | **Domain Editor** | (`/quality-domains`) Domain stewards review, edit, save, and revert the JSON criteria for their line of business — no code change needed. Backs up previous versions on save. |
 | **File Merger** | Three-file Jira merge (Epic + Feature + Story) with name-based join. Per-file column mapping, status flags (complete / missing feature / missing epic), orphan handling, Missing-WAF and Missing-R/C surfacing, clickable stat-card filtering, two-phase upload + confirm flow. |
 | **Disputes** | Flag any AI classification as wrong from the **Classify**, **History**, **Teams**, or **Lineage** view. Reviewers triage flagged disputes on `/disputes` — dismiss, accept into Ground Truth, or escalate for WAF review. |
@@ -81,7 +81,7 @@ The app auto-loads WAF definitions and ground truth from `test-data/` on startup
 |-------|------|---------|
 | `/` | Home | Landing page with navigation cards and system status |
 | `/classify` | Classifier | Chat-based AI classification with epic tagging |
-| `/history` | Analytics | Upload → Map Columns → AI verify → Review → Summary → Story Quality → Lineage → History |
+| `/history` | Analytics | Upload → Map Columns → AI verify → Review → Summary → Backlog Quality → Lineage → History |
 | `/teams` | Teams | Drill-down ToT → Team pills with cross-team epic matrix |
 | `/lineage` | Epic Lineage | Epic health scores, WAF breakdowns, and story tree |
 | `/dashboard` | Dashboard | Real-time KPI cards and distribution charts |

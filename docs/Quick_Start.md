@@ -120,12 +120,12 @@ Click any result to navigate to that team's detail view.
 
 ---
 
-## Score Story Quality
+## Score Backlog Quality
 
-The Story Quality tab in Analytics scores backlog items against the Definition of Ready (DoR) from the **Story Excellence Playbook v2** (`docs/playbook/story-excellence-v2.docx`). Rubrics are composable: a universal **base** for the level (Story / Feature / Epic / Defect) plus an optional **domain extension** (Data & Reporting, Capital Markets, SF Origination, MF Servicing, Risk & Compliance) that adds line-of-business-specific criteria.
+The Backlog Quality tab in Analytics scores backlog items against the Definition of Ready (DoR) from the **Story Excellence Playbook v2** (`docs/playbook/story-excellence-v2.docx`). Rubrics are composable: a universal **base** for the level (Story / Feature / Epic / Defect) plus an optional **domain extension** (Data & Reporting, Capital Markets, SF Origination, MF Servicing, Risk & Compliance) that adds line-of-business-specific criteria.
 
 1. Go to **Analytics** and select a specific upload from the **Data Source** dropdown at the top
-2. Click the **Story Quality** tab
+2. Click the **Backlog Quality** tab
 3. Pick a **Level** — Story (default), Feature, Epic, or Defect
 4. Optionally pick a **Domain** — leaves it on *Generic / Base only* and you score against the universal rubric. Pick a domain (e.g. *Data & Reporting* or *Capital Markets*) to layer extension criteria on top.
    - The four non-Data domains ship as **starter content** marked with an amber banner. Domain stewards should review and customize via the Domain Editor (link below the rubric reference card) before relying on those scores in production decisions.
@@ -166,7 +166,7 @@ A story scoring 86 with one required criterion failing is correctly **Needs Work
 
 The Domain Editor lets domain stewards review, edit, and reset the JSON extensions in `rubrics/domains/{id}/` from the UI.
 
-1. From the Story Quality tab, click **⚙ Manage domain rubrics →** under the rubric source line. (Or go directly to `/quality-domains`.)
+1. From the Backlog Quality tab, click **⚙ Manage domain rubrics →** under the rubric source line. (Or go directly to `/quality-domains`.)
 2. Pick a domain on the left rail. The `starter` badge marks placeholder content drafted by the platform team.
 3. Pick a level tab (Story / Feature / Epic / Defect).
 4. Edit:
@@ -174,7 +174,7 @@ The Domain Editor lets domain stewards review, edit, and reset the JSON extensio
    - **Placeholder toggle** — un-check it once your team has validated the criteria; the amber banner disappears for everyone using the rubric
    - **Per-criterion cards** — id, name, required/weight/scored_by, description, why, fix, "what good looks like"
    - **+ Add criterion** to extend, **Delete** on any card to remove
-5. Click **Save changes**. The previous file is backed up to `<path>.bak` and the in-process rubric cache is invalidated — the Story Quality view picks up the change on its next refresh.
+5. Click **Save changes**. The previous file is backed up to `<path>.bak` and the in-process rubric cache is invalidated — the Backlog Quality view picks up the change on its next refresh.
 6. Made a mistake? **Reset to previous** restores from the backup (only shown when one exists).
 
 If a domain × level doesn't have an extension yet, the editor shows a **+ Create extension** button that scaffolds a fresh JSON shell to start from.

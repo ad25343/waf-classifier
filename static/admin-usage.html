@@ -457,7 +457,7 @@ async function loadUsageTrend() {
     const topN = Object.entries(featureTotals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
     const colors = ['#e8944a', '#4ade80', '#60a5fa', '#c084fc', '#fbbf24'];
     const datasets = topN.map((feat, i) => ({
-        label: feat.replace(/^Page\s—\s/, '').replace(/^Story Quality\s—\s/, 'SQ — '),
+        label: feat.replace(/^Page\s—\s/, '').replace(/^Backlog Quality\s—\s/, 'BQ — '),
         data: days.map(d => {
             const found = points.find(p => p.day === d && p.feature === feat);
             return found ? found.hits : 0;

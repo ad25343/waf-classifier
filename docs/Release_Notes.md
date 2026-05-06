@@ -6,6 +6,44 @@
 
 Real Story Excellence playbook adopted, composite rubrics with optional domain extensions, in-app domain editor, inline dispute flagging on three more pages, merge feature overhaul, and a Team-of-Teams filter bugfix.
 
+### "Story Quality" → "Backlog Quality" (rename + scope fix)
+
+The feature originally shipped as "Story Quality" but it now scores all four
+levels (Story / Feature / Epic / Defect). Renamed to **Backlog Quality**
+across the user-facing surfaces (tab label on `/history`, section title,
+README, Quick Start, API Reference, Usage Analytics feature catalog). The
+internal API endpoints (`/api/quality/...`) and route blueprints are
+unchanged — purely a UI/docs rename, no breaking changes.
+
+Companion fixes shipped at the same time:
+
+- **Scope-by-level**: previously the level dropdown only changed which
+  rubric loaded — every classification row was still scored. So picking
+  "Epic" against an upload of 76 stories scored 76 records against the
+  Epic DoR, which was meaningless. Now scoring filters / groups by level:
+    - Epic    → distinct Epics in the upload (one scored row per Epic)
+    - Feature → distinct Features
+    - Defect  → only rows where `story_type` matches /bug|defect/i
+    - Story   → unchanged (every classification row)
+- **Preserve Epic / Feature attributes on upload**: five new columns on
+  `classifications` (`story_type`, `epic_description`, `epic_sponsor`,
+  `epic_block`, `feature_description`) so Epic-level scoring has real
+  Epic content to evaluate, not just child-story synthesis.
+- **Redesigned expanded panel**: clicking a scored row now shows
+    1. **Hierarchy chips** — EPIC / FEATURE / STORY pills naming the parent
+       chain so you know what was actually scored.
+    2. **"What was scored"** — the original description text. If the row
+       has no description, an amber banner replaces this with a clear
+       prompt to add one in JIRA and re-score.
+    3. **Per-criterion result** — each row shows the AI's specific
+       *"What's wrong:"* explanation when present (replacing the prior
+       generic-arrow rendering). The rubric's reference example is now
+       collapsed behind a `Reference example (from rubric)` disclosure
+       so it doesn't visually compete with the AI's per-item feedback.
+- **Rewrite button promoted** to a primary-style button labelled
+  `✨ Rewrite this <level>` (story / feature / epic / defect) instead of
+  the previous outline button.
+
 ### Story Quality scoring — major rewrite
 
 - **Real playbook in repo.** The fictional `"GSE-MF Story Excellence Playbook v1.0"` attribution that shipped in v3.4.0 has been replaced with the actual *Story Excellence Playbook v2*, now stored at `docs/playbook/story-excellence-v2.docx` (canonical), `docs/playbook/story-excellence-v2.md` (extracted text for diff-friendly PR review), and `docs/playbook/story-excellence-v2.pptx` (18-slide companion deck — Epic / Feature / Story end-to-end). All scoring now traces back to a verifiable source document.

@@ -1121,9 +1121,9 @@ Hard delete a dispute record. Returns 404 if not found.
 
 ---
 
-## Story Quality
+## Backlog Quality
 
-Story Quality scores backlog items against a Definition-of-Ready rubric loaded from `rubrics/`. Rubrics compose: a universal **base** for the level (`story` / `feature` / `epic` / `defect`) plus an optional **domain extension** (`data` / `capmkts` / `sf-origination` / `mf-servicing` / `risk` / …) that adds line-of-business-specific criteria.
+Backlog Quality scores backlog items against a Definition-of-Ready rubric loaded from `rubrics/`. Rubrics compose: a universal **base** for the level (`story` / `feature` / `epic` / `defect`) plus an optional **domain extension** (`data` / `capmkts` / `sf-origination` / `mf-servicing` / `risk` / …) that adds line-of-business-specific criteria.
 
 The composite rubric id has the form `<level>-dor` or `<level>-dor:<domain>`. Examples:
 - `story-dor` — universal Story DoR (7 criteria)
