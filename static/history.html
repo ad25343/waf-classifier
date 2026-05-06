@@ -1049,11 +1049,11 @@
                 Using the <strong style="color:var(--text-secondary);">Data Source</strong> selected above. Select a specific upload to enable scoring.
             </div>
             <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
-                <!-- Domain -->
-                <div style="min-width:180px;">
-                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Domain</div>
+                <!-- Level (Story / Feature / Epic / Defect) — populated from /api/quality/rubric -->
+                <div style="min-width:200px;">
+                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Score against</div>
                     <select id="quality-domain" onchange="onQualityDomainChange()" style="width:100%;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:7px;color:var(--text-primary);font-size:13px;">
-                        <option value="data_reporting">Data &amp; Reporting</option>
+                        <option value="story-dor">Story — Definition of Ready</option>
                     </select>
                 </div>
                 <!-- Team of Teams filter -->
@@ -3704,14 +3704,19 @@ async function loadQualityRubric(rubricId) {
 // ── Tab init ──────────────────────────────────────────────────
 
 async function loadQualityTab() {
-    loadQualityRubric();
-
-    // Restore domain only; teams always start fresh
+    // Restore domain (level) preference first so the rubric loader uses it.
     try {
         const saved = JSON.parse(localStorage.getItem('waf_quality_state') || '{}');
-        if (saved.domain) _qualityState.domain = saved.domain;
+        if (saved.domain) {
+            _qualityState.domain = saved.domain;
+            _qualityRubricId = saved.domain;
+        }
         _qualityState.teams = [];
     } catch(e) {}
+
+    // Populate the level selector and load the active rubric.
+    await populateQualityLevelSelector();
+    await loadQualityRubric(_qualityRubricId);
 
     const upload_id = getQualityUploadId();
     if (upload_id) {
@@ -3730,9 +3735,43 @@ async function loadQualityTab() {
 
 // Upload selector removed — quality tab reads from #analytics-upload-filter
 
-function onQualityDomainChange() {
-    _qualityState.domain = document.getElementById('quality-domain').value;
+async function onQualityDomainChange() {
+    const newId = document.getElementById('quality-domain').value;
+    _qualityState.domain = newId;
+    _qualityRubricId = newId;
     saveQualityState();
+    // Reload the rubric reference card with the new level's criteria + good_examples.
+    await loadQualityRubric(newId);
+    // Existing scored rows (cached in _qualityResults) are for the previous
+    // rubric — drop them and clear the results table so they don't show
+    // misleading 'criteria not in this rubric' rows.
+    _qualityResults = [];
+    const tbody = document.getElementById('quality-results-tbody');
+    if (tbody) tbody.innerHTML = '';
+    document.getElementById('quality-results-section').style.display = 'none';
+    // Try to re-load any saved scoring run that matches the new level.
+    await loadSavedQualityResults();
+}
+
+// Populate the level selector dropdown from the API. Called once on tab load.
+async function populateQualityLevelSelector() {
+    try {
+        const res = await fetch('/api/quality/rubric');
+        const data = await res.json();
+        const sel = document.getElementById('quality-domain');
+        if (!sel) return;
+        const available = data.available || [];
+        // Order: story, feature, epic, defect
+        const order = ['story', 'feature', 'epic', 'defect'];
+        available.sort((a, b) => order.indexOf(a.level) - order.indexOf(b.level));
+        sel.innerHTML = available.map(r =>
+            `<option value="${r.id}">${r.name || r.id}</option>`
+        ).join('');
+        // Restore saved selection if any
+        const saved = (_qualityState && _qualityState.domain) || _qualityRubricId || 'story-dor';
+        sel.value = saved;
+        _qualityRubricId = sel.value;
+    } catch(e) { console.error('Could not load level list', e); }
 }
 
 // ── Team of Teams filter ──────────────────────────────────────
@@ -3890,7 +3929,8 @@ async function startQualityScoring() {
             body: JSON.stringify({
                 upload_id: getQualityUploadId(),
                 teams: _qualityState.teams,
-                domain: _qualityState.domain,
+                rubric_id: _qualityRubricId || _qualityState.domain || 'story-dor',
+                domain: _qualityState.domain,  // legacy alias
             }),
         });
         const data = await res.json();
@@ -4293,7 +4333,8 @@ function exportQualityCSV() {
     const upload_id = getQualityUploadId();
     if (!upload_id) return;
     const teams = _qualityState.teams;
-    const qs = `upload_id=${upload_id}&domain=${_qualityState.domain}` +
+    const rubric = _qualityRubricId || _qualityState.domain || 'story-dor';
+    const qs = `upload_id=${upload_id}&rubric_id=${encodeURIComponent(rubric)}` +
         (teams.length ? `&teams=${teams.map(encodeURIComponent).join(',')}` : '');
     window.location=(window.APP_ROOT||'')+`/api/quality/export?${qs}`;
 }
