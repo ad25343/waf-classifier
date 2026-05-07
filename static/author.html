@@ -147,7 +147,7 @@ document.addEventListener('click', () => document.querySelectorAll('.nav-dropdow
         <div class="controls" style="margin-bottom:16px;">
             <div class="field-group">
                 <label class="field-label">Level</label>
-                <select id="level-sel">
+                <select id="level-sel" onchange="updatePlaceholder()">
                     <option value="story">Story</option>
                     <option value="feature">Feature</option>
                     <option value="epic">Epic</option>
@@ -170,10 +170,7 @@ document.addEventListener('click', () => document.querySelectorAll('.nav-dropdow
         </div>
 
         <label class="field-label" style="margin-bottom:6px;display:block;">Your input — idea OR rough draft</label>
-        <textarea id="input-text" class="input-area" placeholder="Examples:
-  • 'We need a delinquency dashboard refreshed daily for the risk committee.'
-  • 'Build same-day commitment letter generation for SF conforming loans, target 80% adoption by EOY.'
-  • Or paste an existing rough draft here and the AI will polish it against the DoR."></textarea>
+        <textarea id="input-text" class="input-area"></textarea>
         <div class="input-hint">
             One-line idea, paragraph of intent, or full rough draft — anything works. The AI uses your active rubric's criteria + exemplars as the bar. Use <code>[REQUIRED: ...]</code> placeholders mark info the team must supply.
         </div>
@@ -308,6 +305,29 @@ function _setStatus(msg, kind) {
     el.className = 'status' + (kind ? ' ' + kind : '');
 }
 
+const PLACEHOLDERS = {
+    story: `Examples (Story):
+  • 'As an underwriter I want to see the borrower's bank-statement income summary on the loan workbench so I can decide eligibility in one screen.'
+  • 'Need a daily delinquency snapshot tile on the servicer dashboard, refresh by 7am ET.'
+  • Or paste a rough user story and the AI will polish it against the Story DoR (INVEST, AC, NFRs, dependencies).`,
+    feature: `Examples (Feature):
+  • 'Real-time AUS decision API for SF conforming loans — sub-2s response, exposes eligibility + pricing tier.'
+  • 'Lender self-service onboarding flow that replaces the current ops-driven 14-day setup.'
+  • Or paste a rough feature brief and the AI will polish it against the Feature DoR (capability statement, KPIs, parent epic, in/out of scope).`,
+    epic: `Examples (Epic):
+  • 'Same-day lender commitments for SF conforming loans — move from 35% to 80% same-day commits by Q4.'
+  • 'Cut manual underwriting touches by 50% on conforming SF loans through automation.'
+  • Or paste a rough epic narrative and the AI will polish it against the Epic DoR (measurable outcome, sponsor, LoB/lifecycle, capacity, risks).`,
+    defect: `Examples (Defect):
+  • 'AUS decision API returns 500 when borrower co-applicant has no SSN on file — started after 4/22 release.'
+  • 'Servicer dashboard delinquency tile shows yesterday's number after 7am refresh ~10% of the time.'
+  • Or paste a rough bug report and the AI will polish it against the Defect DoR (steps to reproduce, expected vs actual, severity, environment).`
+};
+function updatePlaceholder() {
+    const lvl = document.getElementById('level-sel').value;
+    document.getElementById('input-text').placeholder = PLACEHOLDERS[lvl] || PLACEHOLDERS.story;
+}
+updatePlaceholder();
 loadDomains();
 </script>
 
