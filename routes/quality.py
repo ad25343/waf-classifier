@@ -1202,6 +1202,120 @@ Use this structure (one section per Definition-of-Ready criterion):
         return jsonify({"error": str(e)}), 500
 
 
+# ── Author / Draft a new item ────────────────────────────────────────────────
+# Same calibration plumbing as scoring + rewrite, but starts from a free-form
+# user intent (or a rough draft) and produces a structured DoR-passing item.
+# Composes with everything else: rubric + criteria + exemplars + good_examples.
+
+@quality_bp.route("/api/quality/author", methods=["POST"])
+def author_item():
+    """Draft a new Story / Feature / Epic / Defect from free-form intent.
+
+    Body:
+      level     : 'story' | 'feature' | 'epic' | 'defect'
+      domain    : optional — layer a domain extension (e.g. 'capmkts')
+      input_text: free-form user input — either an idea ('we need a
+                  delinquency dashboard') OR a rough existing draft to polish
+      mode      : optional — 'structured' (default, Markdown sections per
+                  criterion) or 'narrative' (single prose block)
+    """
+    data = request.json or {}
+    level  = (data.get("level") or "story").strip().lower()
+    domain = (data.get("domain") or "").strip() or None
+    input_text = (data.get("input_text") or "").strip()
+    mode = (data.get("mode") or "structured").strip().lower()
+
+    if level not in _VALID_LEVELS:
+        return jsonify({"error": f"level must be one of {sorted(_VALID_LEVELS)}"}), 400
+    if not input_text:
+        return jsonify({"error": "input_text is required — describe what you want to build, or paste a draft"}), 400
+
+    rubric = load_rubric(level=level, domain=domain)
+
+    # Build the criteria block (id + description + good_example, same shape
+    # as scoring uses).
+    ai_criteria = [c for c in rubric.get("criteria", []) if c.get("scored_by", "ai") != "system"]
+    def _crit_line(i, c):
+        line = f'{i + 1}. {c["name"]} — {c["description"]}'
+        if c.get("good_example"):
+            line += f'\n     Example of what good looks like: {c["good_example"]}'
+        return line
+    criteria_list = "\n".join(_crit_line(i, c) for i, c in enumerate(ai_criteria))
+
+    # Reference exemplars block (same shape as scoring).
+    exemplars = rubric.get("exemplars") or []
+    exemplars_block = ""
+    if exemplars:
+        ex_lines = []
+        for i, e in enumerate(exemplars[:3], 1):
+            ex_lines.append(f"[EXEMPLAR {i}] {e.get('name','(unnamed)')}")
+            if e.get("content"):
+                ex_lines.append(e["content"].strip())
+            if e.get("why_this_passes"):
+                ex_lines.append(f"Why this passes: {e['why_this_passes'].strip()}")
+            ex_lines.append("")
+        exemplars_block = (
+            "\nREFERENCE EXEMPLARS — passing items from this organization. Use these as the bar.\n\n"
+            + "\n".join(ex_lines).strip() + "\n"
+        )
+
+    persona = {
+        "epic":    "product manager drafting an epic for portfolio review",
+        "feature": "product owner drafting a feature for program refinement",
+        "story":   "product owner / analyst drafting a sprint-ready story",
+        "defect":  "engineer drafting a defect report",
+    }.get(level, "product owner")
+
+    structure_instr = ""
+    if mode == "structured":
+        sections = []
+        for c in ai_criteria:
+            sections.append(f"### {c['name']}\n[Address per the criterion above. Use [REQUIRED: ...] placeholders for missing info.]")
+        structure_instr = (
+            "\n\nFORMAT: output the draft as Markdown. One section per Definition-of-Ready criterion, "
+            "in this exact order:\n\n" + "\n\n".join(sections)
+        )
+    else:
+        structure_instr = (
+            "\n\nFORMAT: output the draft as a single coherent narrative paragraph or two — no headings."
+        )
+
+    prompt = f"""You are helping a {persona} draft a new {level}-level item against the {rubric.get('name', 'Definition of Ready')}.
+
+Use the user's input as the seed. If they wrote a one-line idea, expand it. If they pasted a rough draft, polish it. Address every criterion below — use [REQUIRED: ...] placeholders for information the user hasn't supplied that the team must fill in. Don't invent specifics that aren't reasonably inferable from the input.
+
+The reference exemplars below show this organization's bar — match their tone and depth.
+{exemplars_block}
+DEFINITION-OF-READY CRITERIA:
+{criteria_list}
+
+USER'S INPUT:
+{input_text}
+{structure_instr}
+
+Output only the draft. No preamble, no explanation."""
+
+    try:
+        client = _get_client()
+        resp = client.messages.create(
+            model=AI_MODEL,
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        _log_tokens_safe(resp, AI_MODEL, route="/api/quality/author")
+        drafted = resp.content[0].text.strip()
+        return jsonify({
+            "drafted":   drafted,
+            "level":     level,
+            "domain":    domain,
+            "rubric_id": rubric.get("id"),
+            "exemplars_used": len(exemplars[:3]),
+            "criteria_count": len(ai_criteria),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @quality_bp.route("/api/quality/export", methods=["GET"])
 def quality_export():
     upload_id = request.args.get("upload_id", type=int)

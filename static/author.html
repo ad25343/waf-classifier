@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Classifier | Author</title>
+    <style>
+        :root { color-scheme: dark; }
+        [data-theme="dark"] {
+            --bg-primary: #111318; --bg-secondary: #1a1c25; --bg-tertiary: #252838;
+            --border: #2e3244;
+            --text-primary: #ecedf1; --text-secondary: #9ca0b0; --text-muted: #6c7086;
+            --accent: #e8944a; --accent-hover: #d4832f;
+            --success: #4ade80; --warning: #fbbf24; --error: #f87171;
+            --teal: #2dd4bf; --purple: #c084fc; --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5; --bg-secondary: #ffffff; --bg-tertiary: #e4e7ed;
+            --border: #d1d5db;
+            --text-primary: #1a1a2e; --text-secondary: #4a4a6a; --text-muted: #8888a0;
+            --accent: #d4722a; --accent-hover: #c0611e;
+            --success: #16a34a; --warning: #d97706; --error: #dc2626;
+            --teal: #0d9488; --purple: #9333ea; --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .header { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #d4722a); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: white; }
+        .header-text h1 { font-size: 22px; font-weight: 700; }
+        .header-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+        .top-nav { display: flex; gap: 4px; padding: 8px 24px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); justify-content: flex-end; }
+        .top-nav-link { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+        .top-nav-link:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .top-nav-link.active { background: var(--accent); color: #fff; }
+        .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
+        .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
+        .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; min-width: 200px; padding: 6px; z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
+        .nav-dropdown-item { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); text-decoration: none; white-space: nowrap; }
+        .nav-dropdown-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-dropdown-item.active { color: var(--accent); font-weight: 600; }
+        .theme-toggle { background: none; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 14px; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px 24px 60px; }
+
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 26px; margin-bottom: 18px; }
+
+        .controls { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+        .field-group { display: flex; flex-direction: column; min-width: 180px; }
+        .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); font-weight: 600; margin-bottom: 5px; }
+        select, .input { padding: 8px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 7px; color: var(--text-primary); font-size: 13px; font-family: inherit; }
+        select:focus, .input:focus { outline: none; border-color: var(--accent); }
+
+        .input-area { width: 100%; min-height: 160px; padding: 12px 14px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; font-family: inherit; line-height: 1.5; resize: vertical; }
+        .input-area:focus { outline: none; border-color: var(--accent); }
+        .input-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.5; }
+
+        .btn { padding: 9px 18px; border: 1px solid var(--border); border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s, border-color 0.15s; }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+        .btn-primary:disabled { opacity: 0.5; cursor: wait; }
+        .btn-secondary { background: transparent; color: var(--text-secondary); }
+        .btn-secondary:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+        .actions-bar { display: flex; gap: 10px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+        .meta-line { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+
+        .output-card { background: var(--bg-tertiary); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 8px; padding: 18px 20px; margin-top: 12px; }
+        .output-content { font-size: 14px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .output-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
+        .output-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); font-weight: 600; }
+
+        .copy-btn { background: rgba(232,148,74,0.10); border: 1px solid rgba(232,148,74,0.4); color: var(--accent); padding: 5px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        .copy-btn:hover { background: rgba(232,148,74,0.20); }
+        .copy-btn.success { background: rgba(74,222,128,0.15); border-color: rgba(74,222,128,0.4); color: var(--success); }
+
+        .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; }
+        .empty-icon { font-size: 36px; margin-bottom: 14px; opacity: 0.5; }
+
+        .status { font-size: 12px; }
+        .status.error { color: var(--error); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/" class="header-left">
+        <div class="logo">W</div>
+        <div class="header-text">
+            <h1>WAF Classifier</h1>
+            <p>Author — draft Story / Feature / Epic / Defect against your Definition of Ready</p>
+        </div>
+    </a>
+</div>
+
+<nav class="top-nav">
+    <a href="/" class="top-nav-link">Home</a>
+    <a href="/classify" class="top-nav-link">Classify</a>
+    <a href="/author" class="top-nav-link active">✨ Author</a>
+    <div class="nav-dropdown">
+        <span class="top-nav-link nav-dropdown-btn">Analyze <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/history"  class="nav-dropdown-item">Analyze Stories</a>
+            <a href="/lineage"  class="nav-dropdown-item">Epic Lineage</a>
+            <a href="/teams"    class="nav-dropdown-item">Teams</a>
+            <a href="/disputes" class="nav-dropdown-item">Classification Disputes</a>
+        </div>
+    </div>
+    <div class="nav-dropdown">
+        <span class="top-nav-link nav-dropdown-btn">Admin <span class="nav-chevron">▾</span></span>
+        <div class="nav-dropdown-menu">
+            <a href="/merge"           class="nav-dropdown-item">File Merger</a>
+            <a href="/waf-reference"   class="nav-dropdown-item">WAF Reference</a>
+            <a href="/aliases"         class="nav-dropdown-item">Category Aliases</a>
+            <a href="/quality-domains" class="nav-dropdown-item">Domain Editor</a>
+            <a href="/admin/usage"     class="nav-dropdown-item">Usage Analytics</a>
+        </div>
+    </div>
+    <a href="/settings" class="top-nav-link">Settings</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light"><span class="theme-icon">☾</span></button>
+</nav>
+
+<script>
+document.querySelectorAll('.nav-dropdown-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const dd = btn.closest('.nav-dropdown');
+        document.querySelectorAll('.nav-dropdown.open').forEach(d => { if (d !== dd) d.classList.remove('open'); });
+        dd.classList.toggle('open');
+    });
+});
+document.addEventListener('click', () => document.querySelectorAll('.nav-dropdown.open').forEach(d => d.classList.remove('open')));
+</script>
+
+<div class="container">
+
+    <!-- Input card -->
+    <div class="card">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Draft a backlog item</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;line-height:1.55;">
+            Pick a level + optional domain, then describe what you want to build. The AI will produce a structured draft addressing every Definition-of-Ready criterion, calibrated against your rubric and exemplars. Paste a rough draft to polish, or start from a one-line idea.
+        </div>
+
+        <div class="controls" style="margin-bottom:16px;">
+            <div class="field-group">
+                <label class="field-label">Level</label>
+                <select id="level-sel">
+                    <option value="story">Story</option>
+                    <option value="feature">Feature</option>
+                    <option value="epic">Epic</option>
+                    <option value="defect">Defect</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label class="field-label">Domain (optional)</label>
+                <select id="domain-sel">
+                    <option value="">— Generic / Base only —</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label class="field-label">Output format</label>
+                <select id="mode-sel">
+                    <option value="structured">Structured (one section per criterion)</option>
+                    <option value="narrative">Narrative (free-form prose)</option>
+                </select>
+            </div>
+        </div>
+
+        <label class="field-label" style="margin-bottom:6px;display:block;">Your input — idea OR rough draft</label>
+        <textarea id="input-text" class="input-area" placeholder="Examples:
+  • 'We need a delinquency dashboard refreshed daily for the risk committee.'
+  • 'Build same-day commitment letter generation for SF conforming loans, target 80% adoption by EOY.'
+  • Or paste an existing rough draft here and the AI will polish it against the DoR."></textarea>
+        <div class="input-hint">
+            One-line idea, paragraph of intent, or full rough draft — anything works. The AI uses your active rubric's criteria + exemplars as the bar. Use <code>[REQUIRED: ...]</code> placeholders mark info the team must supply.
+        </div>
+
+        <div class="actions-bar">
+            <button class="btn btn-primary" id="generate-btn" onclick="generate()">✨ Generate draft</button>
+            <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+            <span class="meta-line" id="meta-line"></span>
+        </div>
+        <div id="status" class="status"></div>
+    </div>
+
+    <!-- Output card -->
+    <div class="card" id="output-card" style="display:none;">
+        <div class="output-toolbar">
+            <div>
+                <div class="output-label">Drafted item</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px;" id="output-meta"></div>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button class="copy-btn" id="copy-btn" onclick="copyOutput()">📋 Copy</button>
+                <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px;" onclick="generate()" title="Regenerate from the same input">↻ Regenerate</button>
+            </div>
+        </div>
+        <div class="output-content" id="output-content"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="card empty" id="empty-state">
+        <div class="empty-icon">✨</div>
+        <div>Type an idea or paste a draft above, pick the level + domain, and click <strong>Generate</strong>.</div>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    const saved = localStorage.getItem('waf-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    const nxt = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nxt);
+    localStorage.setItem('waf-theme', nxt);
+    const icon = document.querySelector('.theme-icon');
+    if (icon) icon.textContent = nxt === 'dark' ? '☾' : '☀';
+}
+
+const E = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+let _lastDrafted = '';
+
+async function loadDomains() {
+    try {
+        const res = await fetch('/api/quality/rubric');
+        const data = await res.json();
+        const domSel = document.getElementById('domain-sel');
+        // Skip 'base' — that's a Domain Editor concept, not a scoring/auth domain.
+        const real = (data.domains || []).filter(d => !d.is_base);
+        real.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name + (d.is_placeholder ? ' (starter)' : '');
+            domSel.appendChild(opt);
+        });
+    } catch(e) { /* leave generic-only if loading fails */ }
+}
+
+async function generate() {
+    const level  = document.getElementById('level-sel').value;
+    const domain = document.getElementById('domain-sel').value;
+    const mode   = document.getElementById('mode-sel').value;
+    const text   = document.getElementById('input-text').value.trim();
+
+    if (!text) {
+        _setStatus('Add some input first — an idea or a draft.', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('generate-btn');
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    _setStatus('', '');
+
+    try {
+        const res = await fetch('/api/quality/author', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ level, domain: domain || undefined, input_text: text, mode }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Author failed');
+
+        _lastDrafted = data.drafted || '';
+        document.getElementById('output-content').textContent = _lastDrafted;
+        document.getElementById('output-meta').textContent =
+            `${data.rubric_id} · ${data.criteria_count} criteria · ${data.exemplars_used} exemplar${data.exemplars_used === 1 ? '' : 's'} used`;
+        document.getElementById('output-card').style.display = 'block';
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('output-card').scrollIntoView({behavior:'smooth', block:'start'});
+    } catch(e) {
+        _setStatus('Failed: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Generate draft';
+    }
+}
+
+function clearAll() {
+    document.getElementById('input-text').value = '';
+    _lastDrafted = '';
+    document.getElementById('output-card').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'block';
+    _setStatus('', '');
+}
+
+function copyOutput() {
+    if (!_lastDrafted) return;
+    navigator.clipboard.writeText(_lastDrafted).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied';
+        btn.classList.add('success');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('success'); }, 1800);
+    });
+}
+
+function _setStatus(msg, kind) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status' + (kind ? ' ' + kind : '');
+}
+
+loadDomains();
+</script>
+
+</body>
+</html>

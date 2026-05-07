@@ -131,3 +131,8 @@ def quality_domains_page():
 @pages_bp.route("/admin/usage")
 def admin_usage_page():
     return _serve("admin-usage.html")
+
+
+@pages_bp.route("/author")
+def author_page():
+    return _serve("author.html")
