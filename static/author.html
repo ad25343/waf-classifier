@@ -147,7 +147,7 @@ document.addEventListener('click', () => document.querySelectorAll('.nav-dropdow
         <div class="controls" style="margin-bottom:16px;">
             <div class="field-group">
                 <label class="field-label">Level</label>
-                <select id="level-sel" onchange="updatePlaceholder()">
+                <select id="level-sel" onchange="onScopeChange()">
                     <option value="story">Story</option>
                     <option value="feature">Feature</option>
                     <option value="epic">Epic</option>
@@ -156,7 +156,7 @@ document.addEventListener('click', () => document.querySelectorAll('.nav-dropdow
             </div>
             <div class="field-group">
                 <label class="field-label">Domain (optional)</label>
-                <select id="domain-sel">
+                <select id="domain-sel" onchange="onScopeChange()">
                     <option value="">— Generic / Base only —</option>
                 </select>
             </div>
@@ -174,6 +174,21 @@ document.addEventListener('click', () => document.querySelectorAll('.nav-dropdow
         <div class="input-hint">
             One-line idea, paragraph of intent, or full rough draft — anything works. The AI uses your active rubric's criteria + exemplars as the bar. Use <code>[REQUIRED: ...]</code> placeholders mark info the team must supply.
         </div>
+
+        <details id="refs-details" style="margin-top:14px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;">
+            <summary style="cursor:pointer;font-size:13px;font-weight:500;color:var(--text-secondary);">
+                Reference items (optional)
+                <span id="exemplar-status" style="font-weight:400;color:var(--text-muted);margin-left:8px;"></span>
+            </summary>
+            <div style="margin-top:10px;">
+                <textarea id="reference-items" class="input-area" style="min-height:140px;" placeholder="Paste 1–3 epics / features / stories you want this draft to match in style and depth. These are used for THIS draft only — they are not saved.
+
+Tip: persistent reference items live in Domain Editor → Exemplars."></textarea>
+                <div class="input-hint" style="margin-top:6px;">
+                    Use this to style-match a specific sibling item. For org-wide references that everyone reuses, save them as exemplars in Domain Editor instead.
+                </div>
+            </div>
+        </details>
 
         <div class="actions-bar">
             <button class="btn btn-primary" id="generate-btn" onclick="generate()">✨ Generate draft</button>
@@ -257,18 +272,26 @@ async function generate() {
     _setStatus('', '');
 
     try {
+        const refs = document.getElementById('reference-items').value.trim();
         const res = await fetch('/api/quality/author', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ level, domain: domain || undefined, input_text: text, mode }),
+            body: JSON.stringify({
+                level,
+                domain: domain || undefined,
+                input_text: text,
+                reference_items: refs || undefined,
+                mode,
+            }),
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || 'Author failed');
 
         _lastDrafted = data.drafted || '';
         document.getElementById('output-content').textContent = _lastDrafted;
+        const refSuffix = data.user_refs_used ? ' + your pasted refs' : '';
         document.getElementById('output-meta').textContent =
-            `${data.rubric_id} · ${data.criteria_count} criteria · ${data.exemplars_used} exemplar${data.exemplars_used === 1 ? '' : 's'} used`;
+            `${data.rubric_id} · ${data.criteria_count} criteria · ${data.exemplars_used} exemplar${data.exemplars_used === 1 ? '' : 's'}${refSuffix}`;
         document.getElementById('output-card').style.display = 'block';
         document.getElementById('empty-state').style.display = 'none';
         document.getElementById('output-card').scrollIntoView({behavior:'smooth', block:'start'});
@@ -282,6 +305,7 @@ async function generate() {
 
 function clearAll() {
     document.getElementById('input-text').value = '';
+    document.getElementById('reference-items').value = '';
     _lastDrafted = '';
     document.getElementById('output-card').style.display = 'none';
     document.getElementById('empty-state').style.display = 'block';
@@ -327,8 +351,34 @@ function updatePlaceholder() {
     const lvl = document.getElementById('level-sel').value;
     document.getElementById('input-text').placeholder = PLACEHOLDERS[lvl] || PLACEHOLDERS.story;
 }
+
+async function refreshExemplarCount() {
+    const level  = document.getElementById('level-sel').value;
+    const domain = document.getElementById('domain-sel').value;
+    const status = document.getElementById('exemplar-status');
+    status.textContent = '';
+    try {
+        const qs = new URLSearchParams({ level });
+        if (domain) qs.set('domain', domain);
+        const res = await fetch('/api/quality/rubric?' + qs.toString());
+        const data = await res.json();
+        const n = ((data.rubric || {}).exemplars || []).length;
+        const scope = domain ? `${domain} + base` : 'base';
+        if (n === 0) {
+            status.textContent = `· no saved exemplars for ${scope}`;
+        } else {
+            status.textContent = `· ${n} saved exemplar${n === 1 ? '' : 's'} from ${scope} already feeding the AI`;
+        }
+    } catch(e) { /* silent */ }
+}
+
+function onScopeChange() {
+    updatePlaceholder();
+    refreshExemplarCount();
+}
+
 updatePlaceholder();
-loadDomains();
+loadDomains().then(refreshExemplarCount);
 </script>
 
 </body>

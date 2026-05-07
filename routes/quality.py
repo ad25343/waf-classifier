@@ -1223,6 +1223,7 @@ def author_item():
     level  = (data.get("level") or "story").strip().lower()
     domain = (data.get("domain") or "").strip() or None
     input_text = (data.get("input_text") or "").strip()
+    reference_items = (data.get("reference_items") or "").strip()
     mode = (data.get("mode") or "structured").strip().lower()
 
     if level not in _VALID_LEVELS:
@@ -1259,6 +1260,14 @@ def author_item():
             + "\n".join(ex_lines).strip() + "\n"
         )
 
+    user_refs_block = ""
+    if reference_items:
+        user_refs_block = (
+            "\nADDITIONAL REFERENCE ITEMS (supplied by the user for this draft only). "
+            "Match their style, tone, and depth where appropriate.\n\n"
+            + reference_items + "\n"
+        )
+
     persona = {
         "epic":    "product manager drafting an epic for portfolio review",
         "feature": "product owner drafting a feature for program refinement",
@@ -1285,7 +1294,7 @@ def author_item():
 Use the user's input as the seed. If they wrote a one-line idea, expand it. If they pasted a rough draft, polish it. Address every criterion below — use [REQUIRED: ...] placeholders for information the user hasn't supplied that the team must fill in. Don't invent specifics that aren't reasonably inferable from the input.
 
 The reference exemplars below show this organization's bar — match their tone and depth.
-{exemplars_block}
+{exemplars_block}{user_refs_block}
 DEFINITION-OF-READY CRITERIA:
 {criteria_list}
 
@@ -1309,8 +1318,9 @@ Output only the draft. No preamble, no explanation."""
             "level":     level,
             "domain":    domain,
             "rubric_id": rubric.get("id"),
-            "exemplars_used": len(exemplars[:3]),
-            "criteria_count": len(ai_criteria),
+            "exemplars_used":      len(exemplars[:3]),
+            "user_refs_used":      bool(reference_items),
+            "criteria_count":      len(ai_criteria),
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
