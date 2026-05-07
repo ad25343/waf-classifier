@@ -1,7 +1,7 @@
 """
 Generate WAF Classifier capabilities deck — light theme.
 Run: python3 make_deck.py
-Output: static/WAF_Classifier_Capabilities.pptx
+Output: docs/WAF_Classifier_Capabilities.pptx
 
 Structure (13 slides):
   MAIN (5):  Title · Problem · 8 Modules · What Leadership Gets · Where AI is Used
@@ -788,6 +788,6 @@ footer(sl, 13)
 
 
 # ── Save ─────────────────────────────────────────────────────
-out = "static/WAF_Classifier_Capabilities.pptx"
+out = "docs/WAF_Classifier_Capabilities.pptx"
 prs.save(out)
 print(f"✓  Saved → {out}  (13 slides: 5 main · 1 divider · 7 appendix)")
