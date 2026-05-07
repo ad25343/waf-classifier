@@ -1671,7 +1671,15 @@
             s = s.replace(/\n*(<\/?(?:h[1-3]|ul|li)[^>]*>)\n*/g, "$1");
             // Collapse blank lines between text rows — single line break is enough
             s = s.replace(/\n{2,}/g, "\n");
-            return s.replace(/\n/g, "<br>");
+            s = s.replace(/\n/g, "<br>");
+            // Re-introduce a paragraph gap before analytical sections (and trailing
+            // space after the last one) so they don't run flush against metadata.
+            ["Current Tag Assessment", "Similar Ground Truth Examples", "Suggestion"]
+                .forEach(label => {
+                    const re = new RegExp("(<br>)?(<strong>" + label + ")", "g");
+                    s = s.replace(re, "<br><br>$2");
+                });
+            return s + "<br>";
         }
 
         function scrollToBottom() {
