@@ -274,7 +274,7 @@ modules_detail = [
     ("📊", "Analytics & History","Dashboards, full-text search, exports, and AI narratives",                      "5 capabilities"),
     ("🔀", "File Merge",         "Join separate Epic, Feature, and Story JIRA exports into one clean file",        "3 capabilities"),
     ("👥", "Teams",              "Team-level WAF analytics, cross-team epic views, and Team of Teams rollups",     "4 capabilities"),
-    ("🏆", "Story Quality",      "AI-powered Definition of Ready scoring, chat refinement, and story rewrites",    "5 capabilities"),
+    ("🏆", "Backlog Quality",    "AI-powered DoR scoring, chat refinement, rewrite, and free-form Authoring",      "6 capabilities"),
     ("🏗",  "Epic Lineage",      "Epic health scoring, hierarchy trees, and cross-team epic assignment",           "3 capabilities"),
     ("⚡", "Disputes",           "Raise, queue, and resolve disagreements with AI classifications",                "3 capabilities"),
     ("⚙️", "Settings & Versions","WAF/GT file management, named versions, baselines, and system config",           "5 capabilities"),
@@ -399,7 +399,7 @@ bars = [
     ("Analytics",       1, 5),
     ("File Merge",      0, 3),
     ("Teams",           0, 4),
-    ("Story Quality",   3, 5),
+    ("Backlog Quality", 4, 6),
     ("Epic Lineage",    0, 3),
     ("Disputes",        0, 3),
     ("Settings",        0, 5),
@@ -454,7 +454,7 @@ index_items = [
     ("A2", "📊 Analytics & History"),
     ("A3", "🔀 File Merge"),
     ("A4", "👥 Teams"),
-    ("A5", "🏆 Story Quality"),
+    ("A5", "🏆 Backlog Quality"),
     ("A6", "🏗 Epic Lineage · ⚡ Disputes"),
     ("A7", "⚙️ Settings & Version Control"),
 ]
@@ -661,27 +661,30 @@ footer(sl, 10)
 sl = new_slide()
 rect(sl, 0, 0, Inches(0.06), SLIDE_H, fill=ACCENT).line.fill.background()
 slide_eyebrow(sl, "Appendix · A5 · Module 5")
-slide_title(sl, "🏆 Story Quality — Definition of Ready")
-slide_sub(sl, "Score every story against a 9-criterion DoR rubric — then use AI to refine or fully rewrite stories that don't pass.")
+slide_title(sl, "🏆 Backlog Quality — Definition of Ready + Author")
+slide_sub(sl, "Score Stories / Features / Epics / Defects against a level-aware DoR rubric — then refine, rewrite, or draft new items from intent. Calibrated with reference exemplars + per-criterion good_example.")
 divider(sl, Inches(1.42))
 
 cards_top = [
-    ("🎯", "Batch DoR Scoring",
-     "Scores every story against 9 criteria: Narrative Format, Source Data, Business Rules, Output Artifact, Acceptance Criteria, Data Quality Checks, Traceability, Story Points, Dependencies. Each criterion gets a pass/fail with a short reason.",
+    ("🎯", "Level-Aware DoR Scoring",
+     "Scores every Story / Feature / Epic / Defect against its own DoR rubric (7 criteria each, sourced from Story Excellence Playbook v2). Optional domain extensions (CapMkts, Data, MF, SF, Risk) add LoB-specific criteria. Pass/fail per criterion with the AI's specific reasoning.",
      True),
-    ("💬", "Story Improvement Chat",
-     "Open a chat against a specific story. The AI suggests targeted improvements for whichever criteria are failing — collaborative, iterative refinement without rewriting the whole story.",
+    ("✨", "Author — Draft from Intent",
+     "Start from a one-line idea or rough draft and the AI produces a structured DoR-passing item. Same calibration plumbing as scoring: composite rubric, per-criterion good_example, reference exemplars + optional per-call paste-box. Structured (Markdown) or Narrative output mode.",
      True),
-    ("✍️", "AI Story Rewrite",
-     "One click for the AI to produce a fully rewritten version of the story addressing all failing criteria, in the correct narrative format — ready to copy back into JIRA.",
+    ("✍️", "AI Rewrite — What good looks like",
+     "One click for the AI to fully rewrite a failing item against all failing criteria, in the correct format. Cached in-process so re-clicks are free; pass force=true to bypass.",
      True),
 ]
 cards_bot = [
-    ("📊", "Quality Results & History",
-     "Browse scoring results by upload, team, or scoring run. See aggregate Ready / Needs Work / Not Ready counts, per-criterion pass rates, and score trends across multiple runs.",
+    ("💬", "Improvement Chat",
+     "Open an iterative chat against a specific item. The AI suggests targeted improvements for whichever criteria are failing — collaborative refinement without rewriting the whole item.",
+     True),
+    ("📊", "Results, Run History & Export",
+     "Browse scoring results by upload, team, level, domain, or scoring run. Run History columns include Level + Domain + Items count. Export CSV with per-criterion pass/fail, overall score, band, and full metadata.",
      False),
-    ("📤", "Quality Export",
-     "Download results as CSV — one row per story with pass/fail for all 9 criteria, overall score percentage, and team/epic metadata for downstream reporting.",
+    ("⚙️", "Domain Editor + Exemplars",
+     "Domain stewards review and edit DoR criteria in-app at /quality-domains — no code changes. New Exemplars tab stores passing items per rubric, fed into every scoring + rewrite + Author call as REFERENCE EXEMPLARS to set the org's bar.",
      False),
 ]
 
@@ -689,7 +692,7 @@ cw_t, ch_t = Inches(3.9), Inches(1.9)
 for i, (ico, ttl, dsc, llm) in enumerate(cards_top):
     cap_card(sl, Inches(0.55) + i * (cw_t + Inches(0.18)), Inches(1.55), cw_t, ch_t, ico, ttl, dsc, llm)
 
-cw_b, ch_b = Inches(5.95), Inches(1.76)
+cw_b, ch_b = Inches(3.9), Inches(1.76)
 for i, (ico, ttl, dsc, llm) in enumerate(cards_bot):
     cap_card(sl, Inches(0.55) + i * (cw_b + Inches(0.18)), Inches(3.62), cw_b, ch_b, ico, ttl, dsc, llm)
 

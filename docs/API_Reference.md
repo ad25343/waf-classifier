@@ -1334,6 +1334,44 @@ Generate a "what good looks like" rewrite for a single story, addressing the cri
 
 The output structure is rubric-driven — one section per Definition-of-Ready criterion that the rewrite addresses. Each section uses the criterion's `good_example` as guidance.
 
+### POST /api/quality/author
+
+Draft a new Story / Feature / Epic / Defect from a free-form intent or a rough draft. Reuses the same calibration plumbing as scoring + rewrite — composite rubric (`base + domain`), per-criterion `good_example` inlined, up to 3 reference exemplars from the rubric, plus optional user-supplied per-request reference items.
+
+**Request:**
+```json
+{
+  "level": "epic",
+  "domain": "mf-servicing",
+  "input_text": "We need to fix our MF watchlist process. Servicers send NOI / occupancy data and it takes 5-7 days to flag a loan...",
+  "reference_items": "Optional — paste 1-3 sibling epics/features/stories to style-match for THIS draft only. Not saved.",
+  "mode": "structured"
+}
+```
+
+| Field            | Required | Description |
+|------------------|----------|-------------|
+| `level`          | Yes      | `story` / `feature` / `epic` / `defect` |
+| `domain`         | No       | Domain id from the manifest (e.g. `data`, `capmkts`, `mf-servicing`). Omit for base-only. |
+| `input_text`     | Yes      | Free-form intent or rough draft. The AI expands a one-liner or polishes a draft. |
+| `reference_items`| No       | Per-request reference items inlined alongside the saved exemplars. Used for THIS call only — not persisted. |
+| `mode`           | No       | `structured` (default) — Markdown sections per criterion. `narrative` — single prose block. |
+
+**Response:**
+```json
+{
+  "drafted":        "### Strategic Outcome Stated as a Measurable Change\n90% of MF loans flagged...\n\n### Business Sponsor Named...",
+  "level":          "epic",
+  "domain":         "mf-servicing",
+  "rubric_id":      "epic-dor:mf-servicing",
+  "exemplars_used": 1,
+  "user_refs_used": false,
+  "criteria_count": 7
+}
+```
+
+`[REQUIRED: ...]` placeholders appear inline in the draft wherever the user didn't supply something the team must fill in (sponsor name, baseline numbers, capacity envelope, etc.). The placeholders are intentional — the AI does not invent specifics that aren't reasonably inferable from the input.
+
 ### POST /api/quality/chat
 
 Continue an iterative rewrite session.

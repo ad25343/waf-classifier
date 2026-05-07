@@ -2,6 +2,82 @@
 
 ---
 
+## v3.8.0 — May 2026
+
+New **Author** page lets users draft Stories / Features / Epics / Defects from a one-line idea or a rough draft, calibrated against the same DoR rubric the Backlog Quality scorer uses. Reference exemplars and per-criterion `good_example` are now sent to the AI on every scoring + rewrite + author call so output matches the organization's actual bar. Plus an aliases priority bug fix, classifier output spacing polish, and Run History column reshuffle.
+
+### Author — draft a backlog item from free-form intent (new page `/author`)
+
+Users no longer have to start from a blank page when writing an Epic / Feature / Story / Defect. The new Author surface accepts:
+
+- **A one-line idea** ("we need a delinquency dashboard refreshed daily") and expands it into a structured draft.
+- **A rough draft** pasted in — the AI polishes it against the rubric.
+
+It reuses the entire scoring calibration plumbing — same rubric criteria, same per-criterion `good_example`, same reference exemplars, same domain extensions. Output ships in two formats:
+
+- **Structured** — one Markdown section per DoR criterion, with `[REQUIRED: ...]` placeholders where the user hasn't supplied something the team must fill in.
+- **Narrative** — single coherent prose paragraph, useful for Epics / Features.
+
+UI affordances:
+
+- **Level dropdown** (Story / Feature / Epic / Defect) — the textarea placeholder examples swap to match the level (user-story phrasing for Story, measurable-outcome phrasing for Epic, bug-report phrasing for Defect, etc.).
+- **Domain dropdown** (optional) — layers the domain extension on top of the base rubric, so a Capital Markets feature draft gets settlement / pricing / counterparty criteria automatically.
+- **Reference items textarea (collapsible)** — paste 1–3 sibling Epics / Features / Stories you want this draft to match in style and depth. Used for THIS draft only — not saved.
+- **Saved-exemplar indicator** in the summary header (e.g. *"1 saved exemplar from base already feeding the AI"*) — updates live when level or domain changes so users can see what's already loaded before pasting anything.
+- **Output panel** with Copy + Regenerate buttons; metadata line shows rubric id, criterion count, exemplar count, and `+ your pasted refs` when reference items were used.
+
+Top-nav **✨ Author** link added between Classify and Analyze on every page.
+
+### Reference exemplars sent to the AI (scoring + rewrite + author)
+
+Rubrics now carry an `exemplars` array — passing items from the organization that show what good actually looks like at the org's bar. The composite loader concatenates `base.exemplars + extension.exemplars` (no dedup — each domain's exemplars are additive).
+
+On every AI call (scoring, rewrite, author), up to 3 exemplars are inlined as a `REFERENCE EXEMPLARS` block in the system prompt with each exemplar's `name`, `content`, and `why_this_passes`. Domain Editor → Exemplars tab is the editing surface; one exemplar is seeded on `epic-dor.json` (*"Same-Day Lender Commitments for Conforming Loans"*) as a starter.
+
+### Per-criterion `good_example` sent to AI
+
+Previously `good_example` only surfaced in the UI on a failure card. Now it ships in the AI prompt for every criterion, both during scoring and authoring. Calibration is per-criterion, not just per-rubric.
+
+### Aliases — lookup priority fix
+
+Custom WAF aliases were silently being shadowed by the exact-name match check. If a team had aliased `"Reg Mandate"` → `"Regulatory Mandated Change"` but a row arrived with the canonical name, the alias was bypassed and ground-truth comparison fell through. The category-normalization pipeline now runs alias lookup as **step 1**, before any exact / fuzzy match — user-defined mappings always win.
+
+### Classifier chat output — spacing polish
+
+The `/classify` chat view's analysis output had three unwanted gaps caused by an unconditional `\n → <br>` replacement in `formatMessage()`:
+
+- Extra blank line under every heading (`<h3>` already has block margin).
+- Visible blank line between adjacent `<li>` elements inside `<ul>`.
+- Doubled gap above lists.
+
+Fixed by stripping newlines that hug `<h1-3>`, `<ul>`, `<li>` tags before the `\n → <br>` pass; collapsing multiple consecutive newlines to one between metadata fields; and re-introducing a paragraph break before the analytical sections (Current Tag Assessment, Similar Ground Truth Examples, Suggestion) plus a trailing line so the action bar doesn't sit flush against the last line.
+
+### Backlog Quality — Run History columns
+
+The `/history` Backlog Quality "Run History" subtable swapped columns: removed the `Teams` count (rolled into the level scope), added explicit **Level** and **Domain** columns, and renamed `Stories` → `Items` since the count is whatever level was scored (Stories, Features, Epics, or Defects).
+
+### Color (User → AI) — consistent everywhere
+
+Every view that surfaces both a user-assigned WAF and an AI-recommended WAF (History story panel, Teams drill-down, Lineage row detail, Disputes detail) now renders a `User WAF Color → AI WAF Color` chip pair via the shared `static/color-pair.js` helper. Mismatches are visually obvious without having to read both color labels.
+
+### Usage Analytics — drill-down + clickable rows
+
+The `/admin/usage` table is now interactive: every row is clickable to open a detail panel showing the raw routes that rolled into that feature, with a token-spend column added per row (input + output). The "Other" bucket surfaces the actual route names so usage that hasn't been categorized in `_FEATURE_RULES` is visible at a glance.
+
+### API Changes
+
+- **NEW** `POST /api/quality/author` — body: `{level, domain, input_text, reference_items, mode}` → `{drafted, level, domain, rubric_id, exemplars_used, user_refs_used, criteria_count}`
+- `GET /api/quality/rubric` — response now includes `exemplars` array on the composite rubric (`base + extension` concatenated)
+- `PUT /api/quality/extension` — accepts `exemplars` field; validated as a list of `{name, content, why_this_passes}` objects
+- The `_extension_path()` helper accepts `domain == "base"` as a special case → reads/writes `rubrics/base/{level}-dor.json`, so the Domain Editor's "Base (all domains)" entry can edit the universal rubric
+
+### Database
+
+- `classifications` adds five columns to preserve full upload context for level-aware scoring: `story_type`, `epic_description`, `epic_sponsor`, `epic_block`, `feature_description`
+- Migration is additive; existing rows backfill as NULL on the new columns
+
+---
+
 ## v3.7.0 — May 2026
 
 Real Story Excellence playbook adopted, composite rubrics with optional domain extensions, in-app domain editor, inline dispute flagging on three more pages, merge feature overhaul, and a Team-of-Teams filter bugfix.

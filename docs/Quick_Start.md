@@ -162,6 +162,27 @@ A story scoring 86 with one required criterion failing is correctly **Needs Work
 
 ---
 
+## Author a New Backlog Item
+
+The **Author** page (`/author`, also linked as **✨ Author** in the top nav) drafts a Story / Feature / Epic / Defect from a one-line idea or a rough paste, calibrated against the same DoR rubric the Backlog Quality scorer uses.
+
+1. From any page, click **✨ Author** in the top nav.
+2. Pick the **Level** (Story / Feature / Epic / Defect). The textarea placeholder examples swap to match the level.
+3. Pick a **Domain** (optional) — layers the domain extension on top of the base rubric. Generic / Base only is fine for cross-domain items.
+4. Pick the **Output format**:
+   - **Structured** — one Markdown section per DoR criterion, useful for refinement / review.
+   - **Narrative** — a single coherent prose paragraph, useful for Epic / Feature briefs going into a portfolio review deck.
+5. Type or paste your input — anything from a one-line intent ("we need a daily delinquency dashboard") to a full rough draft. The AI expands one-liners and polishes rough drafts.
+6. *(Optional)* Open **Reference items (optional)** and paste 1–3 sibling Epics / Features / Stories you want this draft to match in style. The summary header tells you how many saved exemplars are already feeding the AI for that level + domain combo.
+7. Click **✨ Generate draft**. The output panel shows the drafted item with **Copy** and **Regenerate** buttons. `[REQUIRED: ...]` placeholders mark anything the team must fill in (sponsor name, baseline numbers, capacity envelope, etc.).
+
+**Saved exemplars vs. paste-box references:**
+
+- **Saved exemplars** (Domain Editor → Exemplars tab) are the persistent, org-wide bar — every Author + scoring + rewrite call uses them. Add the canonical "this is how we write a great Epic at our org" templates here.
+- **Reference items textarea** is per-call only — useful for ad-hoc style-matching to a specific sibling item without polluting the org-wide exemplars.
+
+---
+
 ## Customize a Domain Rubric (Domain Editor)
 
 The Domain Editor lets domain stewards review, edit, and reset the JSON extensions in `rubrics/domains/{id}/` from the UI.
