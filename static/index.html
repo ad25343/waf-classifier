@@ -1655,7 +1655,7 @@
 
 
         function formatMessage(text) {
-            return text
+            let s = text
                 .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
                 .replace(/\*(.*?)\*/g, "<em>$1</em>")
                 .replace(/`(.*?)`/g, "<code>$1</code>")
@@ -1666,8 +1666,10 @@
                 .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
                 .replace(/<\/ul>\s*<ul>/g, "")
                 .replace(/✅/g, '<span style="color:var(--success)">✅</span>')
-                .replace(/⚠️/g, '<span style="color:var(--warning)">⚠️</span>')
-                .replace(/\n/g, "<br>");
+                .replace(/⚠️/g, '<span style="color:var(--warning)">⚠️</span>');
+            // Strip newlines hugging block-level tags so they don't become extra <br>s
+            s = s.replace(/\n*(<\/?(?:h[1-3]|ul|li)[^>]*>)\n*/g, "$1");
+            return s.replace(/\n/g, "<br>");
         }
 
         function scrollToBottom() {
