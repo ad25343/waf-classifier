@@ -1669,6 +1669,8 @@
                 .replace(/⚠️/g, '<span style="color:var(--warning)">⚠️</span>');
             // Strip newlines hugging block-level tags so they don't become extra <br>s
             s = s.replace(/\n*(<\/?(?:h[1-3]|ul|li)[^>]*>)\n*/g, "$1");
+            // Collapse blank lines between text rows — single line break is enough
+            s = s.replace(/\n{2,}/g, "\n");
             return s.replace(/\n/g, "<br>");
         }
 
