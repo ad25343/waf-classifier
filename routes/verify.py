@@ -327,6 +327,12 @@ def bulk_verify_preview():
             # ── Organisation ──────────────────────────────────────
             {"key": "team",           "label": "Assigned Teams",     "required": False, "keywords": ["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"]},
             {"key": "timestamp",      "label": "Timestamp",          "required": False, "keywords": ["timestamp", "time stamp", "date", "created", "created_at"]},
+            # ── Epic / Feature attributes for level-aware Backlog Quality scoring ──
+            {"key": "story_type",          "label": "Story Type",         "required": False, "keywords": ["issue type", "story type", "type"]},
+            {"key": "epic_description",    "label": "Epic Description",   "required": False, "keywords": ["epic description", "epic desc", "epic summary"]},
+            {"key": "epic_sponsor",        "label": "Epic Sponsor",       "required": False, "keywords": ["sponsor", "epic sponsor", "owner", "epic owner"]},
+            {"key": "epic_block",          "label": "Epic Block",         "required": False, "keywords": ["block", "sub-block", "org", "epic block"]},
+            {"key": "feature_description", "label": "Feature Description","required": False, "keywords": ["feature description", "feature desc", "feature summary"]},
         ]
         for field in target_fields:
             matched = _find_col(df.columns, field["keywords"], exclude=claimed_cols)
@@ -403,6 +409,15 @@ def bulk_verify():
         epic_id_col = mappings.get("epic_id", "") or None
         story_points_col = mappings.get("story_points", "") or None
         pi_number_col = mappings.get("pi_number", "") or None
+        # v3.7+: Epic / Feature attributes for level-aware Backlog Quality scoring
+        # (must mirror the auto-detect branch below — otherwise the shared loop
+        #  hits NameError on these variables when the user comes through the
+        #  preview→map flow.)
+        story_type_col   = mappings.get("story_type", "") or None
+        epic_desc_col    = mappings.get("epic_description", "") or None
+        epic_sponsor_col = mappings.get("epic_sponsor", "") or None
+        epic_block_col   = mappings.get("epic_block", "") or None
+        feat_desc_col    = mappings.get("feature_description", "") or None
 
         if not title_col:
             return jsonify({"error": "Title column mapping is required"}), 400
