@@ -328,11 +328,19 @@ def bulk_verify_preview():
             {"key": "team",           "label": "Assigned Teams",     "required": False, "keywords": ["assigned teams", "assigned team", "assigned_team", "team", "squad", "group"]},
             {"key": "timestamp",      "label": "Timestamp",          "required": False, "keywords": ["timestamp", "time stamp", "date", "created", "created_at"]},
             # ── Epic / Feature attributes for level-aware Backlog Quality scoring ──
-            {"key": "story_type",          "label": "Story Type",         "required": False, "keywords": ["issue type", "story type", "type"]},
+            # Story Type / Epic Sponsor / Epic Block are intentionally NOT
+            # exposed in the mapping UI — most JIRA exports today don't
+            # populate these columns, so showing dropdowns that always sit on
+            # "(none)" is dead UI weight. The DB columns and AI prompt
+            # plumbing are still in place; auto-detect in the legacy upload
+            # branch still picks them up if a file does have them. To re-
+            # enable user mapping, restore the three commented-out entries
+            # below.
             {"key": "epic_description",    "label": "Epic Description",   "required": False, "keywords": ["epic description", "epic desc", "epic summary"]},
-            {"key": "epic_sponsor",        "label": "Epic Sponsor",       "required": False, "keywords": ["sponsor", "epic sponsor", "owner", "epic owner"]},
-            {"key": "epic_block",          "label": "Epic Block",         "required": False, "keywords": ["block", "sub-block", "org", "epic block"]},
             {"key": "feature_description", "label": "Feature Description","required": False, "keywords": ["feature description", "feature desc", "feature summary"]},
+            # {"key": "story_type",   "label": "Story Type",   "required": False, "keywords": ["issue type", "story type", "type"]},
+            # {"key": "epic_sponsor", "label": "Epic Sponsor", "required": False, "keywords": ["sponsor", "epic sponsor", "owner", "epic owner"]},
+            # {"key": "epic_block",   "label": "Epic Block",   "required": False, "keywords": ["block", "sub-block", "org", "epic block"]},
         ]
         for field in target_fields:
             matched = _find_col(df.columns, field["keywords"], exclude=claimed_cols)
