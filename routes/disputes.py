@@ -124,7 +124,11 @@ def resolve_dispute(dispute_id):
     data = request.json or {}
     action = data.get("action", "")
 
-    valid_actions = {"dismiss", "accept_gt", "flag_waf"}
+    # 'reopen' rolls a previously-resolved dispute back to pending and
+    # clears all resolution fields. The three accept/dismiss/flag actions
+    # are idempotent — calling any of them on an already-resolved dispute
+    # overwrites the previous resolution cleanly.
+    valid_actions = {"dismiss", "accept_gt", "flag_waf", "reopen"}
     if action not in valid_actions:
         return jsonify({"error": f"action must be one of: {', '.join(sorted(valid_actions))}"}), 400
 
@@ -134,18 +138,26 @@ def resolve_dispute(dispute_id):
         return jsonify({"error": "Dispute not found"}), 404
 
     status_map = {
-        "dismiss": "dismissed",
+        "dismiss":   "dismissed",
         "accept_gt": "accepted",
-        "flag_waf": "flagged_waf",
+        "flag_waf":  "flagged_waf",
+        "reopen":    "pending",
     }
     new_status = status_map[action]
 
     gt_updated = 1 if action == "accept_gt" else 0
     waf_flagged = 1 if action == "flag_waf" else 0
-    reviewed_at = datetime.now().isoformat()
-    reviewer_notes = data.get("reviewer_notes", "")
-    resolved_category = data.get("resolved_category", "")
-    resolved_color = data.get("resolved_color", "")
+    # reopen clears reviewed_at + notes + resolved_*; resolutions stamp them.
+    if action == "reopen":
+        reviewed_at = None
+        reviewer_notes = ""
+        resolved_category = ""
+        resolved_color = ""
+    else:
+        reviewed_at = datetime.now().isoformat()
+        reviewer_notes = data.get("reviewer_notes", "")
+        resolved_category = data.get("resolved_category", "")
+        resolved_color = data.get("resolved_color", "")
 
     db.execute(
         """UPDATE disputes

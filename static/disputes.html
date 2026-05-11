@@ -755,17 +755,24 @@ function renderRow(d) {
     const statusKey = d.status || 'pending';
     const statusBadge = '<span class="badge badge-' + statusKey + '">' + statusLabel(statusKey) + '</span>';
 
-    // Actions (only for pending)
-    let actionsHtml = '<td><div class="actions-cell">—</div></td>';
+    // Actions cell: for pending, show 3 inline action buttons for fast
+    // queue processing. For resolved disputes, show a single "Change…"
+    // button that opens the modal so the user can transition between
+    // any of the 4 states (including reopen → pending).
+    let actionsHtml;
     if (statusKey === 'pending') {
-        actionsHtml = `<td><div class="actions-cell">
+        actionsHtml = `<td><div class="actions-cell" onclick="event.stopPropagation()">
             <button class="btn btn-sm btn-dismiss" onclick="openModal(${d.id}, 'dismiss')">Dismiss</button>
             <button class="btn btn-sm btn-accept"  onclick="openModal(${d.id}, 'accept_gt')">Accept → GT</button>
             <button class="btn btn-sm btn-flag"    onclick="openModal(${d.id}, 'flag_waf')">Flag WAF</button>
         </div></td>`;
+    } else {
+        actionsHtml = `<td><div class="actions-cell" onclick="event.stopPropagation()">
+            <button class="btn btn-sm" style="background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border);" onclick="openModal(${d.id}, 'change')">↺ Change…</button>
+        </div></td>`;
     }
 
-    return `<tr>
+    return `<tr style="cursor:pointer;" title="Click to view / change status" onclick="openModal(${d.id}, 'change')">
         <td style="color:var(--text-muted);font-size:12px;white-space:nowrap;">${date}</td>
         <td>
             <div style="font-weight:500;color:var(--text-primary);">${esc(title)}</div>
@@ -844,8 +851,36 @@ function openModal(id, action) {
             ${dispute.suggested_category ? `<div style="margin-top:10px;"><div class="detail-label">User Suggested</div><div class="detail-value">${esc(dispute.suggested_category)}</div></div>` : ''}
         </div>`;
 
-    if (action === 'accept_gt') {
+    if (action === 'change') {
+        // Status-chooser screen — shown when the user clicks the row (or
+        // the "Change…" button on a resolved dispute). Pick a target
+        // state and the modal re-renders into that state's form.
+        const curStatus = dispute.status || 'pending';
+        modalTitle.textContent = 'Change Status';
+        confirmBtn.style.display = 'none';   // chooser has no single confirm; pick a tile
+        const tile = (key, label, fg, bg, desc) => {
+            const isCur = (key === 'dismiss'   && curStatus === 'dismissed') ||
+                          (key === 'accept_gt' && curStatus === 'accepted')  ||
+                          (key === 'flag_waf'  && curStatus === 'flagged_waf') ||
+                          (key === 'reopen'    && curStatus === 'pending');
+            return `<button class="status-tile" ${isCur ? 'disabled' : ''}
+                        onclick="openModal(${id}, '${key}')"
+                        style="text-align:left;padding:14px 16px;border-radius:8px;border:1px solid ${isCur ? 'var(--accent)' : 'var(--border)'};background:${isCur ? 'var(--accent-soft, rgba(99,102,241,0.08))' : 'var(--bg-secondary)'};cursor:${isCur ? 'default' : 'pointer'};opacity:${isCur ? '0.6' : '1'};display:block;width:100%;margin-bottom:8px;">
+                    <div style="font-weight:600;color:${fg};font-size:14px;">${label} ${isCur ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:6px;">(current)</span>' : ''}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${desc}</div>
+                </button>`;
+        };
+        modalBody.innerHTML = storyDetail +
+            `<div class="form-group" style="margin-top:8px;">
+                <label class="form-label" style="margin-bottom:10px;">Where should this dispute go?</label>
+                ${tile('accept_gt', '✅ Accept → Update Ground Truth', 'var(--success, #16a34a)',  '', 'AI was wrong on this story — capture the correct classification as a GT example so the AI learns.')}
+                ${tile('dismiss',   '⊘ Dismiss',                         'var(--text-secondary)',     '', 'The user challenge is not valid — AI classification stands as-is.')}
+                ${tile('flag_waf',  '🚩 Flag WAF Definition',             'var(--teal, #0d9488)',      '', 'The WAF Category Definitions doc is ambiguous and needs an edit. Flag for reviewer.')}
+                ${tile('reopen',    '↺ Reopen as Pending',                'var(--text-secondary)',     '', 'Roll this dispute back to the pending queue — clears the previous resolution.')}
+            </div>`;
+    } else if (action === 'accept_gt') {
         modalTitle.textContent = 'Accept → Update Ground Truth';
+        confirmBtn.style.display = '';
         confirmBtn.textContent = 'Accept & Add to GT';
         confirmBtn.className = 'btn btn-sm btn-accept';
         confirmBtn.style.cssText = 'background:var(--success);color:#000;font-weight:600;';
@@ -876,6 +911,7 @@ function openModal(id, action) {
 
     } else if (action === 'flag_waf') {
         modalTitle.textContent = 'Flag WAF Definition for Review';
+        confirmBtn.style.display = '';
         confirmBtn.textContent = 'Flag WAF';
         confirmBtn.style.cssText = 'background:var(--teal);color:#fff;font-weight:600;';
 
@@ -885,9 +921,23 @@ function openModal(id, action) {
                 <textarea class="form-textarea" id="modal-notes" placeholder="e.g. The boundary between 'Technical Maintenance' and 'KTLO' is unclear when…" style="min-height:120px;"></textarea>
             </div>`;
 
+    } else if (action === 'reopen') {
+        modalTitle.textContent = 'Reopen as Pending';
+        confirmBtn.style.display = '';
+        confirmBtn.textContent = 'Reopen';
+        confirmBtn.style.cssText = 'background:var(--text-muted);color:#fff;font-weight:600;';
+
+        modalBody.innerHTML = storyDetail +
+            `<div class="form-group">
+                <div style="padding:10px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;color:#92400e;font-size:12px;line-height:1.5;">
+                    Resetting this dispute to <strong>pending</strong> clears the previous resolution (status, reviewer notes, resolved category/color). Any GT row created by a previous <em>Accept → GT</em> is left in place — review it manually if you want it removed.
+                </div>
+            </div>`;
+
     } else {
         // dismiss
         modalTitle.textContent = 'Dismiss Dispute';
+        confirmBtn.style.display = '';
         confirmBtn.textContent = 'Dismiss';
         confirmBtn.style.cssText = 'background:var(--text-muted);color:#fff;font-weight:600;';
 
