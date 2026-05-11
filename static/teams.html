@@ -744,7 +744,7 @@
             <div class="insights-section" id="team-insights">
                 <div class="kpi-row" id="kpi-team">
                     <div class="kpi-card kpi-clickable" title="Show all stories" onclick="filterTeamByKpi('all')"><div class="kpi-label">Total Stories</div><div class="kpi-value" id="kt-stories">-</div></div>
-                    <div class="kpi-card"><div class="kpi-label">Epics</div><div class="kpi-value" id="kt-epics">-</div></div>
+                    <div class="kpi-card kpi-clickable" title="Switch to By Epic view" onclick="switchTab('by-epic')"><div class="kpi-label">Epics</div><div class="kpi-value" id="kt-epics">-</div></div>
                     <div class="kpi-card kpi-clickable" title="Show mismatched stories" onclick="filterTeamByKpi('mismatch')"><div class="kpi-label">Mismatch Rate</div><div class="kpi-value" id="kt-mismatch">-</div></div>
                     <div class="kpi-card"><div class="kpi-label">Dominant Category</div><div class="kpi-value" id="kt-dominant" style="font-size:16px;">-</div></div>
                 </div>
@@ -929,12 +929,18 @@ async function loadTeamsData() {
         window._teamDetailMap = {};
         detailResults.forEach((data, i) => { if (data) window._teamDetailMap[teamNames[i]] = data; });
 
-        // Flatten all stories across all teams
+        // Flatten all stories across all teams. The detail endpoint doesn't
+        // include `team` on each story, but ToT filtering needs it — stamp it
+        // here from the per-team response so filter(s => visibleTeams.has(s.team))
+        // actually matches.
         window._allTeamStories = [];
         detailResults.forEach(data => {
             if (!data) return;
             (data.epics || []).forEach(ep => (ep.features || []).forEach(ft =>
-                (ft.stories || []).forEach(s => window._allTeamStories.push(s))
+                (ft.stories || []).forEach(s => {
+                    s.team = data.team;
+                    window._allTeamStories.push(s);
+                })
             ));
         });
 
@@ -1072,7 +1078,11 @@ function selectAllTeams() {
     const allPill = document.getElementById('pill-all-teams');
     if (allPill) allPill.classList.add('active');
 
-    // KPIs from summary aggregate — respect active ToT filter
+    // KPIs from summary aggregate — respect active ToT filter.
+    // total_stories is the authoritative server-side count per team, summed
+    // across visible teams. Don't rely on _allTeamStories.length because that
+    // depends on per-team detail fetches all completing — a silent fetch
+    // failure would zero out the KPI even when the server has data.
     const totFilter = _totFilterValue();
     const allTeams = summaryData?.teams || [];
     const teams = totFilter ? allTeams.filter(t => t.team_of_teams === totFilter) : allTeams;
@@ -1080,8 +1090,8 @@ function selectAllTeams() {
     const allStories = totFilter
         ? window._allTeamStories.filter(s => visibleTeamNames.has(s.team))
         : window._allTeamStories;
-    const totalStories = allStories.length;
-    const totalMismatches = allStories.filter(s => s.was_mismatch).length;
+    const totalStories  = teams.reduce((s, t) => s + (t.total_stories || 0), 0);
+    const totalMismatches = teams.reduce((s, t) => s + (t.mismatches    || 0), 0);
     const mismatchRate = totalStories > 0 ? (totalMismatches / totalStories * 100).toFixed(1) : '0.0';
     const catTotals = {};
     teams.forEach(t => Object.entries(t.categories || {}).forEach(([c, n]) => { catTotals[c] = (catTotals[c] || 0) + n; }));
