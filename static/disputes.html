@@ -760,7 +760,7 @@ function renderRow(d) {
     if (statusKey === 'pending') {
         actionsHtml = `<td><div class="actions-cell">
             <button class="btn btn-sm btn-dismiss" onclick="openModal(${d.id}, 'dismiss')">Dismiss</button>
-            <button class="btn btn-sm btn-accept"  onclick="openModal(${d.id}, 'accept')">Accept → GT</button>
+            <button class="btn btn-sm btn-accept"  onclick="openModal(${d.id}, 'accept_gt')">Accept → GT</button>
             <button class="btn btn-sm btn-flag"    onclick="openModal(${d.id}, 'flag_waf')">Flag WAF</button>
         </div></td>`;
     }
@@ -844,7 +844,7 @@ function openModal(id, action) {
             ${dispute.suggested_category ? `<div style="margin-top:10px;"><div class="detail-label">User Suggested</div><div class="detail-value">${esc(dispute.suggested_category)}</div></div>` : ''}
         </div>`;
 
-    if (action === 'accept') {
+    if (action === 'accept_gt') {
         modalTitle.textContent = 'Accept → Update Ground Truth';
         confirmBtn.textContent = 'Accept & Add to GT';
         confirmBtn.className = 'btn btn-sm btn-accept';
@@ -915,7 +915,7 @@ async function confirmResolve() {
 
     const body = { action: action, reviewer_notes: notes };
 
-    if (action === 'accept') {
+    if (action === 'accept_gt') {
         const catEl = document.getElementById('modal-category');
         const colorEl = document.getElementById('modal-color');
         body.resolved_category = catEl ? catEl.value : '';
