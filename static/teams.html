@@ -704,6 +704,13 @@
         <button class="tab-btn" data-tab="by-epic" onclick="switchTab('by-epic')">By Epic</button>
     </div>
 
+    <!-- Untagged-team banner (shown when summary reports no real teams) -->
+    <div id="no-team-banner" style="display:none;margin:10px 0 14px;padding:10px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;color:#9a3412;font-size:13px;line-height:1.5;">
+        <strong>No team-tagged data in this upload.</strong>
+        Stories are bucketed under <code style="background:#fed7aa;padding:1px 6px;border-radius:4px;">(No Team)</code> because the source file didn't have a Team column mapped.
+        Re-upload via <a href="/history" style="color:#9a3412;text-decoration:underline;font-weight:600;">Upload Data</a> and map the <em>Assigned Teams</em> column to enable team-by-team breakdowns.
+    </div>
+
     <!-- ========== BY TEAM TAB ========== -->
     <div class="tab-content active" id="tab-by-team">
 
@@ -913,6 +920,10 @@ async function loadTeamsData() {
         ]);
         summaryData = await sumRes.json();
         epicsList = await epicsRes.json();
+
+        // Show the "no team mapping" banner when every team bucket is "(No Team)".
+        const banner = document.getElementById('no-team-banner');
+        if (banner) banner.style.display = summaryData.has_untagged_only ? 'block' : 'none';
 
         const catSet = new Set();
         summaryData.teams.forEach(t => Object.keys(t.categories).forEach(c => catSet.add(c)));

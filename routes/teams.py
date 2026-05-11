@@ -9,6 +9,19 @@ from database import get_db
 
 teams_bp = Blueprint("teams_bp", __name__)
 
+# Untagged rows (team is NULL / empty / the verify.py default placeholder
+# "default") are bucketed under this synthetic label so the Teams view
+# shows them instead of silently filtering them out.
+NO_TEAM_LABEL = "(No Team)"
+
+
+def _team_label(raw):
+    """Normalize a raw team value into a display label."""
+    v = (raw or "").strip()
+    if not v or v.lower() == "default":
+        return NO_TEAM_LABEL
+    return v
+
 
 @teams_bp.route("/api/teams/summary")
 def teams_summary():
@@ -16,16 +29,18 @@ def teams_summary():
     db = get_db()
     upload_id = request.args.get("upload_id")
 
+    # Include rows with empty / 'default' team values — they get bucketed
+    # under "(No Team)" via _team_label() so users see their untagged data
+    # instead of getting a silent empty response.
     query = """
         SELECT team, epic, waf_category, waf_color, run_change,
                was_mismatch, approved, confidence,
                COALESCE(team_of_teams, '') as team_of_teams
         FROM classifications
-        WHERE team != '' AND team != 'default'
     """
     params = []
     if upload_id:
-        query += " AND upload_id = ?"
+        query += " WHERE upload_id = ?"
         params.append(upload_id)
 
     rows = db.execute(query, params).fetchall()
@@ -49,7 +64,7 @@ def teams_summary():
     tot_teams = defaultdict(set)
 
     for row in rows:
-        team = row["team"]
+        team = _team_label(row["team"])
         t = team_data[team]
         t["stories"] += 1
         if row["epic"]:
@@ -121,6 +136,11 @@ def teams_summary():
         for tot, tms in tot_teams.items()
     ], key=lambda x: x["name"])
 
+    # Flag for the frontend banner: every team is "(No Team)" → user
+    # didn't map a Team column. Helpful nudge to go back to upload.
+    has_untagged_only = bool(teams) and all(t["name"] == NO_TEAM_LABEL for t in teams)
+    has_untagged_bucket = any(t["name"] == NO_TEAM_LABEL for t in teams)
+
     return jsonify({
         "teams": teams,
         "team_of_teams": tot_list,
@@ -134,6 +154,9 @@ def teams_summary():
             "avg_mismatch_rate": avg_mismatch,
             "most_active_team": most_active,
         },
+        "has_untagged_only":   has_untagged_only,
+        "has_untagged_bucket": has_untagged_bucket,
+        "no_team_label":       NO_TEAM_LABEL,
     })
 
 
@@ -146,12 +169,17 @@ def teams_detail():
 
     upload_id = request.args.get("upload_id")
     db = get_db()
-    query = """SELECT id, story_title, story_description, waf_category, waf_color,
+    base_select = """SELECT id, story_title, story_description, waf_category, waf_color,
                   run_change, confidence, was_mismatch, epic, parent_feature,
                   timestamp, story_id, feature_id, epic_id, pi_number, waf_reasoning
-           FROM classifications
-           WHERE team = ?"""
-    params = [team]
+           FROM classifications """
+    # Untagged bucket — match all rows whose normalized label is "(No Team)".
+    if team == NO_TEAM_LABEL:
+        query = base_select + "WHERE (team IS NULL OR team = '' OR LOWER(team) = 'default')"
+        params = []
+    else:
+        query = base_select + "WHERE team = ?"
+        params = [team]
     if upload_id:
         query += " AND upload_id = ?"
         params.append(upload_id)
@@ -270,7 +298,7 @@ def teams_by_epic():
     total_stories = 0
 
     for r in rows:
-        team_name = r["team"] or "(No Team)"
+        team_name = _team_label(r["team"])
         tm = team_map[team_name]
 
         story = {
@@ -327,9 +355,11 @@ def epics_list():
     """Return list of all epics with team and story counts."""
     upload_id = request.args.get("upload_id")
     db = get_db()
+    # Include untagged-team rows — bucketed under "(No Team)" — so the
+    # Epics list isn't artificially short on uploads where Team wasn't mapped.
     query = """SELECT epic, team, COUNT(*) as cnt
            FROM classifications
-           WHERE epic != '' AND team != '' AND team != 'default'"""
+           WHERE epic != ''"""
     params = []
     if upload_id:
         query += " AND upload_id = ?"
@@ -340,7 +370,7 @@ def epics_list():
     epic_map = defaultdict(lambda: {"teams": set(), "story_count": 0})
     for r in rows:
         ep = epic_map[r["epic"]]
-        ep["teams"].add(r["team"])
+        ep["teams"].add(_team_label(r["team"]))
         ep["story_count"] += r["cnt"]
 
     epics = []
