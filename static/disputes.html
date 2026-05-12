@@ -910,18 +910,42 @@ function openModal(id, action) {
         }).join('');
 
         modalBody.innerHTML = storyDetail +
-            `<div class="form-group">
+            `<div style="padding:10px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;color:#92400e;font-size:12px;line-height:1.5;margin-bottom:14px;">
+                <strong>Heads-up:</strong> this row becomes a Ground Truth example the AI uses to calibrate every future classification. Edit the title and description below if they need cleanup, or hit <strong>✨ Enhance with AI</strong> to polish them in place. The preview at the bottom shows exactly what will be written.
+            </div>
+            <div class="form-group">
                 <label class="form-label">Resolved Category</label>
-                <select class="form-select" id="modal-category">${catOptions}</select>
+                <select class="form-select" id="modal-category" onchange="updateGTPreview()">${catOptions}</select>
             </div>
             <div class="form-group">
                 <label class="form-label">Resolved Color</label>
-                <select class="form-select" id="modal-color">${colorOptions}</select>
+                <select class="form-select" id="modal-color" onchange="updateGTPreview()">${colorOptions}</select>
             </div>
+            <div class="form-group">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">
+                    <label class="form-label" style="margin-bottom:0;">GT Title</label>
+                    <button type="button" id="enhance-btn" onclick="enhanceGT()"
+                        style="font-size:11px;padding:4px 10px;border:1px solid var(--accent);background:var(--bg-secondary);color:var(--accent);border-radius:6px;cursor:pointer;font-weight:600;">
+                        ✨ Enhance with AI
+                    </button>
+                </div>
+                <input type="text" class="form-input" id="modal-gt-title" value="${esc(dispute.story_title || '')}" oninput="updateGTPreview()" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);font-size:13px;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">GT Description</label>
+                <textarea class="form-textarea" id="modal-gt-description" oninput="updateGTPreview()" style="min-height:90px;">${esc(dispute.story_description || '')}</textarea>
+            </div>
+            <div id="enhance-changes-note" style="display:none;font-size:12px;color:var(--text-muted);background:var(--bg-tertiary);padding:8px 12px;border-radius:6px;margin-bottom:12px;border-left:3px solid var(--accent);"></div>
             <div class="form-group">
                 <label class="form-label">Reviewer Notes</label>
                 <textarea class="form-textarea" id="modal-notes" placeholder="Why is this the correct classification?"></textarea>
+            </div>
+            <div style="margin-top:14px;padding:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:8px;">Preview — what will be written to GT</div>
+                <div id="gt-preview" style="font-size:12px;line-height:1.55;color:var(--text-secondary);"></div>
             </div>`;
+        // Render initial preview
+        setTimeout(updateGTPreview, 0);
 
     } else if (action === 'flag_waf') {
         modalTitle.textContent = 'Flag WAF Definition for Review';
@@ -970,6 +994,74 @@ function closeModal() {
     pendingAction = null;
 }
 
+// ── Accept → GT: live preview + AI enhance ─────────────────────────
+function updateGTPreview() {
+    const titleEl = document.getElementById('modal-gt-title');
+    const descEl  = document.getElementById('modal-gt-description');
+    const catEl   = document.getElementById('modal-category');
+    const colorEl = document.getElementById('modal-color');
+    const preview = document.getElementById('gt-preview');
+    if (!titleEl || !preview) return;
+    const t = (titleEl.value || '').trim() || '<em style="color:var(--text-muted);">(empty title)</em>';
+    const d = (descEl  && descEl.value || '').trim();
+    const dHtml = d ? esc(d) : '<em style="color:var(--text-muted);">(empty description)</em>';
+    const c = catEl ? catEl.value : '';
+    const k = colorEl ? colorEl.value : '';
+    const dotHex = WAF_COLOR_MAP[k] || '#888';
+    preview.innerHTML =
+        '<div style="margin-bottom:6px;"><strong style="color:var(--text-primary);">' + (typeof t === 'string' && t.startsWith('<') ? t : esc(t)) + '</strong></div>' +
+        '<div style="margin-bottom:8px;">' + dHtml + '</div>' +
+        '<div style="display:flex;gap:14px;font-size:11px;color:var(--text-muted);">' +
+            '<span><strong>Category:</strong> ' + (c ? esc(c) : '—') + '</span>' +
+            '<span><strong>Color:</strong> <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + dotHex + ';vertical-align:middle;margin-right:4px;"></span>' + (k || '—') + '</span>' +
+        '</div>';
+}
+
+async function enhanceGT() {
+    if (!pendingAction) return;
+    const { id } = pendingAction;
+    const titleEl = document.getElementById('modal-gt-title');
+    const descEl  = document.getElementById('modal-gt-description');
+    const catEl   = document.getElementById('modal-category');
+    const colorEl = document.getElementById('modal-color');
+    const noteEl  = document.getElementById('enhance-changes-note');
+    const btn     = document.getElementById('enhance-btn');
+    if (!titleEl || !btn) return;
+    const orig = btn.textContent;
+    btn.textContent = 'Enhancing…';
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/disputes/' + id + '/enhance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title:             titleEl.value,
+                description:       descEl ? descEl.value : '',
+                resolved_category: catEl ? catEl.value : '',
+                resolved_color:    colorEl ? colorEl.value : '',
+            }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+        titleEl.value = data.title || titleEl.value;
+        if (descEl) descEl.value = data.description || descEl.value;
+        if (noteEl) {
+            noteEl.style.display = 'block';
+            noteEl.innerHTML = '<strong>AI changes:</strong> ' + esc(data.changes || '(no summary)');
+        }
+        updateGTPreview();
+    } catch (e) {
+        if (noteEl) {
+            noteEl.style.display = 'block';
+            noteEl.style.borderLeftColor = 'var(--danger, #dc2626)';
+            noteEl.innerHTML = '<strong>Enhance failed:</strong> ' + esc(e.message || String(e));
+        }
+    } finally {
+        btn.textContent = orig;
+        btn.disabled = false;
+    }
+}
+
 async function confirmResolve() {
     if (!pendingAction) return;
 
@@ -980,10 +1072,14 @@ async function confirmResolve() {
     const body = { action: action, reviewer_notes: notes };
 
     if (action === 'accept_gt') {
-        const catEl = document.getElementById('modal-category');
-        const colorEl = document.getElementById('modal-color');
-        body.resolved_category = catEl ? catEl.value : '';
-        body.resolved_color    = colorEl ? colorEl.value : '';
+        const catEl     = document.getElementById('modal-category');
+        const colorEl   = document.getElementById('modal-color');
+        const titleEl   = document.getElementById('modal-gt-title');
+        const descEl    = document.getElementById('modal-gt-description');
+        body.resolved_category    = catEl   ? catEl.value   : '';
+        body.resolved_color       = colorEl ? colorEl.value : '';
+        body.resolved_title       = titleEl ? titleEl.value.trim() : '';
+        body.resolved_description = descEl  ? descEl.value.trim()  : '';
     }
 
     const confirmBtn = document.getElementById('modal-confirm-btn');

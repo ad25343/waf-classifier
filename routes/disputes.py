@@ -4,12 +4,17 @@ Allows users to flag disagreements with AI classifications and
 reviewers to resolve them (dismiss, accept into GT, or flag for WAF review).
 """
 
+import json
 import math
+import re
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify
 
+from config import AI_MODEL
 from database import get_db, save_classification
+# Reuse the AI client + token logger already used by quality scoring.
+from routes.quality import _get_client, _log_tokens_safe
 
 disputes_bp = Blueprint("disputes_bp", __name__)
 
@@ -171,12 +176,17 @@ def resolve_dispute(dispute_id):
     )
     db.commit()
 
-    # If accepting into GT, save the corrected classification
+    # If accepting into GT, save the corrected classification.
+    # Reviewer can override the dispute's original title + description
+    # (via the editable fields / Enhance button on the modal) so we
+    # only inject polished, GT-quality text into the training set.
     if action == "accept_gt" and resolved_category:
         dispute = _row_to_dict(row)
+        gt_title       = (data.get("resolved_title")       or dispute.get("story_title",       "")).strip()
+        gt_description = (data.get("resolved_description") or dispute.get("story_description", "")).strip()
         save_classification(
-            title=dispute.get("story_title", ""),
-            description=dispute.get("story_description", ""),
+            title=gt_title,
+            description=gt_description,
             category=resolved_category,
             team_of_teams="",
             color=resolved_color,
@@ -198,6 +208,104 @@ def resolve_dispute(dispute_id):
         )
 
     return jsonify({"success": True})
+
+
+# ── POST /api/disputes/<id>/enhance — AI polish title + description ─────────
+
+@disputes_bp.route("/api/disputes/<int:dispute_id>/enhance", methods=["POST"])
+def enhance_dispute(dispute_id):
+    """Rewrite a dispute's title + description into clean GT-quality text.
+
+    The accept_gt flow writes a row into classifications which the AI then
+    uses to calibrate future classifications — so the GT set must stay
+    clean. This endpoint takes the dispute's original story content +
+    the resolved category and asks the AI to produce a polished version
+    that preserves intent but removes typos, ticket-number noise,
+    markdown artifacts, and ambiguous phrasing.
+
+    Body (all optional — falls back to stored dispute fields):
+      title              str  reviewer's current draft title
+      description        str  reviewer's current draft description
+      resolved_category  str  target WAF category for calibration
+      resolved_color     str  target color (informational only)
+
+    Returns:
+      {title: str, description: str, changes: str}
+    """
+    db = get_db()
+    row = db.execute("SELECT * FROM disputes WHERE id=?", (dispute_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Dispute not found"}), 404
+
+    data = request.json or {}
+    dispute = _row_to_dict(row)
+    title = (data.get("title")             or dispute.get("story_title",       "")).strip()
+    desc  = (data.get("description")       or dispute.get("story_description", "")).strip()
+    cat   = (data.get("resolved_category") or dispute.get("suggested_category", "")).strip()
+    color = (data.get("resolved_color")    or "").strip()
+    user_comment = dispute.get("user_comment", "")
+
+    if not title and not desc:
+        return jsonify({"error": "Nothing to enhance — both title and description are empty"}), 400
+
+    prompt = f"""You are polishing a JIRA story that will be inserted into the WAF Classifier's
+Ground Truth training set. GT examples calibrate every future AI classification,
+so they must be clear, well-structured, and unambiguously represent their
+category. Your job is to clean the story without changing its meaning.
+
+Target WAF category: {cat or '(not specified)'}
+Target color: {color or '(not specified)'}
+
+Reviewer's reasoning for this classification:
+{user_comment or '(none provided)'}
+
+ORIGINAL TITLE:
+{title or '(empty)'}
+
+ORIGINAL DESCRIPTION:
+{desc or '(empty)'}
+
+Rules:
+- Preserve the original intent. Do not invent facts (system names, dates,
+  metrics, user roles) that weren't in the input.
+- Remove typos, JIRA noise (ticket numbers, markdown artifacts, status
+  stamps like "[DONE]" or "@mention"), and ambiguous phrasing.
+- Keep the title concise (under 100 chars) and the description focused
+  (2–4 sentences is typical for a GT example).
+- If the original is already clean, return it essentially unchanged
+  and say so in `changes`.
+
+Return a JSON object with exactly these keys, nothing else:
+{{
+  "title":       "polished title",
+  "description": "polished description",
+  "changes":     "1-2 sentence summary of what you changed and why (or 'no changes needed')"
+}}"""
+
+    try:
+        client = _get_client()
+        resp = client.messages.create(
+            model=AI_MODEL,
+            max_tokens=1200,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        _log_tokens_safe(resp, AI_MODEL, route="/api/disputes/enhance")
+        raw = resp.content[0].text.strip()
+        # Strip code fences if the model wrapped the JSON in them
+        m = re.search(r"\{[\s\S]*\}", raw)
+        if not m:
+            return jsonify({"error": "AI response was not valid JSON", "raw": raw[:400]}), 502
+        try:
+            out = json.loads(m.group(0))
+        except json.JSONDecodeError as je:
+            return jsonify({"error": f"AI response parse failed: {je}", "raw": raw[:400]}), 502
+        return jsonify({
+            "title":       (out.get("title")       or title).strip(),
+            "description": (out.get("description") or desc).strip(),
+            "changes":     (out.get("changes")     or "").strip(),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ── DELETE /api/disputes/<id> — hard delete a dispute ────────────────────────
