@@ -15,6 +15,9 @@ from state import waf_store, ground_truth_store, chat_history
 from config import AI_MODEL, UPLOAD_FOLDER
 from database import get_db, save_classification, get_setting, set_setting
 from waf_core import parse_waf_file, parse_ground_truth, get_client, build_system_prompt, build_system_prompt_for_versions
+# Auto-version on upload — make the new file pickable in the analysis-run
+# dropdown without the user having to remember the separate "Save as Version".
+from routes.settings_api import auto_version_waf_from_upload, auto_version_gt_from_upload
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +46,17 @@ def upload_waf():
         waf_store["categories"] = categories
         set_setting("active_waf_path", filepath)
 
+        # Auto-create a named version so the upload shows in the analysis-run
+        # version picker immediately. Best-effort — failure doesn't abort the
+        # upload (file is still loaded into the active in-memory store).
+        version_id = auto_version_waf_from_upload(filename, filepath)
+
         return jsonify({
             "success": True,
             "filename": filename,
             "categories": [str(c) for c in categories],
-            "preview": text[:500] + ("..." if len(text) > 500 else "")
+            "preview": text[:500] + ("..." if len(text) > 500 else ""),
+            "auto_version_id": version_id,
         })
     except Exception as e:
         logger.error("Failed to parse file: %s", e, exc_info=True)
@@ -79,13 +88,19 @@ def upload_ground_truth():
         ground_truth_store["raw_text"] = f"{len(examples)} examples across {len(stats)} categories"
         set_setting("active_gt_path", filepath)
 
+        # Auto-create a named version so the upload shows in the analysis-run
+        # version picker immediately. Best-effort — failure doesn't abort the
+        # upload (file is still loaded into the active in-memory store).
+        version_id = auto_version_gt_from_upload(filename)
+
         return jsonify({
             "success": True,
             "filename": filename,
             "example_count": len(examples),
             "stats": stats,
             "columns_detected": {k: v for k, v in col_map.items() if v},
-            "sample": examples[:3] if examples else []
+            "sample": examples[:3] if examples else [],
+            "auto_version_id": version_id,
         })
     except Exception as e:
         logger.error("Failed to parse ground truth: %s", e, exc_info=True)

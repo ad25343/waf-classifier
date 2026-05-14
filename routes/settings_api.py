@@ -3,7 +3,9 @@ WAF Classifier — Settings, Ground Truth, Baseline, and WAF Definitions API rou
 Blueprint: settings_bp
 """
 
+import logging
 import os
+import re
 import shutil
 from datetime import datetime
 
@@ -14,6 +16,8 @@ from state import waf_store, ground_truth_store
 from config import BASELINE_DIR, UPLOAD_FOLDER
 from database import get_db, get_setting, set_setting, _refresh_settings_cache
 from waf_core import parse_waf_file, parse_ground_truth
+
+logger = logging.getLogger(__name__)
 
 # Sub-directories for named version files
 WAF_VER_DIR = os.path.join(BASELINE_DIR, "waf")
@@ -325,6 +329,82 @@ def _row_count_for_file(filepath):
             return max(0, sum(1 for _ in f) - 1)
     except Exception:
         return 0
+
+
+def _auto_version_name(filename):
+    """Build a friendly version name from an uploaded filename.
+    'my_jira_export.csv' -> 'my jira export'"""
+    base = os.path.splitext(filename)[0]
+    # Replace separators with spaces, collapse runs of whitespace
+    nice = re.sub(r"[_\-]+", " ", base).strip()
+    return nice[:60] if nice else filename
+
+
+def auto_version_waf_from_upload(filename, src_filepath):
+    """Snapshot the WAF file just uploaded as a versioned entry so it
+    shows up in the analysis-run picker immediately. Returns the new
+    version row id (or None on failure)."""
+    try:
+        if not os.path.exists(src_filepath):
+            return None
+        now = datetime.now()
+        ts  = now.strftime("%Y%m%d_%H%M%S")
+        name = _auto_version_name(filename)
+        safe = "".join(c if c.isalnum() or c in "-_ " else "_" for c in name)[:50].strip().replace(" ", "_") or "upload"
+        ver_filename = f"waf_{safe}_{ts}.csv"
+        ver_filepath = os.path.join(WAF_VER_DIR, ver_filename)
+        # Copy from upload dir into the versions dir so the version owns
+        # its own file (the upload dir is volatile).
+        shutil.copy2(src_filepath, ver_filepath)
+        row_count = _row_count_for_file(ver_filepath)
+        db = get_db()
+        cur = db.execute(
+            "INSERT INTO waf_versions (name, author, notes, filename, filepath, created_at, row_count) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (name, "System (auto)", f"Auto-saved on upload of {filename}",
+             ver_filename, ver_filepath, now.isoformat(), row_count)
+        )
+        db.commit()
+        return cur.lastrowid
+    except Exception:
+        logger.exception("auto_version_waf_from_upload failed")
+        return None
+
+
+def auto_version_gt_from_upload(filename):
+    """Snapshot the active GT store (just populated by upload_ground_truth)
+    as a versioned entry. Returns the new version row id (or None)."""
+    try:
+        if not ground_truth_store.get("examples"):
+            return None
+        now = datetime.now()
+        ts  = now.strftime("%Y%m%d_%H%M%S")
+        name = _auto_version_name(filename)
+        safe = "".join(c if c.isalnum() or c in "-_ " else "_" for c in name)[:50].strip().replace(" ", "_") or "upload"
+        ver_filename = f"gt_{safe}_{ts}.csv"
+        ver_filepath = os.path.join(GT_VER_DIR, ver_filename)
+        # Write the in-memory examples — accepts both legacy and canonical
+        # key names produced by parse_ground_truth and add_ground_truth_row.
+        col_map = {"title": "Story Title", "description": "Description",
+                   "run_change": "Run/Change",
+                   "color": "WAF Color",       "waf_color": "WAF Color",
+                   "category": "WAF Category", "waf_category": "WAF Category",
+                   "team_of_teams": "Team of Teams"}
+        gt_df = pd.DataFrame(ground_truth_store["examples"]).rename(columns=col_map)
+        gt_df.to_csv(ver_filepath, index=False)
+        row_count = len(ground_truth_store["examples"])
+        db = get_db()
+        cur = db.execute(
+            "INSERT INTO gt_versions (name, author, notes, filename, filepath, created_at, row_count) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (name, "System (auto)", f"Auto-saved on upload of {filename}",
+             ver_filename, ver_filepath, now.isoformat(), row_count)
+        )
+        db.commit()
+        return cur.lastrowid
+    except Exception:
+        logger.exception("auto_version_gt_from_upload failed")
+        return None
 
 
 @settings_bp.route("/api/versions/waf", methods=["GET"])
