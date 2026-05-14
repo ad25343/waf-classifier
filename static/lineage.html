@@ -881,8 +881,8 @@ function renderEpicList() {
     </div>`;
 
     html += epicListData.map(e => `
-        <div class="epic-item" data-epic="${e.name}" onclick="selectEpic('${e.name.replace(/'/g, "\\'")}', this)">
-            <div class="epic-name">${e.name}</div>
+        <div class="epic-item" data-epic="${_escAttr(e.name)}" onclick="selectEpic('${_escJs(e.name)}', this)">
+            <div class="epic-name">${_escAttr(e.name)}</div>
             <div class="epic-meta">
                 <span class="epic-count">${e.story_count} stories</span>
                 ${e.mismatches > 0 ? `<span class="epic-mismatch">${e.mismatches} mismatches</span>` : ''}
@@ -895,11 +895,40 @@ function renderEpicList() {
 }
 
 function filterEpics() {
-    const q = document.getElementById('epic-search').value.toLowerCase();
-    document.querySelectorAll('.epic-item[data-epic]').forEach(el => {
-        const name = el.dataset.epic.toLowerCase();
-        el.style.display = name.includes(q) ? '' : 'none';
+    // Read from the rendered .epic-name text content instead of the
+    // data-epic attribute — the attribute can be broken when an epic
+    // name contains characters like " or & that mangle the HTML.
+    // textContent is whatever the browser actually rendered, so it's
+    // bulletproof.
+    const q = (document.getElementById('epic-search').value || '').toLowerCase().trim();
+    document.querySelectorAll('#epic-list .epic-item').forEach(el => {
+        // "All Epics" header has no data-epic — keep it visible always
+        if (!el.hasAttribute('data-epic')) {
+            el.style.display = '';
+            return;
+        }
+        const nameEl = el.querySelector('.epic-name');
+        const name = (nameEl ? nameEl.textContent : el.dataset.epic || '').toLowerCase();
+        el.style.display = !q || name.includes(q) ? '' : 'none';
     });
+}
+
+// HTML-attribute / JS-string-literal escapers — defined here because
+// lineage.html doesn't share the common escape helpers in static/.
+// Epic names can contain ', ", &, <, > — without these the data-epic
+// attribute and the inline onclick handler both break.
+function _escAttr(s) {
+    return String(s == null ? '' : s).replace(/[&"<>]/g, c => ({
+        '&':'&amp;', '"':'&quot;', '<':'&lt;', '>':'&gt;'
+    }[c]));
+}
+function _escJs(s) {
+    return String(s == null ? '' : s)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g,  "\\'")
+        .replace(/"/g,  '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r');
 }
 
 function showOverview(el) {
@@ -967,7 +996,8 @@ function renderOverview() {
 }
 
 function selectEpicByName(name) {
-    const item = document.querySelector(`.epic-item[data-epic="${name}"]`);
+    // CSS.escape handles names with quotes / brackets / unicode etc.
+    const item = document.querySelector('.epic-item[data-epic="' + CSS.escape(String(name)) + '"]');
     if (item) selectEpic(name, item);
 }
 
