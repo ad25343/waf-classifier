@@ -390,6 +390,19 @@ def init_db():
                 (_alias, _canonical, _now)
             )
 
+    # Self-healing canonical-name migrations.
+    # When a canonical category gets renamed in state.py (e.g.
+    # "KTLO (Keep the Lights On)" → "Keep the Lights On") we need to
+    # rewrite any existing alias rows that still point to the old name —
+    # otherwise the DB aliases override the seed and the rename is invisible
+    # at runtime. UPDATE is idempotent: once everything's on the new name
+    # the WHERE clause matches nothing and the migration is a no-op.
+    _CANON_RENAMES = [
+        ("KTLO (Keep the Lights On)", "Keep the Lights On"),
+    ]
+    for _old, _new in _CANON_RENAMES:
+        conn.execute("UPDATE waf_aliases SET canonical = ? WHERE canonical = ?", (_new, _old))
+
     # ── Usage tracking ──────────────────────────────────────────────────
     # Aggregate, anonymous request + AI-token telemetry. No row-level
     # record tracking — these tables only store feature-level events so

@@ -14,7 +14,7 @@ waf_store = {
 
 # ── Fuzzy WAF Category Matching ────────────────────────────────────────
 DEFAULT_WAF_CATEGORIES = [
-    "KTLO (Keep the Lights On)",
+    "Keep the Lights On",
     "Business Maintenance",
     "Technical Maintenance",
     "Regulatory (Operational)",
@@ -25,16 +25,16 @@ DEFAULT_WAF_CATEGORIES = [
 ]
 
 WAF_ALIASES = {
-    # KTLO — all common forms map to canonical
-    "ktlo":                                "KTLO (Keep the Lights On)",
-    "keep the lights on":                  "KTLO (Keep the Lights On)",
-    "keep lights on":                      "KTLO (Keep the Lights On)",
-    "keep the lights on (ktlo)":           "KTLO (Keep the Lights On)",
-    "keeping the lights on":               "KTLO (Keep the Lights On)",
-    "keeping the lights on (ktlo)":        "KTLO (Keep the Lights On)",
-    "ktlo - keep the lights on":           "KTLO (Keep the Lights On)",
-    "ktlo – keep the lights on":           "KTLO (Keep the Lights On)",
-    "ktlo: keep the lights on":            "KTLO (Keep the Lights On)",
+    # Keep the Lights On — canonical name; KTLO and variants alias back.
+    "ktlo":                                "Keep the Lights On",
+    "ktlo (keep the lights on)":           "Keep the Lights On",
+    "keep lights on":                      "Keep the Lights On",
+    "keep the lights on (ktlo)":           "Keep the Lights On",
+    "keeping the lights on":               "Keep the Lights On",
+    "keeping the lights on (ktlo)":        "Keep the Lights On",
+    "ktlo - keep the lights on":           "Keep the Lights On",
+    "ktlo – keep the lights on":           "Keep the Lights On",
+    "ktlo: keep the lights on":            "Keep the Lights On",
     # Maintenance
     "biz maintenance":               "Business Maintenance",
     "bus maintenance":               "Business Maintenance",

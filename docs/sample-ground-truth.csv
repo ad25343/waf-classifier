@@ -1,7 +1,7 @@
 Story Title,Description,WAF Category,WAF Color,Team of Teams,Run/Change
-Production AUS API returning 500 on co-applicant lookup,Investigate and fix 504s seen on /aus/decision after the 4/22 release — affecting ~3% of conforming SF submissions.,KTLO (Keep the Lights On),GRAY,SF Underwriting,Run
-Daily backup verification automation,Add automated check confirming DR snapshots completed and are restorable. Page on failure.,KTLO (Keep the Lights On),GRAY,Platform Eng,Run
-Quarterly security patch rollout — Q2 batch,Apply CVE-flagged patches to the loan-workbench app servers per the standing security calendar.,KTLO (Keep the Lights On),GRAY,Platform Eng,Run
+Production AUS API returning 500 on co-applicant lookup,Investigate and fix 504s seen on /aus/decision after the 4/22 release — affecting ~3% of conforming SF submissions.,Keep the Lights On,GRAY,SF Underwriting,Run
+Daily backup verification automation,Add automated check confirming DR snapshots completed and are restorable. Page on failure.,Keep the Lights On,GRAY,Platform Eng,Run
+Quarterly security patch rollout — Q2 batch,Apply CVE-flagged patches to the loan-workbench app servers per the standing security calendar.,Keep the Lights On,GRAY,Platform Eng,Run
 YBYO,Bring-your-own-tooling cleanup — decommission orphaned dev environments and consolidate dev-tool licenses.,Technical Maintenance,BLACK,Platform Eng,Run
 Removing obsolete repos,Decommission deprecated GitHub repos no longer referenced by any active service. Archive history then delete.,Technical Maintenance,BLACK,Platform Eng,Run
 Upgrade pandas 1.x → 2.x in analytics pipeline,Dependency hygiene — bring analytics jobs onto supported pandas with no behavior change.,Technical Maintenance,BLACK,Data Platform,Run
