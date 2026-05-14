@@ -80,7 +80,12 @@ def list_disputes():
     count_rows = db.execute(
         "SELECT status, COUNT(*) as cnt FROM disputes GROUP BY status"
     ).fetchall()
-    counts = {"pending": 0, "dismissed": 0, "accepted": 0, "waf_flagged": 0}
+    # NB: key MUST match the stored status value (flagged_waf, not waf_flagged).
+    # The frontend at static/disputes.html keys off `flagged_waf` everywhere
+    # (status tab data-status, badge class, status-pill mapping). A previous
+    # naming swap left this dict using waf_flagged, which meant the count
+    # never incremented for that bucket.
+    counts = {"pending": 0, "dismissed": 0, "accepted": 0, "flagged_waf": 0}
     for r in count_rows:
         s = r["status"]
         if s in counts:
