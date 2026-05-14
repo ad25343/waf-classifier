@@ -600,10 +600,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Close modal on overlay click
-    document.getElementById('resolve-modal').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
+    // Close modal on overlay click — but only when BOTH mousedown and the
+    // resulting click happened on the overlay itself, not when the user
+    // started a text-drag inside an input/textarea and released over the
+    // overlay (the browser would otherwise dispatch the click to the
+    // overlay as the common ancestor and close the modal mid-edit).
+    (function() {
+        const overlay = document.getElementById('resolve-modal');
+        let mouseDownTarget = null;
+        overlay.addEventListener('mousedown', function(e) { mouseDownTarget = e.target; });
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay && mouseDownTarget === overlay) closeModal();
+            mouseDownTarget = null;
+        });
+    })();
 
     // ESC closes modal
     document.addEventListener('keydown', function(e) {
