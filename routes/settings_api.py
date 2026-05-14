@@ -99,15 +99,19 @@ def update_ground_truth_row(idx):
     examples = ground_truth_store["examples"]
     if idx < 0 or idx >= len(examples):
         return jsonify({"error": "Index out of range"}), 404
-    # Update fields
-    for key in ["title", "description", "category", "team_of_teams", "color", "run_change"]:
+    # Update fields. Accept both canonical (waf_category / waf_color) and
+    # legacy (category / color) field names from the frontend, but always
+    # store using the canonical names — that's what the AI prompt reads.
+    KEY_ALIAS = {"category": "waf_category", "color": "waf_color"}
+    for key in ["title", "description", "category", "waf_category",
+                "team_of_teams", "color", "waf_color", "run_change"]:
         if key in data:
-            examples[idx][key] = data[key]
-    # Recalculate stats
+            examples[idx][KEY_ALIAS.get(key, key)] = data[key]
+    # Recalculate stats — tolerate any pre-fix records still under legacy key
     stats = {}
     for ex in examples:
-        cat = ex.get("category", "Unknown")
-        stats[cat] = stats.get(cat, 0) + 1
+        c = ex.get("waf_category") or ex.get("category") or "Unknown"
+        stats[c] = stats.get(c, 0) + 1
     ground_truth_store["stats"] = stats
     return jsonify({"success": True, "example": examples[idx]})
 
@@ -118,22 +122,30 @@ def add_ground_truth_row():
     data = request.get_json(force=True)
     if not data or not data.get("title"):
         return jsonify({"error": "Title is required"}), 400
+    # IMPORTANT: store using the same field names that parse_ground_truth
+    # writes when a GT file is uploaded (waf_category, waf_color) — the AI
+    # prompt builder in waf_core.build_ground_truth_section reads from
+    # those keys. A mismatch here makes form-added GT silently invisible
+    # to the AI (categories appear as "Unknown" in the prompt).
+    cat   = (data.get("waf_category") or data.get("category") or "").strip()
+    color = (data.get("waf_color")    or data.get("color")    or "").strip()
     example = {
-        "title": data.get("title", ""),
-        "description": data.get("description", ""),
-        "category": data.get("category", ""),
+        "title":         data.get("title", ""),
+        "description":   data.get("description", ""),
+        "waf_category":  cat,
         "team_of_teams": data.get("team_of_teams", ""),
-        "color": data.get("color", ""),
-        "run_change": data.get("run_change", ""),
+        "waf_color":     color,
+        "run_change":    data.get("run_change", ""),
     }
     ground_truth_store["examples"].append(example)
     ground_truth_store["example_count"] = len(ground_truth_store["examples"])
     ground_truth_store["loaded"] = True
-    # Recalculate stats
+    # Recalculate stats — tolerate any legacy records that may still be
+    # stored under the old "category" key from before this fix.
     stats = {}
     for ex in ground_truth_store["examples"]:
-        cat = ex.get("category", "Unknown")
-        stats[cat] = stats.get(cat, 0) + 1
+        c = ex.get("waf_category") or ex.get("category") or "Unknown"
+        stats[c] = stats.get(c, 0) + 1
     ground_truth_store["stats"] = stats
     return jsonify({"success": True, "example": example, "example_count": ground_truth_store["example_count"]})
 
@@ -150,8 +162,8 @@ def delete_ground_truth_row(idx):
         ground_truth_store["loaded"] = False
     stats = {}
     for ex in examples:
-        cat = ex.get("category", "Unknown")
-        stats[cat] = stats.get(cat, 0) + 1
+        c = ex.get("waf_category") or ex.get("category") or "Unknown"
+        stats[c] = stats.get(c, 0) + 1
     ground_truth_store["stats"] = stats
     return jsonify({"success": True, "removed": removed, "example_count": len(examples)})
 
@@ -181,7 +193,9 @@ def save_baseline():
         gt_df = pd.DataFrame(ground_truth_store["examples"])
         # Rename columns to match expected format
         col_map = {"title": "Story Title", "description": "Description", "run_change": "Run/Change",
-                    "color": "WAF Color", "category": "WAF Category", "team_of_teams": "Team of Teams"}
+                    "color": "WAF Color", "waf_color": "WAF Color",
+                    "category": "WAF Category", "waf_category": "WAF Category",
+                    "team_of_teams": "Team of Teams"}
         gt_df = gt_df.rename(columns=col_map)
         gt_df.to_csv(gt_path, index=False)
         saved["ground_truth"] = gt_path

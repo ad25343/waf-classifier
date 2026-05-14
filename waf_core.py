@@ -430,7 +430,13 @@ When classifying new stories, pattern-match against these examples for consisten
     max_per_category = max(3, 50 // max(len(stats or {}), 1))
 
     for ex in examples:
-        cat = ex.get("waf_category", "Unknown")
+        # Tolerate legacy key names — older form-add code (pre-fix) stored
+        # the WAF category under "category" and color under "color", while
+        # CSV-uploaded GT and the current form-add path use "waf_category"
+        # / "waf_color". Without this fallback, legacy records show as
+        # "Unknown" in the prompt and the AI ignores them.
+        cat = ex.get("waf_category") or ex.get("category") or "Unknown"
+        col = ex.get("waf_color")    or ex.get("color")    or ""
         if cat not in categories_shown:
             categories_shown[cat] = 0
 
@@ -441,8 +447,8 @@ When classifying new stories, pattern-match against these examples for consisten
         section += f"EXAMPLE — Category: {cat}"
         if ex.get("team_of_teams"):
             section += f" | Team of Teams: {ex['team_of_teams']}"
-        if ex.get("waf_color"):
-            section += f" | Color: {ex['waf_color']}"
+        if col:
+            section += f" | Color: {col}"
         section += "\n"
         section += f"  Title: {ex.get('title', 'N/A')}\n"
         if ex.get("description"):
