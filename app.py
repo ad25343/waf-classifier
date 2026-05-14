@@ -101,8 +101,21 @@ def auto_load_sample_data():
     """Auto-load WAF definitions and ground truth on startup.
     Priority: 1) last user-uploaded file (from DB), 2) test-data/ defaults.
     """
-    from database import get_setting
+    from database import get_setting, set_setting
     test_dir = os.path.join(os.path.dirname(__file__), "test-data")
+
+    # If the stored active_waf_path points to a file that no longer exists
+    # (e.g. the upload dir was wiped on redeploy), clear the setting so the
+    # fallback to test-data/ kicks in and the user sees the current default
+    # baseline instead of an empty / stale state.
+    _active_waf = get_setting("active_waf_path")
+    if _active_waf and not os.path.exists(_active_waf):
+        print(f"  Stored active_waf_path missing on disk — clearing: {_active_waf}")
+        set_setting("active_waf_path", "")
+    _active_gt = get_setting("active_gt_path")
+    if _active_gt and not os.path.exists(_active_gt):
+        print(f"  Stored active_gt_path missing on disk — clearing: {_active_gt}")
+        set_setting("active_gt_path", "")
 
     # ── WAF Definitions ──────────────────────────────────────────────
     waf_file = get_setting("active_waf_path") or os.path.join(test_dir, "waf-definitions.csv")

@@ -1,6 +1,6 @@
 Story Title,Description,Run/Change,WAF Color,WAF Category,WAF Sub-Category
-Fix production database connection timeout,"Users experiencing intermittent 504 errors on loan lookup service during peak hours. Connection pool exhaustion confirmed.",Run,GRAY,KTLO (Keep the Lights On),Emergency break-fix
-Implement daily backup verification script,"Create automated validation that DR backups completed successfully and are restorable.",Run,GRAY,KTLO (Keep the Lights On),Monitoring and backups
+Fix production database connection timeout,"Users experiencing intermittent 504 errors on loan lookup service during peak hours. Connection pool exhaustion confirmed.",Run,GRAY,Keep the Lights On,Emergency break-fix
+Implement daily backup verification script,"Create automated validation that DR backups completed successfully and are restorable.",Run,GRAY,Keep the Lights On,Monitoring and backups
 Update fee calculation rules for Q2 rate changes,"Business requested update to existing fee schedule logic to reflect new Q2 pricing approved by product team.",Run,BLACK,Business Maintenance,Configuration updates
 Fix duplicate records in customer address table,"Data quality issue causing downstream errors in correspondence. Existing dedup logic needs tuning.",Run,BLACK,Business Maintenance,Data quality fixes
 Upgrade Java runtime from 11 to 17,"Current JDK approaching EOL. Upgrade to maintain security patch availability and performance.",Run,BLACK,Technical Maintenance,Platform upgrades
