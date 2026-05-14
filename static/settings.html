@@ -768,19 +768,24 @@ async function loadGT() {
         _gtExamples = d.examples || [];
         const tb = document.getElementById('gt-table-body');
         if (_gtExamples.length > 0) {
-            tb.innerHTML = _gtExamples.map((ex, i) =>
-                `<tr id="gt-row-${i}" style="cursor:pointer;" onclick="toggleGTEdit(${i})" title="Click to edit">
+            tb.innerHTML = _gtExamples.map((ex, i) => {
+                // Records may use either the canonical (waf_category / waf_color)
+                // or the legacy (category / color) field names — see the GT
+                // key-canonicalization fix in commit 4200bff. Read both.
+                const cat = ex.waf_category || ex.category || '';
+                const col = ex.waf_color    || ex.color    || '';
+                return `<tr id="gt-row-${i}" style="cursor:pointer;" onclick="toggleGTEdit(${i})" title="Click to edit">
                     <td style="color:var(--text-primary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(ex.title)}">${esc(ex.title)}</td>
-                    <td style="font-size:12px;">${esc(ex.category)}</td>
-                    <td>${esc(ex.color)}</td>
+                    <td style="font-size:12px;">${esc(cat)}</td>
+                    <td>${esc(col)}</td>
                     <td><span class="badge ${(ex.run_change||'').toLowerCase()}">${esc(ex.run_change)}</span></td>
                     <td style="text-align:center;white-space:nowrap;">
                         <span style="font-size:11px;color:var(--text-muted);">▼ edit</span>
                         <button class="btn btn-danger btn-sm" style="margin-left:8px;" onclick="event.stopPropagation();deleteGTRow(${i})">Del</button>
                     </td>
                 </tr>
-                ${_gtInlineForm(i, ex)}`
-            ).join('') +
+                ${_gtInlineForm(i, ex)}`;
+            }).join('') +
             // "New" form row always at the bottom, hidden until + Add is clicked
             _gtInlineForm('new', null);
         } else {
@@ -820,7 +825,18 @@ function filterBaselineList() {
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGTModal();closeSaveVerModal();if(_openPanel)closePanel(_openPanel);}});
-loadWafDefs();loadGT();loadVersions();loadSettings();
+// Don't call loadVersions() here — it's defined in the Version Library
+// script block further down the page, so calling it before DOMContentLoaded
+// throws ReferenceError and halts the rest of this script (which leaves
+// loadSettings() never called and the Configuration card stuck on "Loading…").
+// The DOMContentLoaded handler below runs after every script block has
+// parsed, so every loader is guaranteed to be defined.
+document.addEventListener('DOMContentLoaded', function() {
+    loadWafDefs();
+    loadGT();
+    if (typeof loadVersions === 'function') loadVersions();
+    if (typeof loadSettings === 'function') loadSettings();
+});
 </script>
 
 <!-- ── Version Library JS ─────────────────────────────────────────── -->
