@@ -237,6 +237,18 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             waf_raw   = safe_str(row.get(em.get("waf_col"), "")) if em.get("waf_col") else ""
             waf_color, waf_category = parse_waf_field(waf_raw)
             rc_explicit = safe_str(row.get(em.get("run_change_col"), "")) if em.get("run_change_col") else ""
+            # Run/Change source priority: explicit Epic column > suffix on Epic Name.
+            # Track which path was used so we can flag auto-detected values in the
+            # preview UI (so reviewers know to spot-check them).
+            if rc_explicit:
+                run_change_value  = rc_explicit
+                run_change_source = "explicit"
+            elif rc_from_name:
+                run_change_value  = rc_from_name
+                run_change_source = "suffix"
+            else:
+                run_change_value  = ""
+                run_change_source = ""
             entry = {
                 "id":           safe_str(row.get(em.get("id_col"), ""))    if em.get("id_col")    else "",
                 "name":         raw_name,
@@ -246,7 +258,8 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
                 "waf":          waf_raw,
                 "waf_color":    waf_color,
                 "waf_category": waf_category,
-                "run_change":   rc_explicit or rc_from_name,
+                "run_change":           run_change_value,
+                "run_change_source":    run_change_source,
             }
             epic_lookup[raw_name.lower()]   = entry
             if clean_name and clean_name.lower() != raw_name.lower():
@@ -275,6 +288,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
     no_feature_ref            = 0
     missing_waf_count         = 0
     missing_run_change_count  = 0
+    rc_auto_detected_count    = 0  # rows whose Run/Change came from the Epic Name suffix
 
     for _, row in df_story.iterrows():
         story_id      = safe_str(row.get(sm.get("id_col"), ""))            if sm.get("id_col")            else ""
@@ -314,6 +328,9 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
         waf_color     = epic_data.get("waf_color",    "")
         waf_category  = epic_data.get("waf_category", "")
         run_change    = epic_data.get("run_change",   "")
+        rc_source     = epic_data.get("run_change_source", "")
+        if rc_source == "suffix" and run_change:
+            rc_auto_detected_count += 1
 
         # ── Status & completeness flag ─────────────────────────────────────
         # Definition of "complete" adapts to which files were uploaded:
@@ -369,6 +386,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
             "_is_complete":     is_complete,
             "_flag_missing_waf": flag_missing_waf,
             "_flag_missing_run_change": flag_missing_rc,
+            "_run_change_source": rc_source,
             "_story_id":        story_id,
             "_story_name":      story_name,
             "_feat_name_ref":   feat_name_ref,
@@ -391,6 +409,7 @@ def merge_files(df_epic, df_feature, df_story, col_map, has_epic=True, has_featu
         "missing_epic":       sum(1 for r in merged_rows if r["_status"] == "missing_epic"),
         "missing_waf":        missing_waf_count,
         "missing_run_change": missing_run_change_count,
+        "rc_auto_detected":   rc_auto_detected_count,   # from (Run)/(Change) suffix
         "unmatched_features": unmatched_features,
         "unmatched_epics":    unmatched_epics,
         "no_feature_ref":     no_feature_ref,
@@ -419,21 +438,30 @@ def build_issues(merged_rows, epic_lookup, feature_lookup, has_feature=True, has
     for row in merged_rows:
         sid   = row["_story_id"]
         title = row["_story_name"] or sid or "?"
+        team  = row.get("Assigned Teams", "") or ""
 
         if has_feature:
             feat_ref   = row["_feat_name_ref"]
             feat_found = row["_feat_found"]
             if feat_ref and not feat_found:
+                # Story references a Feature Name that doesn't exist in the Feature file
                 orphan_stories.append({
                     "story_id":        sid,
                     "story_title":     title,
+                    "team":            team,
+                    "kind":            "feature_not_found",
                     "missing_feature": feat_ref,
+                    "reason":          f'Story references feature "{feat_ref}" but no row with that Feature Name exists in the Feature file.',
                 })
             elif not feat_ref:
+                # Story has no Feature Name at all
                 orphan_stories.append({
                     "story_id":        sid,
                     "story_title":     title,
-                    "missing_feature": "(no Feature Name set)",
+                    "team":            team,
+                    "kind":            "no_feature_ref",
+                    "missing_feature": "",
+                    "reason":          'Story has no Feature Name set in the Story file — cannot link to any parent Feature.',
                 })
 
         if row["_flag_missing_waf"]:
@@ -623,22 +651,33 @@ def merge_process():
         row["_flag_missing_run_change"] = r.get("_flag_missing_run_change", False)
         return row
 
-    # Sort preview so orphans float to the top — then missing-WAF, then
-    # missing-Run/Change, then everything else. Easier triage at a glance.
-    sorted_rows = sorted(
-        merged_rows,
-        key=lambda r: (
-            0 if not r["_is_complete"] else 1,
-            0 if r["_flag_missing_waf"] else 1,
-            0 if r.get("_flag_missing_run_change") else 1,
-        )
-    )
+    # Build a preview that guarantees BOTH orphan and complete buckets
+    # are represented. Previously preview was sorted-orphans-first and
+    # sliced to [:50], so on any non-trivial file the Complete filter
+    # showed zero rows (all 50 preview rows were orphans). Now we take
+    # all orphans (up to 150) plus up to 50 complete rows.
+    orphans  = [r for r in merged_rows if not r["_is_complete"]]
+    complete = [r for r in merged_rows if     r["_is_complete"]]
+    # Inside orphans: missing-WAF / missing-RC sort to top (existing behavior)
+    orphans.sort(key=lambda r: (
+        0 if r["_flag_missing_waf"] else 1,
+        0 if r.get("_flag_missing_run_change") else 1,
+    ))
+    # Inside complete: same secondary sort
+    complete.sort(key=lambda r: (
+        0 if r["_flag_missing_waf"] else 1,
+        0 if r.get("_flag_missing_run_change") else 1,
+    ))
+    preview_rows = orphans[:150] + complete[:50]
 
     return jsonify({
         "token":      token,
         "stats":      stats,
         "issues":     issues,
-        "preview":    [_preview_row(r) for r in sorted_rows[:50]],
+        "preview":    [_preview_row(r) for r in preview_rows],
+        "preview_truncated": (len(orphans) > 150 or len(complete) > 50),
+        "preview_orphans_shown":  min(len(orphans), 150),
+        "preview_complete_shown": min(len(complete), 50),
         "columns":    OUTPUT_COLUMNS,
         "column_map": col_map,
     })

@@ -1377,7 +1377,7 @@ function renderValidation(issues) {
     }
 
     const CARD_DEFS = [
-        { id: 'issue-orphan-stories',  severity: 'red',    label: 'Orphan Stories',       sub: 'Feature name not found in Feature file', hasReject: true,  items: (data.orphan_stories  || []).map(s => ({ id: s.story_id,   title: s.story_title  || s.story_id  || '?', meta: 'Missing feature: ' + (s.missing_feature || '—') })) },
+        { id: 'issue-orphan-stories',  severity: 'red',    label: 'Orphan Stories',       sub: 'Story has no resolvable parent Feature', hasReject: true,  items: (data.orphan_stories  || []).map(s => ({ id: s.story_id,   title: s.story_title  || s.story_id  || '?', meta: s.reason || ('Missing feature: ' + (s.missing_feature || '—')), team: s.team || '', kind: s.kind || '', missing_feature: s.missing_feature || '' })) },
         { id: 'issue-orphan-features', severity: 'orange', label: 'Orphan Features',      sub: 'Epic name not found in Epic file',       hasReject: false, info: 'Stories under these features will have a blank Epic field.', items: (data.orphan_features || []).map(f => ({ id: null, title: f.feature_name || f.feature_id || '?', meta: 'Feature: ' + (f.feature_id || '—') + ' · Missing epic name: ' + (f.missing_epic || '—') })) },
         { id: 'issue-missing-waf',     severity: 'yellow', label: 'Missing WAF Category', sub: 'No WAF value on linked Epic',            hasReject: true,  items: (data.missing_waf     || []).map(s => ({ id: s.story_id,   title: s.story_title  || s.story_id  || '?', meta: 'Epic has no WAF field value' })) },
         { id: 'issue-unknown-color',   severity: 'yellow', label: 'Unknown WAF Color',    sub: 'WAF field format not recognised',        hasReject: true,  items: (data.unknown_color   || []).map(s => ({ id: s.story_id,   title: s.story_title  || s.story_id  || '?', meta: 'WAF value "' + (s.waf_category || '') + '" — expected format: "COLOR - Category Name"' })) },
@@ -1429,12 +1429,30 @@ function renderValidation(issues) {
             card.items.forEach(function(item) {
                 const rowEl = document.createElement('div');
                 rowEl.className = 'issue-row';
+                const clickable = !!item.id;
+                if (clickable) {
+                    rowEl.style.cursor = 'pointer';
+                    rowEl.title = 'Click to view full story row in preview below';
+                    rowEl.addEventListener('click', function(e) {
+                        // Don't fire when the user clicks the reject checkbox
+                        if (e.target.classList.contains('reject-cb')) return;
+                        _focusOnStory(item.id);
+                    });
+                }
                 let rowInner = '';
                 if (card.hasReject && item.id) {
-                    rowInner = '<input type="checkbox" class="reject-cb" onchange="_toggleReject(\'' + esc(item.id) + '\',this.checked)">';
+                    rowInner = '<input type="checkbox" class="reject-cb" onchange="_toggleReject(\'' + esc(item.id) + '\',this.checked)" onclick="event.stopPropagation()">';
                 }
+                // Team chip on orphan-story cards so reviewers can spot who to ping
+                const teamChip = (item.team && card.id === 'issue-orphan-stories')
+                    ? '<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--bg-tertiary);color:var(--text-secondary);margin-left:6px;">' + esc(item.team) + '</span>'
+                    : '';
+                // Show the story id as a small monospace tag when present
+                const idTag = (item.id)
+                    ? '<code style="font-size:10px;background:var(--bg-tertiary);padding:1px 5px;border-radius:3px;margin-left:6px;color:var(--text-muted);">' + esc(item.id) + '</code>'
+                    : '';
                 rowInner += '<div class="issue-row-content">' +
-                    '<div class="issue-row-title" title="' + esc(item.title) + '">' + esc(item.title) + '</div>' +
+                    '<div class="issue-row-title" title="' + esc(item.title) + '">' + esc(item.title) + idTag + teamChip + '</div>' +
                     '<div class="issue-row-meta">' + esc(item.meta) + '</div>' +
                     '</div>';
                 rowEl.innerHTML = rowInner;
@@ -1799,7 +1817,7 @@ function renderPreview(rows, allCols) {
         if (status === 'missing_epic') rowClass = ' class="row-orphan-epic"';
         else if (isOrphan)             rowClass = ' class="row-orphan"';
 
-        bHtml += `<tr${rowClass} onclick="openRowDetail(${rowIdx})" title="Click row for detail">`;
+        bHtml += `<tr${rowClass} data-story-id="${sid}" data-row-idx="${rowIdx}" onclick="openRowDetail(${rowIdx})" title="Click row for detail">`;
         bHtml += `<td style="text-align:center;" onclick="event.stopPropagation();"><input type="checkbox" id="${cbId}" style="accent-color:var(--accent);cursor:pointer;" ${sid ? `onchange="_toggleReject('${sid}',this.checked)"` : 'disabled'}></td>`;
 
         // Status column
@@ -1818,6 +1836,8 @@ function renderPreview(rows, allCols) {
                 bHtml += `<td class="diff-cell-missing" title="Epic has no WAF category">— missing</td>`;
             } else if (col === 'Run/Change' && isMissingRc && !val) {
                 bHtml += `<td class="diff-cell-missing" title="Epic has no Run/Change tag">— missing</td>`;
+            } else if (col === 'Run/Change' && val && row._run_change_source === 'suffix') {
+                bHtml += `<td>${esc(val)} <span style="font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(99,102,241,0.12);color:var(--accent);font-weight:600;letter-spacing:0.3px;margin-left:4px;" title="Auto-detected from '(${val})' suffix on the Epic Name — no explicit Run/Change column in the Epic file. Spot-check.">AUTO</span></td>`;
             } else {
                 bHtml += `<td title="${esc(val)}">${esc(val)}</td>`;
             }
@@ -1863,6 +1883,32 @@ function renderPreview(rows, allCols) {
 
 // ── Row detail modal ───────────────────────────────────────────────
 let _activeRowIdx = null;
+// Find the preview-table row for a given Story Id, scroll it into view,
+// flash-highlight it, and open the row-detail panel. Used by Step 3 DQ
+// issue cards so reviewers can jump from "this story is orphan" to the
+// row showing what fields it has, the team it's on, etc.
+function _focusOnStory(storyId) {
+    if (!storyId) return;
+    const tbody = document.getElementById('preview-tbody');
+    if (!tbody) return;
+    const row = tbody.querySelector('tr[data-story-id="' + CSS.escape(String(storyId)) + '"]');
+    if (!row) {
+        // Row may be filtered out — clear the filter and try again
+        if (typeof setPreviewFilter === 'function') setPreviewFilter('all');
+        setTimeout(() => _focusOnStory(storyId), 50);
+        return;
+    }
+    const idx = parseInt(row.getAttribute('data-row-idx'), 10);
+    if (!isNaN(idx)) openRowDetail(idx);
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Flash-highlight using a transient outline
+    const origOutline = row.style.outline;
+    const origBg = row.style.background;
+    row.style.outline = '2px solid var(--accent)';
+    row.style.background = 'rgba(99,102,241,0.18)';
+    setTimeout(() => { row.style.outline = origOutline; row.style.background = origBg; }, 1600);
+}
+
 function openRowDetail(idx) {
     const row = (window._previewRows || [])[idx];
     if (!row) return;

@@ -2330,7 +2330,11 @@ function filterVerifyByStatus(status) {
     } else if (status === 'mismatch') {
         verifyResults = base.filter(r => r.is_match === false);
     } else if (status === 'untagged') {
-        verifyResults = base.filter(r => !r.user_submitted_waf || r.user_submitted_waf.trim() === '');
+        // Untagged = the row had no existing WAF tag to compare against.
+        // Matches the backend KPI definition (is_match is None), not just
+        // empty user_submitted_waf — those can disagree on edge cases
+        // (e.g. user_submitted_waf='nan' or values that fail normalization).
+        verifyResults = base.filter(r => r.is_match === null || r.is_match === undefined);
     }
     renderVerifyTable();
 }
@@ -2356,7 +2360,9 @@ function renderVerifyTable() {
         } else if (r.is_match === false) {
             statusBadge = '<span class="badge mismatch">Mismatch</span>';
         } else {
-            statusBadge = '<span class="badge medium">New</span>';
+            // Row had no existing WAF tag — same as the "Untagged" KPI tile.
+            // Keep the label consistent so the click→filter chain is obvious.
+            statusBadge = '<span class="badge medium" title="No existing WAF tag in the source file — AI classified this fresh.">Untagged</span>';
         }
 
         const confClass = (r.ai_confidence || '').toLowerCase().replace('confidence: ', '');
