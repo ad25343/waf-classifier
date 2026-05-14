@@ -230,14 +230,16 @@
         .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
         .nav-dropdown-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
         .nav-chevron { font-size: 9px; transition: transform 0.2s; opacity: 0.7; }
-        .nav-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+        .nav-dropdown:hover .nav-chevron,
+        .nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
         .nav-dropdown-menu {
             display: none; position: absolute; top: calc(100% + 6px); left: 0;
             min-width: 190px; background: var(--bg-secondary); border: 1px solid var(--border);
             border-radius: 10px; padding: 6px; z-index: 1000;
             box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         }
-        .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+        .nav-dropdown:hover .nav-dropdown-menu,
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
         .nav-dropdown-item {
             display: block; padding: 8px 12px; border-radius: 7px;
             font-size: 13px; font-weight: 500; color: var(--text-secondary);
