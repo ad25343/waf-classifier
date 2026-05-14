@@ -1,0 +1,18 @@
+Story Title,Description,WAF Category,WAF Color,Team of Teams,Run/Change
+Production AUS API returning 500 on co-applicant lookup,Investigate and fix 504s seen on /aus/decision after the 4/22 release — affecting ~3% of conforming SF submissions.,KTLO (Keep the Lights On),GRAY,SF Underwriting,Run
+Daily backup verification automation,Add automated check confirming DR snapshots completed and are restorable. Page on failure.,KTLO (Keep the Lights On),GRAY,Platform Eng,Run
+Quarterly security patch rollout — Q2 batch,Apply CVE-flagged patches to the loan-workbench app servers per the standing security calendar.,KTLO (Keep the Lights On),GRAY,Platform Eng,Run
+YBYO,Bring-your-own-tooling cleanup — decommission orphaned dev environments and consolidate dev-tool licenses.,Technical Maintenance,BLACK,Platform Eng,Run
+Removing obsolete repos,Decommission deprecated GitHub repos no longer referenced by any active service. Archive history then delete.,Technical Maintenance,BLACK,Platform Eng,Run
+Upgrade pandas 1.x → 2.x in analytics pipeline,Dependency hygiene — bring analytics jobs onto supported pandas with no behavior change.,Technical Maintenance,BLACK,Data Platform,Run
+Tune servicing-fee calculation thresholds,Adjust existing fee rules to reflect updated standard processing costs. No new fee types — pure parameter tune.,Business Maintenance,BLACK,MF Servicing Ops,Run
+Loan-officer data-quality dashboard rules refresh,Update existing DQ rule set on the loan-officer dashboard to flag stale records by new threshold.,Business Maintenance,BLACK,SF Originations,Run
+Quarterly DFAST stress-test execution,Run the standing FDIC stress-test workflow for Q2 and submit results per the existing process.,Regulatory (Operational),RED,Risk & Compliance,Run
+OFAC screening — daily batch operation,Continue running the existing OFAC screening pipeline against new applications and report exceptions.,Regulatory (Operational),RED,Risk & Compliance,Run
+CFPB Reg X servicing rule update — 2026 amendments,Implement the CFPB Reg X 2026 amendments by effective date 2026-10-01. New disclosure timing and content.,Regulatory Mandated Change,RED,MF Servicing Tech,Change
+Same-Day Lender Commitments for Conforming SF Loans,Outcome: 90% of conforming SF loans receive a commit same-day (baseline 35%) by Q4. Sponsor: SVP SF Acquisitions.,Enterprise Strategic Priority,ORANGE,SF Originations,Change
+Enterprise data platform — Snowflake migration,Multi-year migration of legacy EDW workloads to Snowflake. Sponsored by CTO. Funded enterprise-wide.,Enterprise Strategic Priority,ORANGE,Data Platform,Change
+SF underwriting workbench v3 redesign,Single-LoB SVP-sponsored redesign of the underwriter workbench — funded from SF Originations.,Top Divisional Priority,YELLOW,SF Underwriting,Change
+MF watchlist automation — NOI/Occupancy ingestion,Automate ingestion of servicer NOI / occupancy data to drive same-day watchlist decisions. MF SVP sponsored.,Top Divisional Priority,YELLOW,MF Asset Mgmt,Change
+Team-level pricing-API latency dashboard,Add p95/p99 latency views to the CapMkts pricing-API team dashboard. Block-funded quarterly enhancement.,Other Block Priority,GREEN,CapMkts Pricing,Change
+Loan-officer commission-statement PDF feature flag,Block-scoped UX experiment behind a feature flag. Targeted to two pilot regions.,Other Block Priority,GREEN,SF Originations,Change
